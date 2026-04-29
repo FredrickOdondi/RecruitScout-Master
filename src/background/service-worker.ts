@@ -1191,17 +1191,10 @@ class ServiceWorker {
         currentPhase: mode === 'bulk-search' ? `Search ${currentIndex + 1}/${totalTitles}` as any : undefined,
       });
 
-      // ── Early pagination stop ─────────────────────────────────────────────
-      // If this entire page returned zero new jobs, every listing on it was a
-      // duplicate from a previous run. Since Indeed returns newest-first, all
-      // subsequent pages will be even older — no point continuing.
+      // ── Pagination Check ─────────────────────────────────────────────────
       if ((mode === 'pagination' || mode === 'bulk-search') && result?.nextPageUrl && !this.abortRequested) {
-        if (pageNewCount === 0 && result.jobs && result.jobs.length > 0) {
-          console.log('[RecruitScout] ⏹️  Full page of duplicates detected — stopping pagination early (daily dedup).');
-          urlToScrape = undefined;
-        } else {
-          urlToScrape = result.nextPageUrl;
-        }
+        console.log(`[RecruitScout] Proceeding to next page: ${result.nextPageUrl}`);
+        urlToScrape = result.nextPageUrl;
       } else {
         urlToScrape = undefined;
       }

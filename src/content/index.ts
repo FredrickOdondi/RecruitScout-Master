@@ -122,9 +122,9 @@ class ContentScript {
       if (mode === 'pagination' || mode === 'bulk-search') {
         nextPageUrl = this.findNextPageUrl();
         if (nextPageUrl) {
-          console.log(`[RecruitScout] Found next page URL: ${nextPageUrl}`);
+          console.log(`[RecruitScout] ➡️ Found next page URL: ${nextPageUrl}`);
         } else {
-          console.log(`[RecruitScout] No next page URL found. Pagination complete.`);
+          console.warn(`[RecruitScout] ⏹️ No next page URL found. Mode: ${mode}`);
         }
       }
 
