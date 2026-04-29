@@ -1,0 +1,278 @@
+
+TECHNICAL SPECIFICATION
+Chrome Extension for Universal
+Job Data Extraction
+AI Agent Development Prompt
+
+Version 1.0
+March 2026
+
+
+1. PROJECT OVERVIEW	3
+1.1 Executive Summary	3
+1.2 Core Objectives	3
+1.3 Technical Requirements Summary	3
+2. ARCHITECTURE DESIGN	4
+2.1 Extension Architecture Overview	4
+2.2 Core Components	4
+2.3 Data Flow Architecture	5
+3. EXTRACTION ENGINE DESIGN	5
+3.1 Universal Extraction Strategy	5
+3.2 Field Extraction Specifications	6
+3.3 Crawling Strategy	7
+4. USER INTERFACE DESIGN	8
+4.1 Design Philosophy	8
+4.2 Main Popup Layout	8
+4.3 Job Cards Design	8
+4.4 Progress Visualization	9
+4.5 Interactive Components	9
+4.6 Animation and Micro-interactions	9
+5. TECHNICAL IMPLEMENTATION DETAILS	10
+5.1 Manifest V3 Configuration	10
+5.2 State Management Architecture	10
+5.3 Content Script Injection Strategy	10
+5.4 Message Passing Protocol	10
+5.5 Data Storage Strategy	10
+5.6 Error Handling Framework	10
+6. EXPORT FUNCTIONALITY	11
+7. ANTI-DETECTION MEASURES	11
+8. TESTING REQUIREMENTS	12
+9. BUILD AND DEPLOYMENT	12
+10. PROJECT STRUCTURE	13
+11. QUALITY CHECKLIST	13
+12. IMPLEMENTATION PRIORITY	14
+13. DEVELOPER NOTES	14
+
+Note: Right-click the Table of Contents and select "Update Field" to refresh page numbers.
+
+1. PROJECT OVERVIEW
+1.1 Executive Summary
+Build a production-ready Chrome Extension that intelligently extracts comprehensive job listing data from any job board website. The extension must combine crawling (URL discovery) and scraping (data extraction) techniques to achieve universal compatibility across major job platforms including LinkedIn, Indeed, Glassdoor, Monster, ZipRecruiter, and company career pages. The solution must feature a beautiful, functional UI that provides real-time feedback, extraction progress visualization, and seamless data export capabilities.
+1.2 Core Objectives
+	•	Universal Compatibility: Design a site-agnostic extraction engine that adapts to different DOM structures, URL patterns, and anti-bot measures across 50+ job board platforms without hardcoding specific selectors for each site.
+	•	Comprehensive Data Extraction: Extract all relevant job metadata including title, company name, company domain, location (with geocoding support), full description, original URL, date posted, employment type, salary range (with currency normalization), and application status.
+	•	Intelligent Crawling: Implement depth-controlled crawling that discovers job listings from listing pages, follows pagination, handles infinite scroll, and respects robots.txt directives while avoiding duplicate extractions.
+	•	Beautiful User Interface: Create a modern, responsive UI with glassmorphism design, smooth animations, real-time progress indicators, job preview cards, filtering capabilities, and intuitive data management features.
+	•	Robust Error Handling: Implement comprehensive error recovery, retry mechanisms with exponential backoff, rate limiting compliance, and graceful degradation when extraction partially fails.
+1.3 Technical Requirements Summary
+Requirement
+Specification
+Manifest Version
+Manifest V3 (latest Chrome standard)
+Target Browsers
+Chrome 120+, Edge 120+, Brave (Chromium-based)
+UI Framework
+React 18+ with TypeScript, TailwindCSS 3.4+
+Build Tool
+Vite with CRXJS extension plugin
+Storage
+Chrome Storage API + IndexedDB for large datasets
+Export Formats
+CSV, JSON, XLSX with customizable field mapping
+
+2. ARCHITECTURE DESIGN
+2.1 Extension Architecture Overview
+The extension follows a modular architecture with clear separation of concerns between the background service worker, content scripts, popup UI, and offscreen documents for heavy processing. This design ensures maintainability, testability, and optimal performance across different job board websites.
+The architecture employs an event-driven communication model where the background service worker acts as the central orchestrator, coordinating extraction tasks, managing state, and facilitating communication between isolated extension components. All cross-component communication uses Chrome's message passing API with typed message contracts to ensure type safety and prevent runtime errors.
+2.2 Core Components
+2.2.1 Background Service Worker
+The background service worker serves as the central orchestration hub for all extension operations. Unlike traditional background pages, service workers are event-based and terminate when idle, requiring careful state management using Chrome Storage API. The service worker maintains extraction queues, manages concurrent tab operations, handles rate limiting logic, and coordinates between content scripts and the popup UI. It implements a job queue system that persists across service worker lifecycle events, ensuring extraction tasks survive service worker termination and restart cycles.
+2.2.2 Content Scripts Layer
+Content scripts operate in the context of web pages and serve as the primary data extraction agents. The content script layer is organized into distinct modules: DOM traversers that locate job listing elements, extractors that parse structured data from elements, observers that detect dynamic content changes, and communicators that relay extracted data to the background worker. Content scripts must handle varying DOM structures gracefully, employing multiple fallback strategies when primary extraction methods fail. They also manage scroll-triggered extraction for infinite scroll pages and detect SPA navigation events.
+2.2.3 Popup UI Component
+The popup UI provides the primary user interface for controlling extraction operations and viewing results. Built with React and TailwindCSS, it features a tabbed interface with sections for extraction controls, job listings view, settings configuration, and export functionality. The popup maintains real-time synchronization with background state using message passing and implements optimistic UI updates for responsive user experience. It displays extraction progress with animated indicators, provides job preview cards with expandable details, and includes advanced filtering and sorting capabilities.
+2.2.4 Offscreen Document Handler
+For computationally intensive operations like PDF generation, large data processing, and complex DOM parsing, the extension utilizes offscreen documents. These persistent background contexts can access DOM APIs without visible UI, enabling efficient processing without blocking the main thread. Offscreen documents handle data transformation, export generation, and can perform advanced text extraction from complex HTML structures using dedicated parsing algorithms.
+2.3 Data Flow Architecture
+Data flows through the extension in a unidirectional pattern inspired by Flux architecture. User actions in the popup dispatch messages to the background worker, which processes requests and updates the central store. State changes propagate to all connected UI components through subscription mechanisms. Extraction results flow from content scripts through the background worker for validation and normalization before being persisted to storage and reflected in the UI. This unidirectional flow ensures predictable state transitions and simplifies debugging.
+3. EXTRACTION ENGINE DESIGN
+3.1 Universal Extraction Strategy
+The extraction engine employs a multi-layered approach combining pattern-based extraction, semantic analysis, and machine learning heuristics to achieve universal compatibility. Rather than hardcoding selectors for specific sites, the engine analyzes page structure, identifies candidate elements through semantic hints, and applies extraction rules based on element positioning, text patterns, and surrounding context. This approach allows the extension to work on previously unseen job boards with reasonable accuracy.
+3.1.1 Heuristic Selector Engine
+The heuristic selector engine forms the first layer of extraction, applying pattern-matching rules to identify job listing containers and data fields. It uses a scoring system that evaluates elements based on multiple criteria: class names and IDs containing job-related keywords (job, listing, position, career), structural patterns common across job boards (repeated sibling elements with similar structure), semantic HTML elements (article, section with appropriate aria labels), and data attributes indicating job-related content. Elements with highest combined scores become primary extraction targets.
+3.1.2 Schema.org and Structured Data Parser
+Many modern job boards implement Schema.org JobPosting structured data, providing a reliable extraction source when available. The engine prioritizes JSON-LD script blocks containing JobPosting schemas, extracting structured fields directly from the parsed JSON. This method provides the highest accuracy for supported fields and serves as the primary extraction method for sites with proper structured data implementation. The parser handles nested structures, extracts salary ranges from monetary amount objects, and normalizes location data from address schemas.
+3.1.3 Natural Language Extraction
+For fields embedded within unstructured text, the engine applies natural language processing techniques to extract relevant information. Date parsers recognize various date formats including relative dates ("Posted 3 days ago"), absolute dates in different locales, and timestamp strings. Salary extractors identify compensation patterns including hourly rates, annual salaries, salary ranges, and currency symbols across different formats. Location parsers extract city, state, country combinations and recognize remote work indicators.
+3.2 Field Extraction Specifications
+3.2.1 Job Title Extraction
+Primary extraction strategies for job titles, ordered by priority:
+	•	Schema.org JobPosting title property - highest accuracy, use when available
+	•	Open Graph og:title meta tag - commonly set for social sharing
+	•	HTML title tag (cleaned of site name suffixes) - universal fallback
+	•	H1/H2 heading elements - often contains job title on detail pages
+	•	Heuristic elements with class patterns: job-title, position-title, posting-title, role-title
+3.2.2 Company Name and Domain Extraction
+Company information extraction requires multiple strategies due to varying presentation formats:
+	•	Schema.org hiringOrganization.name property - structured and reliable
+	•	Company logo alt text and title attributes - visual element fallback
+	•	Link elements pointing to company profile pages - extract from link text
+	•	Elements with company-related class patterns - company-name, employer, organization
+	•	Meta tags: og:site_name, twitter:site - often contains company name
+Domain extraction: Parse company website URLs from job postings, extract base domain using URL API, resolve redirects to find actual company domain, and cache resolved domains to avoid repeated lookups. When company URL is not directly provided, attempt to infer from company name using search heuristics or provide the job board's domain as fallback with appropriate flagging.
+3.2.3 Location Extraction and Normalization
+Location data varies significantly across job boards, requiring sophisticated parsing and normalization. The extraction engine supports multiple location formats: full addresses with street information, city/state combinations, city/country international formats, remote work indicators ("Remote", "Work from Home", "Virtual"), hybrid work arrangements, and multi-location postings. Extracted locations are normalized to a standard format: City, State/Province, Country, with remote work status flagged separately. The engine attempts geocoding using browser's built-in APIs or fallback services to verify and enrich location data.
+3.2.4 Salary Extraction and Currency Normalization
+Salary extraction handles the most diverse data format among all fields. The engine recognizes: annual salary ranges ("$80,000 - $120,000 per year"), hourly rates ("$25-35/hour", "$25-35/hr"), monthly salaries common in international postings, salary ranges with "up to" or "from" indicators, currency symbols from multiple regions ($, €, £, ¥, ₹, etc.), abbreviated formats ("80k-120k", "$80K+"), and salary type indicators (annual, monthly, weekly, hourly). Normalized output includes: minimum value, maximum value, currency code (ISO 4217), and period (annual/hourly/monthly). When only a single value is provided, it is treated as both minimum and maximum.
+3.2.5 Date Posted Extraction
+Date extraction handles relative and absolute formats with timezone normalization. Supported formats include: relative dates ("Posted today", "2 days ago", "1 week ago", "Posted 3 hours ago"), absolute dates in various formats ("March 15, 2024", "15/03/2024", "2024-03-15"), ISO 8601 timestamps from structured data, Unix timestamps, and locale-specific formats. The engine converts all dates to ISO 8601 format in UTC, calculates actual dates from relative expressions based on current time, and handles timezone conversions. When no date is found, the extraction timestamp is used with a flag indicating estimated date.
+3.2.6 Employment Type Classification
+Employment type is classified from explicit labels or inferred from job content. Standard categories include:
+	•	Full-time: Standard permanent employment, typically 35-40 hours/week
+	•	Part-time: Reduced hours, typically under 35 hours/week
+	•	Contract: Fixed-term employment or project-based work
+	•	Temporary: Short-term positions with defined end date
+	•	Internship: Student or entry-level training positions
+	•	Freelance: Independent contractor arrangements
+	•	Remote: Location-independent work arrangement (can combine with other types)
+3.3 Crawling Strategy
+3.3.1 URL Discovery Mechanism
+The crawling system discovers job URLs through multiple discovery channels. Primary discovery identifies job listing links on search results and category pages by analyzing href patterns, link text content, and surrounding context. The crawler recognizes common job URL patterns: /job/, /jobs/, /career/, /position/, /posting/, /vacancy/, query parameters containing job IDs, and hash-based routing patterns in SPAs. Secondary discovery monitors navigation events, detects dynamically loaded content, and handles infinite scroll triggers to find additional listings.
+3.3.2 Pagination Handling
+The crawler supports multiple pagination paradigms commonly used by job boards. Traditional pagination with numbered page links is handled by following next/previous links or directly constructing page URLs. Load more buttons require click simulation and content observation. Infinite scroll implementations trigger scroll events at calculated positions and monitor DOM mutations for new content. API-based pagination intercepts network requests to discover pagination endpoints and parameters. The crawler maintains visit state to prevent re-processing already extracted jobs across pagination boundaries.
+3.3.3 Rate Limiting and Politeness
+Responsible crawling is implemented through configurable rate limiting and politeness policies. The engine respects robots.txt directives by fetching and parsing robots.txt for each domain before crawling. Inter-request delays are configurable per domain, with default values based on observed server response times. Concurrent request limits prevent overwhelming target servers. Exponential backoff on error responses (429, 503) gradually reduces request frequency. Domain-specific configurations allow adjustment for known rate-limited sites. Users can override default limits but are warned about potential blocking risks.
+4. USER INTERFACE DESIGN
+4.1 Design Philosophy
+The UI design follows modern design principles emphasizing clarity, efficiency, and visual appeal. The interface employs a glassmorphism aesthetic with translucent panels, subtle gradients, and refined shadows creating depth and hierarchy. Color schemes are customizable with light and dark modes, using carefully selected accent colors that maintain accessibility contrast ratios. All interactive elements provide clear visual feedback through hover states, active states, and smooth transitions.
+4.2 Main Popup Layout
+The popup window measures 420px wide by 600px tall, providing sufficient space for complex interactions while remaining compact. The layout is organized into a header section with branding and quick actions, a primary tab navigation for major feature areas, a content area that adapts to selected tab, and a footer with status information and version details. The design uses a consistent spacing system with 8px base units and typography scale following a modular ratio.
+4.2.1 Header Section
+The header displays the extension logo and name on the left side, with quick action buttons on the right including start/stop extraction toggle, settings access, and help documentation link. A subtle gradient background separates the header visually from the content area. The extraction status indicator shows current state (idle, extracting, paused, error) with animated icons for active states.
+4.2.2 Tab Navigation
+Primary tabs provide access to major feature areas:
+	•	Extract Tab: Main extraction controls with site detection, extraction mode selection, and progress visualization
+	•	Jobs Tab: Extracted job listings display with filtering, sorting, and bulk selection capabilities
+	•	Export Tab: Data export configuration with format selection and field mapping options
+	•	Settings Tab: Extension configuration, site-specific settings, and advanced options
+4.3 Job Cards Design
+Individual job listings are displayed as cards with a clean, information-dense layout. Each card presents the job title prominently with company name and location on the second line. Key metadata (salary, employment type, posted date) appears as compact badges. The card includes quick action buttons for viewing details, opening the original posting, and toggling selection status. Expandable cards reveal the full job description without navigating away. Hover states elevate the card with subtle shadow changes and highlight the interactive boundary.
+4.3.1 Card Layout Structure
+The card header contains a checkbox for selection, job title as the primary text (truncated with ellipsis if necessary), and a status indicator showing extraction quality or errors. The card body displays company name with optional logo thumbnail, location with remote indicator, salary range with currency, employment type badge, and relative posting date. Expandable content shows full job description with basic formatting preserved, benefits summary if detected, and application link. The card footer includes view original button, copy details button, and delete/archive actions.
+4.4 Progress Visualization
+During extraction operations, the interface provides comprehensive progress feedback. A main progress bar shows overall completion percentage based on discovered URLs versus processed URLs. Below the main progress, segmented mini-progress indicators show current page progress for parallel extractions. Real-time statistics display jobs found, successfully extracted, and errors encountered. A scrollable log area shows recent extraction events with timestamps and severity indicators. Estimated time remaining is calculated based on current extraction speed and remaining items.
+4.5 Interactive Components
+4.5.1 Search and Filter Panel
+The filter panel allows users to narrow down extracted jobs through multiple criteria. Full-text search filters across title, company, and description fields. Dropdown filters provide options for employment type, salary range brackets, location (with typeahead suggestions), and date posted ranges. Filter chips display active filters with one-click removal. A reset button clears all filters instantly. The filter panel can be collapsed to maximize job listing display area.
+4.5.2 Bulk Action Bar
+When multiple jobs are selected, a floating action bar appears at the bottom of the popup. The bar displays selection count and provides bulk action buttons: select all/deselect all, export selected, delete selected, and mark as applied. The action bar uses a distinct background color to stand out from the main content. Actions confirm before execution for destructive operations like delete.
+4.6 Animation and Micro-interactions
+Subtle animations enhance the user experience without adding unnecessary cognitive load. Card entrance animations stagger when new jobs are added, creating a flowing appearance. Loading states use skeleton screens with shimmer effects rather than spinners. Button interactions provide scale and shadow feedback. Tab transitions use crossfade effects. Progress bars animate smoothly rather than jumping. All animations respect the prefers-reduced-motion media query for accessibility.
+5. TECHNICAL IMPLEMENTATION DETAILS
+5.1 Manifest V3 Configuration
+The manifest.json file serves as the extension's configuration blueprint, defining permissions, scripts, and capabilities. Under Manifest V3, background scripts are replaced by service workers declared with minimal persistence settings for state continuity. Content script declarations specify URL patterns for automatic injection, with all_frames set to false for performance. The permissions array requests storage for data persistence, activeTab for user-initiated actions, tabs for tab management, scripting for dynamic injection, and offscreen for background DOM operations. Host permissions use broad matching for job board coverage while respecting user privacy.
+5.2 State Management Architecture
+The extension implements a centralized state management system using a custom store built on Chrome Storage API. The store provides reactive updates through a pub/sub pattern, allowing UI components to subscribe to state changes. State is organized into domains: extraction state (active jobs, progress, errors), job data (extracted listings with metadata), user preferences (settings, filters, export configurations), and cache (URL visit status, domain configurations). The store handles serialization/deserialization automatically and provides atomic update operations for concurrent modification safety.
+5.3 Content Script Injection Strategy
+Content scripts are injected using a hybrid strategy combining declarative content scripts for known job board domains and programmatic injection for user-initiated extraction on arbitrary pages. Declarative injection ensures immediate availability on supported sites without user action. Programmatic injection uses chrome.scripting.executeScript API for on-demand extraction, with proper error handling for restricted pages. The injection system detects page type (listing page vs. detail page) and loads appropriate extraction modules to minimize memory footprint.
+5.4 Message Passing Protocol
+All cross-component communication uses Chrome's runtime message passing API with a typed protocol. Messages are structured with a type field indicating the action, a payload field containing message-specific data, and an optional correlation ID for request-response patterns. The background worker implements a message router that dispatches messages to appropriate handlers and returns responses asynchronously. Error responses follow a standard format with error code, message, and optional details. Long-running operations use progress messages to provide intermediate updates.
+5.5 Data Storage Strategy
+The extension uses a tiered storage strategy optimized for different data characteristics. Chrome Storage Sync stores user preferences and settings with automatic cross-device synchronization, limited by sync quota (100KB total). Chrome Storage Local stores extraction state, recent job data, and cache with higher quota limits (10MB by default, extendable). IndexedDB handles large datasets exceeding Storage API limits, storing full job descriptions and historical extraction data with support for complex queries. The storage layer provides a unified API abstracting the underlying storage mechanism, with automatic migration between tiers based on data size.
+5.6 Error Handling Framework
+Robust error handling is critical for extraction reliability. The framework categorizes errors into recoverable (network timeouts, rate limits) and non-recoverable (missing content, invalid URL). Recoverable errors trigger retry with exponential backoff (initial delay 1s, max delay 60s, max attempts 5). Extraction errors are logged with context (URL, timestamp, error type) and displayed in the UI with actionable suggestions. The framework implements circuit breakers per domain to prevent cascading failures when a site is consistently failing. Global error handlers catch unhandled exceptions and promise rejections, logging them for debugging.
+6. EXPORT FUNCTIONALITY
+6.1 Export Format Specifications
+6.1.1 CSV Export
+CSV export generates comma-separated values files with UTF-8 encoding and BOM for Excel compatibility. The first row contains column headers matching field names. Text fields containing commas, quotes, or newlines are properly escaped using CSV quoting conventions. Multi-value fields like skills are serialized as pipe-separated strings within a single column. The export handles all currency symbols and special characters correctly through proper encoding. Users can select which fields to include and reorder columns through the export configuration interface.
+6.1.2 JSON Export
+JSON export produces a structured file containing an array of job objects. Each job object includes all extracted fields with proper data types preserved (numbers remain numbers, dates are ISO strings). The export can optionally include metadata: extraction timestamp, source URL, data quality scores, and extraction method used. Nested structures like salary ranges and location objects are preserved as nested JSON objects. The output is pretty-printed with 2-space indentation for readability, or minified for smaller file sizes.
+6.1.3 Excel (XLSX) Export
+Excel export creates a properly formatted .xlsx file using the SheetJS library. The workbook includes a header row with bold formatting and frozen panes for easy navigation. Auto-fit column widths improve readability. Dates are formatted as Excel date types enabling proper filtering and sorting. Currency columns use appropriate number formatting. Hyperlinks are preserved as clickable links. The export can create multiple sheets: one for job data and optionally a summary sheet with statistics.
+6.2 Field Mapping and Customization
+The export configuration allows users to customize output through field mapping. Users can select which fields to include in the export, rename fields for compatibility with existing workflows, reorder columns through drag-and-drop, and define custom field transformations using a simple expression language (e.g., concatenate first_name and last_name). Field mapping presets can be saved and recalled for consistent exports across sessions. The interface previews export output before generating the file.
+7. ANTI-DETECTION MEASURES
+7.1 Browser Fingerprint Considerations
+Job boards may implement bot detection through various fingerprinting techniques. The extension is designed to operate within normal browser behavior patterns to minimize detection risk. Extraction requests are made through the user's existing browser session, inheriting legitimate cookies and authentication state. Request timing follows human-like patterns with randomized delays between actions. DOM interactions simulate realistic mouse movements and scroll patterns when necessary. The extension does not modify navigator properties or canvas fingerprint as these are strong detection signals.
+7.2 Request Pattern Management
+To avoid triggering rate limiters and bot detection systems, the extension manages request patterns carefully. Inter-request delays vary randomly within configured ranges (default 2-5 seconds). Burst requests are avoided except when simulating normal page interactions. The extraction queue randomizes the order of URLs from different domains when processing multiple sites concurrently. Retry requests after errors use longer delays to avoid compounding detection signals. User-configurable extraction speed settings allow trade-offs between extraction speed and detection risk.
+7.3 CAPTCHA and Challenge Handling
+When CAPTCHA challenges or bot verification screens are encountered, the extension pauses extraction and alerts the user through the UI. The user can manually complete the challenge, after which extraction resumes automatically. The extension detects common challenge patterns: Cloudflare challenges, reCAPTCHA, hCaptcha, and custom verification pages. Detection is implemented through DOM pattern matching and response code analysis. Manual intervention events are logged to identify frequently challenging sites for future reference.
+8. TESTING REQUIREMENTS
+8.1 Unit Testing Strategy
+Unit tests cover all pure functions and utility modules using Jest or Vitest framework. Critical test coverage areas include: URL pattern matching algorithms, date parsing functions, salary normalization logic, text extraction utilities, and data transformation functions. Test fixtures include sample HTML from various job boards anonymized to remove PII. Mock implementations of Chrome APIs enable isolated testing of extension components. Code coverage target is 80% for utility functions and 70% overall.
+8.2 Integration Testing
+Integration tests verify component interactions using a combination of approaches. Puppeteer tests automate browser interactions for end-to-end testing against live job boards (with rate limiting consideration). WebdriverIO tests verify cross-browser compatibility. Chrome Extension testing utilities verify message passing between components. Storage layer tests verify data persistence and retrieval. Integration tests run against a curated set of job boards representing different architectural patterns: server-rendered pages, SPAs, infinite scroll, and various pagination styles.
+8.3 Extraction Accuracy Testing
+Extraction accuracy is validated through automated comparison against manually curated ground truth datasets. For each supported job board, a set of 50-100 job postings are manually annotated with correct field values. The extraction engine processes these URLs, and output is compared against ground truth using field-level precision/recall metrics. Acceptable accuracy thresholds: title 95%, company 90%, location 85%, salary 80% (when present), employment type 90%, date posted 85%. Accuracy reports identify common failure modes for targeted improvement.
+9. BUILD AND DEPLOYMENT
+9.1 Build Configuration
+The build system uses Vite with the CRXJS plugin for Chrome Extension development. The configuration specifies multiple entry points: background service worker, content scripts (injected), popup UI (React application), and offscreen document. Environment variables configure development vs. production builds. The production build generates optimized, minified output with source maps for debugging. Asset handling includes image optimization, CSS extraction, and proper manifest generation with dynamic values injected at build time.
+9.2 Development Workflow
+Development uses hot module replacement (HMR) for rapid iteration on the popup UI. Content script changes trigger automatic extension reload. Background worker changes require manual extension reload (limitation of Chrome extension architecture). Development builds include additional debugging features: verbose logging, extraction traces, and UI debug panels. A development manifest with expanded permissions enables testing on any domain without production permission restrictions.
+9.3 Packaging and Distribution
+The production build generates a .crx file for direct distribution and a .zip file for Chrome Web Store submission. The build process validates manifest correctness, checks for required assets, and verifies permission declarations. Version numbers follow semantic versioning and are synchronized across manifest, package.json, and UI display. Store assets (screenshots, promotional images, description) are generated or sourced from the design system. Build artifacts are uploaded to a release management system with proper tagging.
+10. PROJECT STRUCTURE
+The project follows a feature-based directory structure optimized for Chrome Extension development with React UI. Key directories and their purposes are detailed below:
+Directory/File
+Purpose
+/src/background
+Service worker, message routing, state management
+/src/content
+Content scripts, DOM extraction, page monitoring
+/src/popup
+React UI components, hooks, styles for popup
+/src/offscreen
+Offscreen document for heavy processing
+/src/shared
+Shared utilities, types, constants, helpers
+/src/lib
+Core extraction engine, parsers, normalizers
+/public
+Static assets, icons, manifest.json template
+/tests
+Unit tests, integration tests, fixtures
+
+11. QUALITY CHECKLIST
+Before considering the implementation complete, verify all items in the following checklist are satisfied. Each item represents a critical quality gate for production readiness.
+11.1 Functionality Requirements
+	•	Extension successfully extracts job data from LinkedIn, Indeed, Glassdoor, Monster, and ZipRecruiter
+	•	All required fields (title, company, location, description, URL) are extracted with >90% accuracy
+	•	Optional fields (salary, employment type, date posted) are extracted when present with >80% accuracy
+	•	Pagination and infinite scroll are handled correctly on all supported platforms
+	•	Export to CSV, JSON, and XLSX formats works correctly with all field types
+	•	Rate limiting and error recovery mechanisms function as specified
+11.2 UI/UX Requirements
+	•	UI renders correctly in both light and dark mode
+	•	All interactive elements have appropriate hover and focus states
+	•	Progress indicators accurately reflect extraction status
+	•	Filtering and sorting operations complete within 100ms for 1000 jobs
+	•	Accessibility requirements met: keyboard navigation, screen reader support, WCAG 2.1 AA compliance
+	•	No UI jank or performance issues during active extraction
+11.3 Technical Requirements
+	•	Manifest V3 compliant with no deprecated APIs
+	•	No console errors or warnings in production build
+	•	Memory usage stays under 100MB during active extraction
+	•	Extension loads and initializes within 2 seconds
+	•	Unit test coverage meets 80% threshold for critical modules
+	•	Build output size under 2MB for optimal load times
+12. IMPLEMENTATION PRIORITY
+Development should proceed in phases to ensure incremental delivery of working functionality. Each phase produces a usable increment while building toward the complete specification.
+Phase 1: Core Infrastructure (Days 1-3)
+	•	Project setup with Vite, React, TypeScript, and TailwindCSS
+	•	Manifest V3 configuration and basic extension structure
+	•	Background service worker with message routing
+	•	Basic popup UI with placeholder content
+	•	Content script injection framework
+Phase 2: Extraction Engine (Days 4-7)
+	•	Universal extraction engine with heuristic selectors
+	•	Schema.org JobPosting parser
+	•	Field-specific extractors (title, company, location, etc.)
+	•	URL discovery and pagination handling
+	•	Error handling and retry mechanisms
+Phase 3: UI Development (Days 8-11)
+	•	Complete popup UI with all tabs and components
+	•	Job cards design and interaction
+	•	Progress visualization and real-time updates
+	•	Filtering, sorting, and search functionality
+	•	Settings page and user preferences
+Phase 4: Polish and Testing (Days 12-14)
+	•	Export functionality implementation (CSV, JSON, XLSX)
+	•	Anti-detection measures and rate limiting refinement
+	•	Comprehensive testing across job boards
+	•	Performance optimization and memory management
+	•	Documentation and final packaging
+
+13. DEVELOPER NOTES
+This prompt provides comprehensive specifications for building a production-ready Chrome extension. The AI agent implementing this should have expertise in Chrome Extension development, React UI development, web scraping techniques, and modern JavaScript/TypeScript practices. All code should follow best practices for security, performance, and maintainability. The extension should be tested thoroughly across multiple job boards before release. Consider implementing telemetry (with user consent) to monitor extraction success rates and identify sites requiring additional extraction patterns.
+Key success metrics for the completed extension include: extraction accuracy above 90% for core fields, support for at least 20 major job boards, UI response time under 100ms for typical interactions, and crash-free rate above 99.5%. Regular updates should address new job board patterns and anti-bot measures as they evolve.
