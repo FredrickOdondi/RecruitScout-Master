@@ -1,184 +1,58 @@
-# RecruitScout - Chrome Extension
+# RecruitScout-Master 🕵️‍♂️
 
-A production-ready Chrome Extension for extracting job listing data from any job board website. RecruitScout combines crawling and scraping techniques to achieve universal compatibility across major job platforms.
+RecruitScout is a production-ready, autonomous Chrome Extension and Command Center designed for high-volume job listing extraction. It transforms any job board into a structured data source using a combination of schema-aware parsing, platform-specific extractors, and a powerful heuristic engine.
 
-## Features
+## 🚀 Key Features
 
-- 🚀 **Universal Compatibility**: Works with LinkedIn, Indeed, Glassdoor, Monster, ZipRecruiter, and 20+ other platforms
-- 🎯 **Intelligent Extraction**: Uses heuristic selectors, Schema.org parsing, and NLP for accurate data extraction
-- 📊 **Beautiful UI**: Glassmorphism design with real-time feedback and progress visualization
-- 💾 **Multiple Export Formats**: CSV, JSON, and XLSX support
-- ⚡ **High Performance**: Response time <100ms, memory usage <100MB
-- 🔒 **Privacy Focused**: All data processed locally, no external servers
+- **Autonomous Scraping Swarm**: Supports multi-agent coordination via a centralized Supabase queue.
+- **Universal Extraction Engine**: 
+  - **Schema.org Parser**: Instant extraction from sites using standard job metadata.
+  - **Heuristic Engine**: Visual analysis of DOM structures to identify job details on unknown platforms.
+  - **Deep Scraping**: Specifically optimized for Indeed (multi-region) and LinkedIn.
+- **Intelligent Enrichment**:
+  - **Domain Resolution**: Automatically finds company websites using Clearbit and Wikidata APIs.
+  - **NLP Skills Extraction**: Parses job descriptions to identify required skill sets.
+  - **Salary Normalization**: Standardizes salary ranges into common currencies and timeframes.
+- **Cross-Node Deduplication**: Prevents redundant work across multiple scraping agents by checking global job IDs in real-time.
+- **Command Center Dashboard**: A modern React-based web interface to monitor agents, manage the bulk queue, and export data.
 
-## Installation
+## 🛠 Tech Stack
 
-### Development Mode
+- **Extension Framework**: Vite + CRXJS (Manifest V3)
+- **Frontend**: React 18, Tailwind CSS, Lucide Icons
+- **Backend/Database**: Supabase (PostgreSQL + Realtime)
+- **Languages**: TypeScript (Strict mode)
+- **Integrations**: Google Sheets API, Clearbit, Wikidata
 
-1. Clone the repository:
-```bash
-git clone https://github.com/recruitscout/recruitscout.git
-cd recruitscout
-```
+## 🏗 Architecture
 
-2. Install dependencies:
-```bash
-npm install
-```
+- `src/background`: The "Brain" - handles state management, remote queue polling, and enrichment logic.
+- `src/content`: The "Eyes" - coordinates extraction modules and handles page-level interactions.
+- `src/content/crawler`: Handles pagination, infinite scroll, and navigation.
+- `src/content/extraction`: Contains the Heuristic Engine and platform-specific extractors.
+- `src/dashboard`: The Command Center web application.
+- `src/shared`: Shared types, constants, and utility functions used across all layers.
 
-3. Build the extension:
-```bash
-npm run build
-```
+## 📋 Setup & Installation
 
-4. Load in Chrome:
-   - Open `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `dist` directory
+### Extension
+1. Clone the repository.
+2. Install dependencies: `npm install`
+3. Run the development server: `npm run dev`
+4. In Chrome, go to `chrome://extensions/`
+5. Enable "Developer mode" and click "Load unpacked".
+6. Select the `dist` directory.
 
-### Production Build
+### Command Center
+1. Navigate to the dashboard directory or run the dev server from the root.
+2. Ensure your Supabase environment variables are configured in `src/shared/supabase.ts`.
 
-```bash
-npm run build
-```
+## 🤖 Remote Agent Mode
+To run RecruitScout as a headless agent:
+1. Open the Extension Options/Popup.
+2. Enable **"Polling Enabled"**.
+3. Set a **"Worker ID"** (e.g., `agent-01`).
+4. The extension will now automatically pull tasks from the Supabase `BulkQueue` and execute them in a background tab.
 
-This will generate the extension files in the `dist` directory, ready for Chrome Web Store submission.
-
-## Usage
-
-### Extract Jobs from Current Page
-
-1. Navigate to a job board (LinkedIn, Indeed, Glassdoor, etc.)
-2. Click the RecruitScout extension icon
-3. Click "Extract Current Page"
-4. View extracted jobs in the "Jobs" tab
-
-### Extract Multiple Pages
-
-1. Navigate to a job board with pagination
-2. Click "Extract All Pages" to crawl through all listings
-3. Monitor progress in real-time
-
-### Export Data
-
-1. Go to the "Export" tab
-2. Select export format (CSV, JSON, XLSX)
-3. Choose fields to include
-4. Click "Export X Jobs" to download
-
-## Project Structure
-
-```
-recruitscout/
-├── src/
-│   ├── background/           # Background Service Worker
-│   ├── content/               # Content Scripts
-│   ├── popup/                 # React Popup UI
-│   ├── offscreen/             # Offscreen Document
-│   ├── shared/                # Shared utilities
-│   └── lib/                   # Core libraries
-├── public/                    # Static assets
-├── tests/                     # Test suite
-└── dist/                      # Build output
-```
-
-## Development
-
-### Available Scripts
-
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run test` - Run tests
-
-### Testing
-
-Run the test suite:
-
-```bash
-npm run test
-```
-
-Run tests with coverage:
-
-```bash
-npm run test -- --coverage
-```
-
-## Configuration
-
-### Extraction Settings
-
-- **Max Jobs per Page**: Limit the number of jobs extracted per page (default: 100)
-- **Pagination Limit**: Maximum number of pages to crawl (default: 10)
-- **Crawl Delay**: Delay between requests in milliseconds (default: 1000)
-- **Respect robots.txt**: Follow robots.txt rules when crawling (default: true)
-
-### Export Settings
-
-- **Format**: Choose between CSV, JSON, or XLSX
-- **Fields**: Select which fields to include in export
-- **Include Metadata**: Include additional metadata in exports
-
-## Architecture
-
-### Extraction Engine
-
-RecruitScout uses a multi-strategy extraction approach:
-
-1. **Schema.org Parser**: Extracts structured data from JSON-LD
-2. **Heuristic Engine**: Uses scoring algorithms to identify job elements
-3. **Field Extractors**: Targeted extractors for specific job fields
-4. **NLP Extractor**: Natural language processing for unstructured data
-
-### Crawler
-
-The crawler supports multiple pagination types:
-
-- Traditional pagination (page numbers)
-- Load more buttons
-- Infinite scroll
-- API-based pagination
-
-### Rate Limiting
-
-Built-in rate limiting ensures respectful crawling:
-
-- Configurable delays between requests
-- Exponential backoff on errors
-- Respect for robots.txt directives
-
-## Performance
-
-- **Extraction Accuracy**: >90% for core fields (title, company, location)
-- **Response Time**: <100ms for typical interactions
-- **Memory Usage**: <100MB during active extraction
-- **Build Size**: Under 2MB
-
-## Browser Support
-
-- Chrome/Chromium 88+
-- Edge 88+
-- Brave 1.20+
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
-
-## Support
-
-- 📧 Email: support@recruitscout.com
-- 🐛 Issues: [GitHub Issues](https://github.com/recruitscout/recruitscout/issues)
-- 📖 Docs: [Documentation](https://docs.recruitscout.com)
-
-## Acknowledgments
-
-- Built with [Vite](https://vitejs.dev/) and [React](https://reactjs.org/)
-- UI inspired by modern design principles
-- Special thanks to all contributors
-# RecruitScout-Master
+## 📄 License
+MIT License - Copyright (c) 2026 Fredrick Odondi
