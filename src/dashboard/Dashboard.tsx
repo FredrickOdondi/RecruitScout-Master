@@ -131,13 +131,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const handleSaveBulkSearch = async () => {
     const titles = bulkTitles.split(/[\n,]+/).map(t => t.trim()).filter(Boolean);
-    if (titles.length === 0) return;
+    const location = locationFilter.trim();
+
+    // Location-only mode: enqueue a single task with no title
+    const tasksToEnqueue = titles.length > 0 ? titles : (location ? [''] : []);
+    if (tasksToEnqueue.length === 0) return;
 
     try {
-      const payload = { titles, assigned_to: assignedTo.trim() || undefined, location: locationFilter.trim() || undefined };
+      const payload = { titles: tasksToEnqueue, assigned_to: assignedTo.trim() || undefined, location: location || undefined };
       const res = await bridgeSendMessage<any>({ type: 'SUPABASE_ENQUEUE_TASKS' as any, payload });
       if (res && !res.error) {
-        alert(`✅ ${titles.length} titles natively saved to the remote queue!`);
+        const modeLabel = titles.length > 0 ? `${titles.length} title(s)` : `location-only (${location})`;
+        alert(`✅ Enqueued ${modeLabel} to the remote queue!`);
         setBulkTitles('');
         // Refresh queue
         bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any }).then(r => r?.data && setQueue(r.data));
@@ -280,7 +285,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   <textarea 
                     value={bulkTitles}
                     onChange={(e) => setBulkTitles(e.target.value)}
-                    placeholder="Software Engineer&#10;Product Manager&#10;Data Scientist"
+                    placeholder={`Software Engineer\nProduct Manager\nData Scientist\n\n(or leave blank and set a Location to scrape all jobs in that area)`}
                     className="w-full h-40 bg-gray-900 border border-gray-700 rounded-lg p-4 text-sm font-mono text-gray-300 placeholder-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none shadow-inner"
                   />
                   
@@ -326,10 +331,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       </button>
                       <button 
                         onClick={handleSaveBulkSearch}
-                        disabled={!bulkTitles.trim()}
+                        disabled={!bulkTitles.trim() && !locationFilter.trim()}
                         className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2.5 rounded-lg font-medium shadow-lg shadow-primary-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap"
                       >
-                        Enqueue Tasks
+                        {bulkTitles.trim() ? 'Enqueue Tasks' : 'Scrape by Location'}
                       </button>
                     </div>
                   </div>

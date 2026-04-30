@@ -938,7 +938,8 @@ class ServiceWorker {
 
         if (response?.data) {
           const queueTask = response.data;
-          console.log(`[RecruitScout] Pulled remote queue task: ${queueTask.job_title}`);
+          const taskLabel = queueTask.job_title?.trim() || `[All Jobs${queueTask.location ? ' in ' + queueTask.location : ''}]`;
+          console.log(`[RecruitScout] Pulled remote queue task: ${taskLabel}`);
 
           let tabId = this.currentTabId;
           if (!tabId) {
@@ -948,7 +949,7 @@ class ServiceWorker {
           }
 
           try {
-            await this.startBulkExtraction({ titles: [queueTask.job_title], options: { location: queueTask.location }, tabId }, undefined);
+            await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location }, tabId }, undefined);
 
             const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
             await supabaseClient.markTaskComplete(queueTask.id, wasAborted);
@@ -1093,11 +1094,15 @@ class ServiceWorker {
 
     try {
       for (let i = 0; i < titles.length; i++) {
-        const title = titles[i];
+        const title = (titles[i] || '').trim();
         const locationParam = options?.location ? `&l=${encodeURIComponent(options.location)}` : '';
-        const searchUrl = `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`;
+        // Location-only mode: if no title provided, scrape all jobs in the location
+        const searchUrl = title
+          ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`
+          : `${baseUrl}/jobs?q=${locationParam.startsWith('&') ? locationParam.slice(1) : locationParam}`;
         
-        console.log(`[RecruitScout] Bulk Search ${i + 1}/${titles.length}: ${title}`);
+        const label = title || `[All Jobs${options?.location ? ' in ' + options.location : ''}]`;
+        console.log(`[RecruitScout] Bulk Search ${i + 1}/${titles.length}: ${label}`);
         
         // Update tab and wait for load
         await chrome.tabs.update(tabId, { url: searchUrl });
