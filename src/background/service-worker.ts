@@ -16,6 +16,8 @@ function extractDomainFromUrl(url: string): string {
 // In-memory cache shared across all resolution calls per service worker lifecycle
 const _domainCache = new Map<string, string>();
 
+let activeClientNameForScraping: string | null = null;
+
 /**
  * Normalize company name by stripping legal suffixes from the end
  * Only removes suffixes at the very end of the string
@@ -420,12 +422,18 @@ function generateJobId(url: string, title: string, company: string): string {
 async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCount: number }> {
   if (!jobs || jobs.length === 0) return { newCount: 0, skippedCount: 0 };
 
+  // Map jobs to inject the active client name
+  const processedJobs = jobs.map(job => ({
+    ...job,
+    client: job.client || activeClientNameForScraping || null
+  }));
+
   const settings = await storage.getSettings();
   const friendName = settings.friendName || '';
   const workerId = friendName || settings.instanceId || 'unknown';
 
   // ── Step 1: Build ID set from incoming jobs ───────────────────────────────
-  const incomingWithIds = jobs.map(job => ({
+  const incomingWithIds = processedJobs.map(job => ({
     job,
     id: generateJobId(job.url || '', job.title || '', job.company || ''),
   }));
@@ -492,16 +500,120 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
   // ── Step 5: Persist ──────────────────────────────────────────────────────
   // We always perform the upsert even if newCount is 0, because Click-Through 
   // might be sending an "upgrade" to an existing job (adding the description).
-  const finalJobs = enriched.length > 0 ? enriched : jobs;
+  const finalJobs = enriched.length > 0 ? enriched : processedJobs;
   await storage.addJobs(finalJobs);
 
   supabaseClient.upsertJobs(finalJobs, workerId).then(result => {
     if (result.error) {
       console.error('[RecruitScout] Supabase sync error:', result.error);
+    } else {
+      // Auto-sync to Google Sheets for matching enrolled clients
+      triggerAutomaticGoogleSheetsSync(finalJobs).catch(err => {
+        console.error('[RecruitScout] Auto-Sheets Sync failed:', err);
+      });
     }
   });
 
   return { newCount, skippedCount };
+}
+
+function sanitizeCell(val: any): string {
+  if (!val) return '';
+  let s = String(val).trim();
+  if (/^[=+\-@]/.test(s)) s = "'" + s;
+  if (s.length > 49000) s = s.substring(0, 49000) + '\n...[truncated]';
+  return s;
+}
+
+async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
+  const clientJobsMap: Record<string, any[]> = {};
+  for (const job of jobs) {
+    if (job.client) {
+      if (!clientJobsMap[job.client]) {
+        clientJobsMap[job.client] = [];
+      }
+      clientJobsMap[job.client].push(job);
+    }
+  }
+
+  const clientNames = Object.keys(clientJobsMap);
+  if (clientNames.length === 0) return;
+
+  // Load unique enrolled clients from Supabase
+  const clientsRes = await supabaseClient.getClients();
+  if (clientsRes.error || !clientsRes.data) {
+    console.error('[RecruitScout] Auto-sync failed to load enrolled clients:', clientsRes.error);
+    return;
+  }
+
+  const enrolledClients = clientsRes.data;
+
+  for (const clientName of clientNames) {
+    const client = enrolledClients.find((c: any) => c.name === clientName);
+    if (!client) {
+      console.warn(`[RecruitScout] Enrolled client details not found for client stamp "${clientName}". Skipping auto sheets sync.`);
+      continue;
+    }
+
+    if (!client.apps_script_url) {
+      console.warn(`[RecruitScout] Enrolled client "${clientName}" does not have an Apps Script Web App URL. Skipping auto sheets sync.`);
+      continue;
+    }
+
+    const clientJobs = clientJobsMap[clientName].filter(job => job.description && job.description.trim() !== '');
+    if (clientJobs.length === 0) {
+      console.log(`[RecruitScout] No jobs with non-empty descriptions for client "${clientName}". Skipping auto sync.`);
+      continue;
+    }
+    const headers = [
+      'job_title',
+      'company',
+      'company_domain',
+      'job_location',
+      'description',
+      'job_post_url',
+      'date_posted',
+      'employment_type',
+      'salary',
+      'status',
+      'source'
+    ];
+
+    const rows = [
+      headers,
+      ...clientJobs.map(job => [
+        sanitizeCell(job.title || ''),
+        sanitizeCell(job.company || ''),
+        sanitizeCell(job.companyDomain || job.companydomain || ''),
+        sanitizeCell(job.location || ''),
+        sanitizeCell(job.description || ''),
+        sanitizeCell(job.url || ''),
+        sanitizeCell(job.datePosted || job.dateposted || ''),
+        sanitizeCell(job.employmentType || job.employmenttype || ''),
+        sanitizeCell(job.salary || ''),
+        sanitizeCell(job.status || 'Active'),
+        sanitizeCell(job.source || '')
+      ])
+    ];
+
+    console.log(`[RecruitScout] 🚀 Automatically syncing ${clientJobs.length} jobs to enrolled client "${clientName}" Google Sheet...`);
+
+    try {
+      await fetch(client.apps_script_url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          spreadsheetId: client.spreadsheet_id || '',
+          sheetName: client.sheet_name || 'Sheet1',
+          data: rows
+        })
+      });
+      console.log(`[RecruitScout] ✓ Auto-synced jobs to "${clientName}" successfully.`);
+    } catch (err) {
+      console.error(`[RecruitScout] ❌ Auto-sync failed for client "${clientName}":`, err);
+    }
+  }
 }
 
 /**
@@ -767,14 +879,18 @@ class ServiceWorker {
       return { healthy: isHealthy };
     });
 
-    // Supabase Bulk Queue Management
     messageRouter.on('SUPABASE_ENQUEUE_TASKS' as MessageType, async (message) => {
-      const { titles, assigned_to, location } = message.payload;
-      return await supabaseClient.enqueueTasks(titles, assigned_to, location);
+      const { titles, assigned_to, location, client_id } = message.payload;
+      return await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id);
     });
 
     messageRouter.on('SUPABASE_GET_QUEUE' as MessageType, async () => {
       return await supabaseClient.getQueueStatus();
+    });
+
+    messageRouter.on('SUPABASE_UPDATE_QUEUE_TASK' as MessageType, async (message) => {
+      const { id, updates } = message.payload;
+      return await supabaseClient.updateQueueTask(id, updates);
     });
 
     messageRouter.on('SUPABASE_UPDATE_QUEUE_LOCATION' as any, async (message) => {
@@ -794,6 +910,18 @@ class ServiceWorker {
       return result;
     });
 
+    messageRouter.on('SUPABASE_GET_CLIENTS' as MessageType, async () => {
+      return await supabaseClient.getClients();
+    });
+
+    messageRouter.on('SUPABASE_ENROLL_CLIENT' as MessageType, async (message) => {
+      return await supabaseClient.enrollClient(message.payload);
+    });
+
+    messageRouter.on('SUPABASE_DELETE_CLIENT' as MessageType, async (message) => {
+      return await supabaseClient.deleteClient(message.payload);
+    });
+
     messageRouter.on('FORCE_POLL_QUEUE' as any, async () => {
       this.pollQueue();
       return { success: true };
@@ -803,7 +931,7 @@ class ServiceWorker {
     messageRouter.on('SHEETS_SYNC' as MessageType, async (message) => {
       let jobsToSync = message.payload?.jobs;
       if (!jobsToSync) {
-         jobsToSync = await storage.getJobs();
+        jobsToSync = await storage.getJobs();
       }
       const settings = await storage.getSettings();
       if (!settings.googleSheetsConfig) return { data: null, error: 'Google Sheets not configured' };
@@ -857,11 +985,11 @@ class ServiceWorker {
   private async getActiveWorkerId(): Promise<string> {
     const settings = await storage.getSettings();
     if (settings.friendName?.trim()) return settings.friendName.trim();
-    
+
     if (!settings.instanceId) {
-       const newId = 'agent_' + Math.random().toString(36).substring(2, 9);
-       await storage.setSettings({ instanceId: newId });
-       return newId;
+      const newId = 'agent_' + Math.random().toString(36).substring(2, 9);
+      await storage.setSettings({ instanceId: newId });
+      return newId;
     }
     return settings.instanceId;
   }
@@ -941,6 +1069,22 @@ class ServiceWorker {
           const taskLabel = queueTask.job_title?.trim() || `[All Jobs${queueTask.location ? ' in ' + queueTask.location : ''}]`;
           console.log(`[RecruitScout] Pulled remote queue task: ${taskLabel}`);
 
+          // Fetch client name if client_id is set
+          let clientName: string | null = null;
+          if (queueTask.client_id) {
+            try {
+              const clientsRes = await supabaseClient.getClients();
+              if (clientsRes.data) {
+                const match = clientsRes.data.find(c => c.id === queueTask.client_id);
+                if (match) {
+                  clientName = match.name;
+                }
+              }
+            } catch (err) {
+              console.error('[RecruitScout] Failed to fetch client name:', err);
+            }
+          }
+
           let tabId = this.currentTabId;
           if (!tabId) {
             const newTab = await chrome.tabs.create({ url: 'https://it.indeed.com', active: false });
@@ -949,6 +1093,7 @@ class ServiceWorker {
           }
 
           try {
+            activeClientNameForScraping = clientName;
             await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location }, tabId }, undefined);
 
             const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
@@ -956,6 +1101,8 @@ class ServiceWorker {
           } catch (jobError) {
             console.error('[RecruitScout] Remote Job Failed:', jobError);
             await supabaseClient.markTaskComplete(queueTask.id, true);
+          } finally {
+            activeClientNameForScraping = null;
           }
 
           if (this.abortRequested) break;
@@ -1099,11 +1246,11 @@ class ServiceWorker {
         // Location-only mode: if no title provided, scrape all jobs in the location
         const searchUrl = title
           ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`
-          : `${baseUrl}/jobs?q=${locationParam.startsWith('&') ? locationParam.slice(1) : locationParam}`;
-        
+          : `${baseUrl}/jobs?l=${encodeURIComponent(options?.location || '')}`;
+
         const label = title || `[All Jobs${options?.location ? ' in ' + options.location : ''}]`;
         console.log(`[RecruitScout] Bulk Search ${i + 1}/${titles.length}: ${label}`);
-        
+
         // Update tab and wait for load
         await chrome.tabs.update(tabId, { url: searchUrl });
         await this.waitForTabLoad(tabId);
@@ -1139,6 +1286,8 @@ class ServiceWorker {
   ): Promise<any> {
     // Initialize state
     const existingJobs = await storage.getJobs();
+    const settings = await storage.getSettings();
+    const crawlDelay = settings.crawlDelay || 3000;
     await stateManager.setState({
       status: 'running',
       mode: mode as any,
@@ -1153,6 +1302,11 @@ class ServiceWorker {
     let pageCount = 0;
     let currentTotal = existingJobs.length;
 
+    let lastSuccessfulUrl: string = url;
+    let lastSuccessfulPageCount = 0;
+    let consecutiveRetries = 0;
+    let nativeClickPending = false;
+
     while (urlToScrape && pageCount < (options.paginationLimit || 50)) {
       // ── IMMEDIATE ABORT CHECK ──────────────────────────────────────────────
       if (this.abortRequested) {
@@ -1162,22 +1316,96 @@ class ServiceWorker {
       pageCount++;
 
       if (pageCount > 1) {
-        console.log(`[RecruitScout] Navigating to page ${pageCount}: ${urlToScrape}`);
-        await chrome.tabs.update(tabId, { url: urlToScrape });
+        if (!nativeClickPending && urlToScrape) {
+          console.log(`[RecruitScout] Navigating to page ${pageCount}: ${urlToScrape}`);
+          await chrome.tabs.update(tabId, { url: urlToScrape });
+        } else {
+          console.log(`[RecruitScout] Waiting for native click navigation to settle on page ${pageCount} (Target: ${urlToScrape})...`);
+        }
+        nativeClickPending = false; // Reset the flag
         if (this.abortRequested) break; // Check after every await
         await this.waitForTabLoad(tabId);
+        // Add a small buffer for SPAs to finish rendering the DOM after navigation
+        await new Promise(r => setTimeout(r, 2000));
         if (this.abortRequested) break; // Check after every await
       }
 
       const state = await stateManager.getState();
       if (state.status !== 'running' || this.abortRequested) break;
 
-      const result = await messageRouter.sendToContent(tabId, {
-        type: MessageType.EXTRACT_JOBS,
-        payload: { mode, options },
-      });
+      let result: any = null;
+      let extractionFailed = false;
+
+      try {
+        result = await messageRouter.sendToContent(tabId, {
+          type: MessageType.EXTRACT_JOBS,
+          payload: { mode, options },
+        });
+
+        if (!result) {
+          extractionFailed = true;
+        }
+      } catch (err: any) {
+        console.warn(`[RecruitScout] ⚠️ Content extraction failed on page ${pageCount}:`, err);
+        extractionFailed = true;
+      }
 
       if (this.abortRequested) break; // Check after every await
+
+      if (extractionFailed) {
+        consecutiveRetries++;
+        if (consecutiveRetries > 3) {
+          console.error(`[RecruitScout] ❌ Exceeded maximum consecutive recovery retries (3) on page ${pageCount}. Halting.`);
+          throw new Error('Scraper halted due to persistent page blocks/connection issues after 3 tab recovery attempts.');
+        }
+
+        let recoveryUrl = urlToScrape || lastSuccessfulUrl;
+
+        // MATHEMATICALLY ENFORCE RECOVERY URL TO AVOID PAGE 1 FALLBACK
+        if (url.includes('indeed.')) {
+          try {
+            const u = new URL(url); // the original base search URL!
+            const startOffset = (pageCount - 1) * 10; // recovering the exact current pageCount
+            if (startOffset > 0) {
+              u.searchParams.set('start', startOffset.toString());
+            } else {
+              u.searchParams.delete('start');
+            }
+            recoveryUrl = u.toString();
+          } catch (e) { /* ignore */ }
+        }
+
+        console.log(`[RecruitScout] 🔄 Recovery [Attempt ${consecutiveRetries}/3]: Block/Cloudflare detected on page ${pageCount}. Recreating tab to bypass...`);
+        console.log(`[RecruitScout] 🔄 Recovery: Closing blocked tab ID ${tabId}...`);
+        try {
+          await chrome.tabs.remove(tabId);
+        } catch { /* ignore */ }
+
+        console.log(`[RecruitScout] 🔄 Recovery: Creating a clean new tab at URL: ${recoveryUrl}`);
+        const newTab = await chrome.tabs.create({ url: recoveryUrl, active: false });
+        if (!newTab.id) {
+          throw new Error('Failed to recreate background tab during auto-bypass.');
+        }
+
+        tabId = newTab.id;
+        this.currentTabId = tabId; // Sync engine active tab reference
+
+        console.log(`[RecruitScout] 🔄 Recovery: Waiting for fresh tab ID ${tabId} to load...`);
+        await this.waitForTabLoad(tabId);
+        await new Promise(r => setTimeout(r, 4000)); // buffer for fresh loading/settling
+
+        // Reset pageCount to try scraping this page again!
+        pageCount = lastSuccessfulPageCount;
+        urlToScrape = recoveryUrl;
+        
+        // Prevent double navigation in the next loop iteration!
+        nativeClickPending = true; 
+
+        console.log(`[RecruitScout] 🔄 Recovery: Fresh tab loaded successfully. Retrying page ${pageCount + 1}...`);
+        continue; // Go back to top of loop to scrape the page again!
+      }
+
+      consecutiveRetries = 0; // reset on success
 
       let pageNewCount = 0;
       if (result && result.jobs && result.jobs.length > 0) {
@@ -1196,10 +1424,54 @@ class ServiceWorker {
         currentPhase: mode === 'bulk-search' ? `Search ${currentIndex + 1}/${totalTitles}` as any : undefined,
       });
 
+      // Update last successful checkpoint parameters!
+      lastSuccessfulUrl = urlToScrape || url;
+      lastSuccessfulPageCount = pageCount;
+
       // ── Pagination Check ─────────────────────────────────────────────────
       if ((mode === 'pagination' || mode === 'bulk-search') && result?.nextPageUrl && !this.abortRequested) {
-        console.log(`[RecruitScout] Proceeding to next page: ${result.nextPageUrl}`);
-        urlToScrape = result.nextPageUrl;
+        // Add a human-like randomised delay between pages to avoid Cloudflare detection.
+        const jitter = crawlDelay * 0.3;
+        const pageDelay = Math.round(crawlDelay + (Math.random() * jitter * 2 - jitter));
+        console.log(`[RecruitScout] ⏳ Waiting ${pageDelay}ms before page ${pageCount + 1}...`);
+        await new Promise(r => setTimeout(r, pageDelay));
+        if (this.abortRequested) break;
+
+        console.log(`[RecruitScout] Proceeding to next page via native click...`);
+        try {
+          const clickResult = await messageRouter.sendToContent(tabId, { type: MessageType.CLICK_NEXT_PAGE });
+          
+          // Mathematically calculate the next page URL to bypass Indeed's obfuscated hrefs
+          let nextMathematicalUrl = result.nextPageUrl;
+          if (url.includes('indeed.')) {
+            try {
+              const u = new URL(url);
+              const nextOffset = pageCount * 10;
+              u.searchParams.set('start', nextOffset.toString());
+              nextMathematicalUrl = u.toString();
+            } catch (e) { /* ignore */ }
+          }
+
+          if (clickResult && clickResult.success) {
+            nativeClickPending = true;
+            urlToScrape = nextMathematicalUrl;
+          } else {
+            console.log(`[RecruitScout] Native click failed, falling back to URL navigation: ${nextMathematicalUrl}`);
+            urlToScrape = nextMathematicalUrl;
+          }
+        } catch (e) {
+          console.error(`[RecruitScout] Click command failed, falling back to URL navigation`, e);
+          let nextMathematicalUrl = result.nextPageUrl;
+          if (url.includes('indeed.')) {
+            try {
+              const u = new URL(url);
+              const nextOffset = pageCount * 10;
+              u.searchParams.set('start', nextOffset.toString());
+              nextMathematicalUrl = u.toString();
+            } catch (e) { /* ignore */ }
+          }
+          urlToScrape = nextMathematicalUrl;
+        }
       } else {
         urlToScrape = undefined;
       }

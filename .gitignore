@@ -39,3 +39,6 @@ out
 
 # OS files
 Thumbs.db
+
+# Archives
+*.zip

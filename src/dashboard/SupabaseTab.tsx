@@ -73,6 +73,8 @@ const COLUMNS: ColDef[] = [
   { key: 'id',             minWidth: 'min-w-[110px]',  truncate: true },
   { key: 'title',          minWidth: 'min-w-[200px]',  truncate: true },
   { key: 'company',        minWidth: 'min-w-[160px]',  truncate: true },
+  { key: 'client',         minWidth: 'min-w-[130px]',  truncate: true },
+  { key: 'category',       minWidth: 'min-w-[200px]',  truncate: true },
   { key: 'companydomain',  minWidth: 'min-w-[150px]',  truncate: true },
   { key: 'location',       minWidth: 'min-w-[150px]',  truncate: true },
   { key: 'employmenttype', minWidth: 'min-w-[140px]',  truncate: true },
@@ -88,6 +90,23 @@ const COLUMNS: ColDef[] = [
 
 const PAGE_SIZE = 50;
 const SHEETS_CONFIG_KEY = 'recruitscout_sheets_config';
+
+const ALLOWED_CATEGORIES = [
+  "Staffing & Recruiting Agency",
+  "Executive Search / Headhunting",
+  "HR Consulting & Services",
+  "Employment & Training Agency",
+  "IT, Tech & Telecommunications",
+  "Manufacturing & Automotive",
+  "Food, Beverage & Agriculture",
+  "Logistics & Supply Chain",
+  "Business Services, Consulting & Finance",
+  "Energy, Utilities & Engineering",
+  "Hospitality, Tourism & Events",
+  "Healthcare & Pharmaceuticals",
+  "Retail & Consumer Goods",
+  "Government, Non-Profit & Real Estate"
+];
 
 // ── Google Sheets helpers ─────────────────────────────────────────────────────
 function sanitizeCell(val: string | undefined | null): string {
@@ -157,6 +176,23 @@ export default function SupabaseTab() {
   const [allSources, setAllSources] = useState<string[]>([]);
   const [workerFilter, setWorkerFilter] = useState('all');
   const [allWorkers, setAllWorkers] = useState<string[]>([]);
+  const [clientFilter, setClientFilter] = useState('all');
+  const [allClients, setAllClients] = useState<string[]>([]);
+  const [allEnrolledClients, setAllEnrolledClients] = useState<any[]>([]);
+  const [selectedClientSync, setSelectedClientSync] = useState<string>('custom');
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // ── Sheets state ───────────────────────────────────────────────────────────
   const storedConfig = (() => {
@@ -211,6 +247,13 @@ export default function SupabaseTab() {
       ).catch(() => {});
     // Load unique worker_ids
     supabaseClient.getUniqueWorkers().then(setAllWorkers);
+    // Load unique enrolled clients
+    supabaseClient.getClients().then(res => {
+      if (res.data) {
+        setAllEnrolledClients(res.data);
+        setAllClients(res.data.map(c => c.name).sort());
+      }
+    });
   }, []);
 
   // ── Fetch page ─────────────────────────────────────────────────────────────
@@ -222,6 +265,8 @@ export default function SupabaseTab() {
         search: debouncedSearch || undefined,
         source: sourceFilter !== 'all' ? sourceFilter : undefined,
         workerId: workerFilter !== 'all' ? workerFilter : undefined,
+        client: clientFilter !== 'all' ? clientFilter : undefined,
+        categories: categoryFilter.length > 0 ? categoryFilter : undefined,
         sortBy,
         limit: PAGE_SIZE,
         offset: (page - 1) * PAGE_SIZE,
@@ -233,10 +278,10 @@ export default function SupabaseTab() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, sourceFilter, workerFilter, sortBy]);
+  }, [page, debouncedSearch, sourceFilter, workerFilter, clientFilter, categoryFilter, sortBy]);
 
   useEffect(() => { fetchPage(); }, [fetchPage]);
-  useEffect(() => { setPage(1); }, [sourceFilter, workerFilter, sortBy]);
+  useEffect(() => { setPage(1); }, [sourceFilter, workerFilter, clientFilter, categoryFilter, sortBy]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -295,6 +340,8 @@ export default function SupabaseTab() {
           search: debouncedSearch || undefined,
           source: sourceFilter !== 'all' ? sourceFilter : undefined,
           workerId: workerFilter !== 'all' ? workerFilter : undefined,
+          client: clientFilter !== 'all' ? clientFilter : undefined,
+          categories: categoryFilter.length > 0 ? categoryFilter : undefined,
           sortBy,
           limit: BATCH,
           offset: p * BATCH,
@@ -391,51 +438,51 @@ export default function SupabaseTab() {
 
       {/* ── Stats bar ── */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
-          <div className="text-2xl font-bold text-cyan-400">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-md p-4">
+          <div className="text-xl font-medium text-gray-900">
             {loading && total === 0
-              ? <span className="text-gray-600 text-base animate-pulse">loading…</span>
+              ? <span className="text-gray-500 text-[13px] animate-pulse">loading…</span>
               : total.toLocaleString()}
           </div>
-          <div className="text-xs text-gray-500 mt-1">Total Rows in Supabase</div>
+          <div className="text-[13px] text-gray-600 mt-1">Total Rows in Supabase</div>
         </div>
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4">
-          <div className="text-2xl font-bold text-purple-400">{COLUMNS.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Columns</div>
+        <div className="bg-white border border-gray-200 shadow-sm rounded-md p-4">
+          <div className="text-xl font-medium text-gray-900">{COLUMNS.length}</div>
+          <div className="text-[13px] text-gray-600 mt-1">Columns</div>
         </div>
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-md p-4 flex items-center justify-between">
           <div>
-            <div className={`text-sm font-semibold ${healthy === true ? 'text-emerald-400' : healthy === false ? 'text-red-400' : 'text-gray-500'}`}>
-              <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${healthy === true ? 'bg-emerald-400' : healthy === false ? 'bg-red-400' : 'bg-gray-600'}`} />
+            <div className={`text-[13px] font-medium ${healthy === true ? 'text-gray-900' : healthy === false ? 'text-red-600' : 'text-gray-600'}`}>
+              <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${healthy === true ? 'bg-green-500' : healthy === false ? 'bg-red-500' : 'bg-gray-400'}`} />
               {healthy === true ? 'Connected' : healthy === false ? 'Offline' : 'Checking…'}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Supabase Status</div>
+            <div className="text-xs text-gray-600 mt-1">Supabase Status</div>
           </div>
           {lastRefreshed && (
-            <div className="text-xs text-gray-600 text-right">Refreshed<br />{lastRefreshed.toLocaleTimeString()}</div>
+            <div className="text-xs text-gray-500 text-right">Refreshed<br />{lastRefreshed.toLocaleTimeString()}</div>
           )}
         </div>
       </div>
 
       {/* ── Google Sheets Sync Panel ── */}
-      <div className="bg-[#0d1321] border border-green-900/40 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-green-900/30">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200">
           <div className="flex items-center gap-2.5">
-            <span className="text-green-500"><SheetsIcon /></span>
-            <span className="text-sm font-semibold text-gray-200">Google Sheets Sync</span>
+            <span className="text-green-600"><SheetsIcon /></span>
+            <span className="text-sm font-semibold text-gray-900">Google Sheets Sync</span>
             {(debouncedSearch || sourceFilter !== 'all') && (
-              <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full px-2 py-0.5">
+              <span className="text-xs bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-full px-2 py-0.5">
                 Filtered · {total.toLocaleString()} rows
               </span>
             )}
             {!debouncedSearch && sourceFilter === 'all' && total > 0 && (
-              <span className="text-xs bg-gray-700/50 text-gray-400 border border-gray-600/30 rounded-full px-2 py-0.5">
+              <span className="text-xs bg-gray-100 text-gray-700 border border-gray-200 rounded-full px-2 py-0.5">
                 All {total.toLocaleString()} rows
               </span>
             )}
             {filterEmptyDesc && (
-              <span className="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full px-2 py-0.5 flex items-center gap-1">
+              <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                 Dropping empty descriptions
               </span>
@@ -448,15 +495,15 @@ export default function SupabaseTab() {
               title={filterEmptyDesc ? 'Click to include all rows (currently dropping empty descriptions)' : 'Click to drop rows with no description before sending'}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all
                 ${filterEmptyDesc
-                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.15)]'
-                  : 'bg-gray-800/60 text-gray-600 border-gray-700/50 hover:text-gray-400 hover:border-gray-600'}`}
+                  ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-sm'
+                  : 'bg-gray-50 text-gray-700 border-gray-200 hover:text-gray-900 hover:border-gray-300'}`}
             >
-              <span className={filterEmptyDesc ? 'text-amber-400' : 'text-gray-600'}><PowerIcon /></span>
+              <span className={filterEmptyDesc ? 'text-amber-500' : 'text-gray-600'}><PowerIcon /></span>
               {filterEmptyDesc ? 'No-desc filter ON' : 'No-desc filter'}
             </button>
             <button
               onClick={() => setShowSheetsConfig(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-lg hover:bg-gray-800"
+              className="flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100"
             >
               <SettingsIcon />
               {showSheetsConfig ? 'Hide config' : 'Config'}
@@ -489,30 +536,73 @@ export default function SupabaseTab() {
 
         {/* Config inputs (collapsible) */}
         {showSheetsConfig && (
-          <div className="px-5 py-4 bg-black/20 border-b border-green-900/20 space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Apps Script Web App URL <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="https://script.google.com/macros/s/…/exec"
-                value={sheetsConfig.webAppUrl}
-                onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all" />
+          <div className="px-5 py-4 bg-gray-50 border-b border-gray-200 space-y-3.5">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-700 font-bold uppercase tracking-wider block">Target Client Sheet</label>
+              <select
+                value={selectedClientSync}
+                onChange={e => {
+                  const val = e.target.value;
+                  setSelectedClientSync(val);
+                  if (val !== 'custom') {
+                    const client = allEnrolledClients.find(c => c.name === val);
+                    if (client) {
+                      setSheetsConfigState({
+                        webAppUrl: client.apps_script_url || '',
+                        spreadsheetId: client.spreadsheet_id || '',
+                        sheetName: client.sheet_name || 'Sheet1',
+                      });
+                    }
+                  }
+                }}
+                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all cursor-pointer shadow-sm"
+              >
+                <option value="custom">✏️ Custom Sheet Settings (Manual)</option>
+                {allEnrolledClients.map(c => (
+                  <option key={c.id} value={c.name}>💼 {c.name}</option>
+                ))}
+              </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Spreadsheet ID (optional)</label>
-                <input type="text" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
-                  value={sheetsConfig.spreadsheetId}
-                  onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all" />
+
+            {selectedClientSync === 'custom' ? (
+              <div className="space-y-2.5">
+                <div>
+                  <label className="text-xs text-gray-700 mb-1 block">Apps Script Web App URL <span className="text-red-500">*</span></label>
+                  <input type="text" placeholder="https://script.google.com/macros/s/…/exec"
+                    value={sheetsConfig.webAppUrl}
+                    onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-700 mb-1 block">Spreadsheet ID (optional)</label>
+                    <input type="text" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+                      value={sheetsConfig.spreadsheetId}
+                      onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
+                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-700 mb-1 block">Sheet Name</label>
+                    <input type="text" placeholder="Sheet1"
+                      value={sheetsConfig.sheetName}
+                      onChange={e => updateSheetsConfig('sheetName', e.target.value)}
+                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Sheet Name</label>
-                <input type="text" placeholder="Sheet1"
-                  value={sheetsConfig.sheetName}
-                  onChange={e => updateSheetsConfig('sheetName', e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all" />
-              </div>
-            </div>
+            ) : (
+              (() => {
+                const client = allEnrolledClients.find(c => c.name === selectedClientSync);
+                return client ? (
+                  <div className="bg-white/50 backdrop-blur border border-gray-200 rounded-lg p-3 text-[13px] text-gray-700 space-y-1.5 shadow-sm">
+                    <div><span className="font-semibold text-gray-950">Target Client:</span> {client.name}</div>
+                    <div className="truncate"><span className="font-semibold text-gray-950">Apps Script URL:</span> {client.apps_script_url || '—'}</div>
+                    <div className="truncate"><span className="font-semibold text-gray-950">Spreadsheet ID:</span> {client.spreadsheet_id || '—'}</div>
+                    <div><span className="font-semibold text-gray-950">Sheet Name:</span> {client.sheet_name || 'Sheet1'}</div>
+                  </div>
+                ) : null;
+              })()
+            )}
             <p className="text-xs text-gray-600">Columns sent: {COLUMNS.map(c => c.key).join(', ')}</p>
           </div>
         )}
@@ -530,68 +620,122 @@ export default function SupabaseTab() {
           </div>
         )}
         {syncStatus && !syncProgress && (
-          <div className={`px-5 py-3 text-sm border-b ${syncStatus.ok ? 'bg-green-500/5 border-green-900/20 text-green-400' : 'bg-red-500/5 border-red-900/20 text-red-400'}`}>
+          <div className={`px-5 py-3 text-sm border-b ${syncStatus.ok ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
             {syncStatus.msg}
           </div>
         )}
       </div>
 
       {/* ── Toolbar ── */}
-      <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-3 flex flex-wrap items-center gap-2.5">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-wrap items-center gap-2.5">
         {/* Search */}
         <div className="relative flex-1 min-w-[220px]">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><SearchIcon /></span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"><SearchIcon /></span>
           <input type="text" placeholder="Search title, company, location…"
             value={search} onChange={e => handleSearchChange(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-8 pr-7 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all" />
+            className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-8 pr-7 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all shadow-sm" />
           {search && (
             <button onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-xs">✕</button>
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 text-xs">✕</button>
           )}
         </div>
 
         {/* Source filter */}
         <div className="relative">
           <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value); setPage(1); }}
-            className="appearance-none bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer">
+            className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer shadow-sm">
             <option value="all">All Sources</option>
             {allSources.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
           </select>
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><ChevronDownIcon /></span>
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"><ChevronDownIcon /></span>
+        </div>
+
+        {/* Category filter */}
+        <div className="relative" ref={categoryDropdownRef}>
+          <button 
+            onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+            className="flex items-center justify-between min-w-[160px] max-w-[200px] bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer shadow-sm"
+          >
+            <span className="truncate">
+              {categoryFilter.length === 0 ? "All Categories" : `${categoryFilter.length} Selected`}
+            </span>
+            <span className="text-gray-600 ml-2"><ChevronDownIcon /></span>
+          </button>
+          
+          {showCategoryDropdown && (
+            <div className="absolute z-20 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl max-h-72 overflow-y-auto">
+              <div 
+                className="px-3 py-2 border-b border-gray-200 hover:bg-gray-50 cursor-pointer text-sm text-gray-900 font-medium sticky top-0 bg-white z-10"
+                onClick={() => { setCategoryFilter([]); setShowCategoryDropdown(false); }}
+              >
+                Clear All
+              </div>
+              {ALLOWED_CATEGORIES.map(cat => {
+                const isSelected = categoryFilter.includes(cat);
+                return (
+                  <label key={cat} className="flex items-start px-3 py-2.5 hover:bg-gray-50 cursor-pointer gap-2 border-b border-gray-100 last:border-0">
+                    <input 
+                      type="checkbox" 
+                      className="mt-0.5 rounded border-gray-300 bg-white accent-cyan-500 cursor-pointer shrink-0"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCategoryFilter([...categoryFilter, cat]);
+                        } else {
+                          setCategoryFilter(categoryFilter.filter(c => c !== cat));
+                        }
+                      }}
+                    />
+                    <span className="text-sm text-gray-700 select-none leading-snug">{cat}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Worker / Extension filter */}
         <div className="relative">
           <select value={workerFilter} onChange={e => { setWorkerFilter(e.target.value); setPage(1); }}
-            className="appearance-none bg-gray-900 border border-cyan-900/60 text-gray-300 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer">
+            className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer shadow-sm">
             <option value="all">🌐 All Nodes</option>
             {allWorkers.map(w => <option key={w} value={w}>🖥 {w}</option>)}
           </select>
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><ChevronDownIcon /></span>
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"><ChevronDownIcon /></span>
+        </div>
+
+        {/* Client filter */}
+        <div className="relative">
+          <select value={clientFilter} onChange={e => { setClientFilter(e.target.value); setPage(1); }}
+            className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer shadow-sm">
+            <option value="all">💼 All Clients</option>
+            {allClients.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"><ChevronDownIcon /></span>
         </div>
 
         {/* Sort */}
         <div className="relative">
           <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
-            className="appearance-none bg-gray-900 border border-gray-700 text-gray-300 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer">
+            className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer shadow-sm">
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
             <option value="title">title A–Z</option>
             <option value="company">company A–Z</option>
           </select>
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"><ChevronDownIcon /></span>
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"><ChevronDownIcon /></span>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
           {selectedIds.size > 0 && (
             <button onClick={() => handleDelete()} disabled={deleting}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all disabled:opacity-50">
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all disabled:opacity-50">
               <TrashIcon />
               {deleting ? 'Deleting…' : `Delete (${selectedIds.size})`}
             </button>
           )}
           <button onClick={() => fetchPage()} disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all disabled:opacity-50">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100 transition-all disabled:opacity-50">
             <span className={loading ? 'animate-spin' : ''}><RefreshIcon /></span>
             Refresh
           </button>
@@ -604,7 +748,7 @@ export default function SupabaseTab() {
       )}
 
       {/* Row info */}
-      <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+      <div className="flex items-center justify-between text-xs text-gray-600 px-1">
         <span>
           {loading ? 'Fetching…' : total === 0 ? 'No results'
             : `Rows ${start}–${end} of ${total.toLocaleString()} (page ${page}/${totalPages.toLocaleString()})`}
@@ -613,22 +757,23 @@ export default function SupabaseTab() {
       </div>
 
       {/* ── Data Table ── */}
-      <div className="rounded-xl border border-gray-700/50 overflow-hidden">
+      <div className="rounded-md border border-gray-200 shadow-sm overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-[13px] border-collapse">
             <thead>
-              <tr className="bg-[#0d1321] border-b border-gray-700/50">
-                <th className="sticky left-0 z-10 bg-[#0d1321] px-3 py-3 border-r border-gray-700/30">
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="sticky left-0 z-10 bg-gray-50 px-2 py-1.5 border-r border-gray-200 w-8">
                   <input type="checkbox"
                     checked={jobs.length > 0 && selectedIds.size === jobs.length}
                     onChange={toggleAll}
-                    className="rounded border-gray-600 bg-gray-900 accent-cyan-500 cursor-pointer" />
+                    className="rounded border-gray-300 bg-white cursor-pointer" />
                 </th>
-                <th className="px-3 py-3 border-r border-gray-700/30 min-w-[44px]" />
+                <th className="px-2 py-1.5 border-r border-gray-200 w-8" />
                 {COLUMNS.map(col => (
                   <th key={col.key}
-                    className={`${col.minWidth} px-3 py-3 text-left font-mono text-xs text-gray-400 font-semibold tracking-wide whitespace-nowrap border-r border-gray-700/20 last:border-r-0`}>
+                    className={`${col.minWidth} px-3 py-1.5 text-left font-medium text-gray-900 whitespace-nowrap border-r border-gray-200 last:border-r-0`}>
                     {col.key}
+                    <span className="font-normal text-gray-500 ml-2">text</span>
                   </th>
                 ))}
               </tr>
@@ -637,7 +782,7 @@ export default function SupabaseTab() {
               {loading ? (
                 <tr>
                   <td colSpan={COLUMNS.length + 2} className="py-24 text-center">
-                    <div className="flex flex-col items-center gap-3 text-gray-600">
+                    <div className="flex flex-col items-center gap-3 text-gray-700">
                       <div className="w-7 h-7 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm">Loading from Supabase…</span>
                     </div>
@@ -645,7 +790,7 @@ export default function SupabaseTab() {
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={COLUMNS.length + 2} className="py-24 text-center text-gray-600 text-sm">
+                  <td colSpan={COLUMNS.length + 2} className="py-24 text-center text-gray-700 text-sm">
                     No jobs match your filters
                   </td>
                 </tr>
@@ -654,22 +799,22 @@ export default function SupabaseTab() {
                   const isSelected = selectedIds.has(job.id);
                   return (
                     <tr key={job.id}
-                      className={`border-b border-gray-800/50 transition-colors
-                        ${isSelected ? 'bg-cyan-500/5' : rowIdx % 2 === 0 ? 'bg-transparent' : 'bg-gray-800/10'}
-                        hover:bg-gray-800/30`}>
-                      <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5 border-r border-gray-700/20">
+                      className={`border-b border-gray-200
+                        ${isSelected ? 'bg-gray-50' : 'bg-white'}
+                        hover:bg-gray-50/50`}>
+                      <td className="sticky left-0 z-10 bg-inherit px-2 py-1 border-r border-gray-200 text-center">
                         <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(job.id)}
-                          className="rounded border-gray-600 bg-gray-900 accent-cyan-500 cursor-pointer" />
+                          className="rounded border-gray-300 bg-white cursor-pointer" />
                       </td>
-                      <td className="px-2 py-2.5 border-r border-gray-700/10">
+                      <td className="px-2 py-1 border-r border-gray-200 text-center">
                         <button onClick={() => handleDelete([job.id])}
-                          className="text-gray-700 hover:text-red-400 transition-colors p-1" title="Delete row">
+                          className="text-gray-500 hover:text-red-500 transition-colors p-0.5" title="Delete row">
                           <TrashIcon />
                         </button>
                       </td>
                       {COLUMNS.map(col => (
                         <td key={col.key}
-                          className="px-3 py-2.5 text-gray-300 border-r border-gray-800/30 last:border-r-0 align-top whitespace-nowrap">
+                          className="px-3 py-1.5 text-gray-700 border-r border-gray-200 last:border-r-0 align-top whitespace-nowrap overflow-hidden">
                           {renderCell(job, col)}
                         </td>
                       ))}
@@ -680,54 +825,28 @@ export default function SupabaseTab() {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-          <button onClick={() => setPage(1)} disabled={page === 1 || loading}
-            className="px-2.5 py-1.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-400 text-xs hover:text-white disabled:opacity-30 transition-all">
-            First
-          </button>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading}
-            className="p-2 rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:text-white disabled:opacity-30 transition-all">
-            <ChevronLeftIcon />
-          </button>
-
-          {pageNumbers().map((p, i) =>
-            p === '…'
-              ? <span key={`e${i}`} className="px-1 text-gray-700 select-none">…</span>
-              : (
-                <button key={p} onClick={() => setPage(p as number)} disabled={loading}
-                  className={`w-9 h-9 rounded-lg text-sm border transition-all disabled:opacity-50
-                    ${page === p ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-gray-800 text-gray-500 border-gray-700 hover:text-white'}`}>
-                  {p}
-                </button>
-              )
-          )}
-
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || loading}
-            className="p-2 rounded-lg border border-gray-700 bg-gray-800 text-gray-400 hover:text-white disabled:opacity-30 transition-all">
-            <ChevronRightIcon />
-          </button>
-          <button onClick={() => setPage(totalPages)} disabled={page === totalPages || loading}
-            className="px-2.5 py-1.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-400 text-xs hover:text-white disabled:opacity-30 transition-all">
-            Last
-          </button>
-
-          <span className="ml-3 flex items-center gap-2 text-xs text-gray-600">
-            Go to
-            <input type="number" min={1} max={totalPages} defaultValue={page} key={page}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  const v = parseInt((e.target as HTMLInputElement).value, 10);
-                  if (!isNaN(v) && v >= 1 && v <= totalPages) setPage(v);
-                }
-              }}
-              className="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-center text-sm text-gray-300 focus:outline-none focus:border-cyan-500" />
-          </span>
+        {/* Supabase style Pagination */}
+        <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-200 text-[13px] text-gray-700 bg-white">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading} className="p-1 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-30"><ChevronLeftIcon /></button>
+              <span className="mx-1">Page</span>
+              <input type="number" min={1} max={totalPages} value={page} onChange={e => { const v = parseInt(e.target.value); if(!isNaN(v) && v >= 1 && v <= totalPages) setPage(v); }} className="w-12 border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-gray-400" />
+              <span className="mx-1">of {totalPages.toLocaleString()}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || loading} className="p-1 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-30"><ChevronRightIcon /></button>
+            </div>
+            <select className="border border-gray-200 rounded px-2 py-0.5 focus:outline-none hover:bg-gray-50">
+              <option>{PAGE_SIZE} rows</option>
+            </select>
+            <span>{total.toLocaleString()} records</span>
+          </div>
+          <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded">
+            <button className="px-3 py-0.5 text-[12px] bg-white rounded shadow-sm font-medium text-gray-800">Data</button>
+            <button className="px-3 py-0.5 text-[12px] text-gray-600 font-medium hover:text-gray-700">Definition</button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { JobData, BulkQueueRecord } from './types';
+import { JobData, BulkQueueRecord, ClientRecord } from './types';
 
 // Supabase configuration
 const SUPABASE_URL = 'https://qyceqgttvvairnaxwicm.supabase.co';
@@ -23,7 +23,22 @@ export interface SupabaseJob {
   description?: string;
   created_at?: string;
   worker_id?: string | null;
+  category?: string | null;
+  client?: string | null;
 }
+
+/**
+ * Supabase client record - holds configuration for Google Sheets syncing per client
+ */
+export interface SupabaseClientRecord {
+  id?: string;
+  name: string;
+  apps_script_url: string;
+  spreadsheet_id?: string | null;
+  sheet_name?: string | null;
+  created_at?: string;
+}
+
 
 /**
  * Response from Supabase operations
@@ -79,6 +94,8 @@ export class SupabaseClient {
       description: job.description ?? null,
       // Write worker_id so we know exactly which extension scraped this job
       worker_id: job.workerId ?? (job as any).worker_id ?? null,
+      category: (job as any).category ?? null,
+      client: (job as any).client ?? null,
     };
   }
 
@@ -188,12 +205,14 @@ export class SupabaseClient {
     search?: string;
     source?: string;
     workerId?: string;
+    client?: string;
+    categories?: string[];
     sortBy?: 'newest' | 'oldest' | 'title' | 'company';
     limit: number;
     offset: number;
   }): Promise<SupabaseResponse<SupabaseJob[]> & { total: number }> {
     try {
-      const { search, source, workerId, sortBy = 'newest', limit, offset } = options;
+      const { search, source, workerId, client, categories, sortBy = 'newest', limit, offset } = options;
 
       const params: string[] = [];
 
@@ -211,6 +230,19 @@ export class SupabaseClient {
       // Worker ID filter — isolate jobs from a specific extension
       if (workerId && workerId !== 'all') {
         params.push(`worker_id=eq.${encodeURIComponent(workerId)}`);
+      }
+
+      // Client filter
+      if (client && client !== 'all') {
+        params.push(`client=eq.${encodeURIComponent(client)}`);
+      }
+
+      // Category filter
+      if (categories && categories.length > 0) {
+        // PostgREST IN syntax requires comma-separated values, optionally quoted
+        // Example: category=in.("IT, Tech","Retail")
+        const catString = categories.map(c => `"${c.replace(/"/g, '""')}"`).join(',');
+        params.push(`category=in.(${encodeURIComponent(catString)})`);
       }
 
       // Sort
@@ -436,14 +468,15 @@ export class SupabaseClient {
   /**
    * Enqueue bulk search tasks
    */
-  async enqueueTasks(titles: string[], assigned_to?: string, location?: string): Promise<SupabaseResponse<{ inserted: number }>> {
+  async enqueueTasks(titles: string[], assigned_to?: string, location?: string, client_id?: string): Promise<SupabaseResponse<{ inserted: number }>> {
     if (!titles || titles.length === 0) return { data: { inserted: 0 }, error: null };
     
     const records = titles.map(title => ({
       job_title: title.trim(),
       status: 'pending',
       assigned_to: assigned_to || null,
-      location: location || null
+      location: location || null,
+      client_id: client_id || null
     }));
 
     try {
@@ -588,6 +621,29 @@ export class SupabaseClient {
       });
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       return { data: { reset: true }, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Update a specific queue task
+   */
+  async updateQueueTask(id: string, updates: Partial<BulkQueueRecord>): Promise<SupabaseResponse<{ updated: boolean }>> {
+    try {
+      const res = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(updates),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
+      return { data: { updated: true }, error: null };
     } catch (error) {
       return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
@@ -743,6 +799,88 @@ export class SupabaseClient {
       return response.ok;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Get all clients from Supabase
+   */
+  async getClients(): Promise<SupabaseResponse<SupabaseClientRecord[]>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/clients?order=created_at.desc`, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error) {
+      console.error('[Supabase] Get clients error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Enroll a new client in Supabase
+   */
+  async enrollClient(client: SupabaseClientRecord): Promise<SupabaseResponse<SupabaseClientRecord>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/clients`, {
+        method: 'POST',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify([client]),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+
+      const data = await response.json();
+      return { data: data[0], error: null };
+    } catch (error) {
+      console.error('[Supabase] Enroll client error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Delete a client by ID
+   */
+  async deleteClient(id: string): Promise<SupabaseResponse<{ deleted: boolean }>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/clients?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Prefer': 'return=minimal',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+
+      return { data: { deleted: true }, error: null };
+    } catch (error) {
+      console.error('[Supabase] Delete client error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

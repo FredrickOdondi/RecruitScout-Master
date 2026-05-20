@@ -46,16 +46,28 @@ class ContentScript {
   private setupMessageListeners(): void {
     // Relay messages from the hosted Dashboard web app to the extension background
     window.addEventListener('message', (event) => {
-      // We only accept messages from ourselves
+      // Security: Only accept messages from specific trusted dashboard origins
+      const allowedOrigins = [
+        window.location.origin, // Allow same-origin (if injected locally or matching)
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://72.60.215.34'
+      ];
+
+      if (!allowedOrigins.includes(event.origin)) {
+        return;
+      }
+
+      // We only accept messages from our dashboard script
       if (event.data && event.data.source === 'recruitscout-dashboard') {
         chrome.runtime.sendMessage(event.data, (response) => {
           // Relay success state back to the web app
-          window.postMessage({ 
-            source: 'recruitscout-extension', 
-            type: event.data.type + '_SUCCESS', 
+          window.postMessage({
+            source: 'recruitscout-extension',
+            type: event.data.type + '_SUCCESS',
             response,
-            _id: event.data._id 
-          }, '*');
+            _id: event.data._id
+          }, '*'); // Since we verified origin above, responding to '*' in the same window is safe
         });
       }
     });
@@ -80,6 +92,10 @@ class ContentScript {
 
         case MessageType.PAUSE_EXTRACTION:
           this.handlePauseExtraction().then(sendResponse);
+          return true;
+
+        case MessageType.CLICK_NEXT_PAGE:
+          this.handleClickNextPage().then(sendResponse);
           return true;
 
         default:
@@ -221,12 +237,12 @@ class ContentScript {
 
       return enhanced;
     });
-    
+
     // Deep scrape indeed right panes if on generic listings page
     if (window.location.hostname.includes('indeed.') && !this.pageMonitor.isDetailPage()) {
       enhancedJobs = await ClickThroughExtractor.enrichWithDescriptions(enhancedJobs);
     }
-    
+
     return enhancedJobs;
   }
 
@@ -280,20 +296,64 @@ class ContentScript {
         return btn.href;
       }
     }
-    
+
     // Aggressive text search fallback
     const allLinks = document.querySelectorAll('a');
     for (const link of Array.from(allLinks)) {
-        if (link.textContent?.toLowerCase().trim().includes('next') && link.href && !link.href.includes('javascript:')) {
-            // Ensure it's inside a pagination block to avoid random "Next steps" links
-            const parent = link.parentElement;
-            if (parent && (parent.className.toLowerCase().includes('pag') || document.querySelector('nav[role="navigation"]')?.contains(link))) {
-                return link.href;
-            }
+      if (link.textContent?.toLowerCase().trim().includes('next') && link.href && !link.href.includes('javascript:')) {
+        // Ensure it's inside a pagination block to avoid random "Next steps" links
+        const parent = link.parentElement;
+        if (parent && (parent.className.toLowerCase().includes('pag') || document.querySelector('nav[role="navigation"]')?.contains(link))) {
+          return link.href;
         }
+      }
     }
 
     return undefined;
+  }
+
+  /**
+   * Click the next page button in the DOM natively
+   */
+  private async handleClickNextPage(): Promise<{ success: boolean; error?: string }> {
+    console.log('[RecruitScout] 🖱️ Executing native click on Next Page button...');
+    const nextPatterns = [
+      'a[data-testid="pagination-page-next"]',
+      'button[data-testid="pagination-page-next"]',
+      'a[aria-label="Next Page"]',
+      'button[aria-label="Next Page"]',
+      'a[aria-label="Next"]',
+      'button[aria-label="Next"]',
+      'a[aria-label*="next" i]',
+      'button[aria-label*="next" i]',
+      'a.pagination-next',
+      '.pagination a:last-child',
+      '.artdeco-pagination__button--next'
+    ];
+
+    for (const selector of nextPatterns) {
+      const btn = document.querySelector(selector) as HTMLElement;
+      if (btn && !btn.classList.contains('disabled')) {
+        console.log(`[RecruitScout] 🖱️ Clicked pagination button using selector: ${selector}`);
+        btn.click();
+        return { success: true };
+      }
+    }
+
+    // Aggressive text search fallback
+    const allLinks = document.querySelectorAll('a, button');
+    for (const el of Array.from(allLinks)) {
+      if (el.textContent?.toLowerCase().trim().includes('next') && !el.classList.contains('disabled')) {
+        const parent = el.parentElement;
+        if (parent && (parent.className.toLowerCase().includes('pag') || document.querySelector('nav[role="navigation"]')?.contains(el))) {
+          console.log(`[RecruitScout] 🖱️ Clicked pagination link using text content.`);
+          (el as HTMLElement).click();
+          return { success: true };
+        }
+      }
+    }
+
+    return { success: false, error: 'Next button not found in DOM' };
   }
 
   /**

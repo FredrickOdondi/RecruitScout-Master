@@ -1,0 +1,10 @@
+node_modules
+dist
+dist.crx
+dist.zip
+.git
+.env
+.claude
+.github
+tests
+docs

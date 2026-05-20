@@ -89,10 +89,22 @@ export interface BulkQueueRecord {
   status: 'pending' | 'running' | 'completed' | 'failed';
   assigned_to?: string;
   location?: string;
+  client_id?: string;
   created_at: string;
   started_at?: string;
   completed_at?: string;
 }
+
+// Client Management Record
+export interface ClientRecord {
+  id: string;
+  name: string;
+  apps_script_url: string;
+  spreadsheet_id?: string;
+  sheet_name?: string;
+  created_at: string;
+}
+
 
 // Settings
 export interface ExtensionSettings {
@@ -145,6 +157,7 @@ export const MessageType = {
   PROCESS_DATA: 'PROCESS_DATA',
   RESOLVE_DOMAIN: 'RESOLVE_DOMAIN',
   FETCH_COMPANY_WEBSITE: 'FETCH_COMPANY_WEBSITE',
+  CLICK_NEXT_PAGE: 'CLICK_NEXT_PAGE',
   // Supabase operations
   SUPABASE_GET_JOBS: 'SUPABASE_GET_JOBS',
   SUPABASE_GET_JOBS_BY_COMPANY: 'SUPABASE_GET_JOBS_BY_COMPANY',
@@ -157,6 +170,11 @@ export const MessageType = {
   SUPABASE_GET_QUEUE: 'SUPABASE_GET_QUEUE',
   SUPABASE_GET_AGENTS: 'SUPABASE_GET_AGENTS',
   SHEETS_SYNC: 'SHEETS_SYNC',
+  // Supabase Client Management operations
+  SUPABASE_GET_CLIENTS: 'SUPABASE_GET_CLIENTS',
+  SUPABASE_ENROLL_CLIENT: 'SUPABASE_ENROLL_CLIENT',
+  SUPABASE_DELETE_CLIENT: 'SUPABASE_DELETE_CLIENT',
+  SUPABASE_UPDATE_QUEUE_TASK: 'SUPABASE_UPDATE_QUEUE_TASK',
 } as const;
 
 export type MessageType = typeof MessageType[keyof typeof MessageType];

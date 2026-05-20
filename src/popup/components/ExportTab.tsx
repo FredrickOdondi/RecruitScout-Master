@@ -54,6 +54,7 @@ async function sendToGoogleSheets(
 // ── Fetch ALL matching jobs from Supabase (paginated) ─────────────────────────
 async function fetchAllFromSupabase(
   workerId: string,
+  clientName?: string,
   onProgress?: (msg: string) => void
 ): Promise<SupabaseJob[]> {
   const BATCH = 1000;
@@ -65,6 +66,7 @@ async function fetchAllFromSupabase(
     onProgress?.(`Fetching from Supabase… (${all.length} rows loaded)`);
     const res = await supabaseClient.queryJobs({
       workerId: workerId === 'all' ? undefined : workerId,
+      client: clientName || undefined,
       limit: BATCH,
       offset,
     });
@@ -103,12 +105,22 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
   // Total job count in cloud (for selected worker)
   const [totalCloudCount, setTotalCloudCount] = useState<number | null>(null);
 
+  // Enrolled clients selection
+  const [allEnrolledClients, setAllEnrolledClients] = useState<any[]>([]);
+  const [selectedClientSync, setSelectedClientSync] = useState<string>('all');
+
   // ── Load unique workers from Supabase on mount ──────────────────────────────
   useEffect(() => {
     setLoadingWorkers(true);
     supabaseClient.getUniqueWorkers().then(list => {
       setWorkers(list);
       setLoadingWorkers(false);
+    });
+    // Load enrolled clients
+    supabaseClient.getClients().then(res => {
+      if (res.data) {
+        setAllEnrolledClients(res.data);
+      }
     });
   }, []);
 
@@ -155,7 +167,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
       setExportStatus(null);
       setExportProgress('Connecting to Supabase…');
 
-      const cloudJobs = await fetchAllFromSupabase(selectedWorker, setExportProgress);
+      const cloudJobs = await fetchAllFromSupabase(selectedWorker, undefined, setExportProgress);
       if (cloudJobs.length === 0) {
         setExportStatus({ ok: false, msg: 'No jobs found in Supabase for the selected filter.' });
         return;
@@ -215,34 +227,89 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
   // ── Google Sheets Sync (fetch cloud → send) ──────────────────────────────────
   async function handleSyncToSheets() {
-    if (!sheetsConfig.webAppUrl) {
-      setSheetsSyncStatus({ ok: false, msg: 'Please enter your Apps Script Web App URL first.' });
-      return;
-    }
     try {
       setIsSheetsSyncing(true);
       setSheetsSyncStatus(null);
-      setSheetsProgress('Connecting to Supabase…');
+      setSheetsProgress('Starting Google Sheets Sync…');
 
-      const cloudJobs = await fetchAllFromSupabase(selectedWorker, setSheetsProgress);
-      if (cloudJobs.length === 0) {
-        setSheetsSyncStatus({ ok: false, msg: 'No jobs found in Supabase for the selected filter.' });
-        return;
+      if (selectedClientSync === 'custom') {
+        if (!sheetsConfig.webAppUrl) {
+          setSheetsSyncStatus({ ok: false, msg: 'Please enter your Apps Script Web App URL first.' });
+          return;
+        }
+        setSheetsProgress('Connecting to Supabase…');
+        const rawJobs = await fetchAllFromSupabase(selectedWorker, undefined, setSheetsProgress);
+        const cloudJobs = rawJobs.filter(j => j.description && j.description.trim() !== '');
+        if (cloudJobs.length === 0) {
+          setSheetsSyncStatus({ ok: false, msg: 'No jobs found in Supabase with non-empty descriptions.' });
+          return;
+        }
+
+        const CHUNK = 1000;
+        const totalChunks = Math.ceil(cloudJobs.length / CHUNK);
+        for (let i = 0; i < cloudJobs.length; i += CHUNK) {
+          const chunkNum = Math.floor(i / CHUNK) + 1;
+          setSheetsProgress(`Sending chunk ${chunkNum}/${totalChunks} to Sheets…`);
+          await sendToGoogleSheets(cloudJobs.slice(i, i + CHUNK), {
+            ...sheetsConfig,
+            sheetName: sheetsConfig.sheetName || 'Sheet1',
+          });
+        }
+        setSheetsSyncStatus({ ok: true, msg: `✓ Sent ${cloudJobs.length} jobs to "${sheetsConfig.sheetName || 'Sheet1'}" successfully!` });
+      } else if (selectedClientSync === 'all') {
+        if (allEnrolledClients.length === 0) {
+          setSheetsSyncStatus({ ok: false, msg: 'No enrolled clients found to sync.' });
+          return;
+        }
+
+        let totalSynced = 0;
+        for (const client of allEnrolledClients) {
+          setSheetsProgress(`Syncing jobs for client "${client.name}"…`);
+          const rawJobs = await fetchAllFromSupabase(selectedWorker, client.name, setSheetsProgress);
+          const clientJobs = rawJobs.filter(j => j.description && j.description.trim() !== '');
+          if (clientJobs.length > 0) {
+            const CHUNK = 1000;
+            const totalChunks = Math.ceil(clientJobs.length / CHUNK);
+            for (let i = 0; i < clientJobs.length; i += CHUNK) {
+              const chunkNum = Math.floor(i / CHUNK) + 1;
+              setSheetsProgress(`Sending client "${client.name}" chunk ${chunkNum}/${totalChunks}…`);
+              await sendToGoogleSheets(clientJobs.slice(i, i + CHUNK), {
+                webAppUrl: client.apps_script_url,
+                spreadsheetId: client.spreadsheet_id || '',
+                sheetName: client.sheet_name || 'Sheet1',
+              });
+            }
+            totalSynced += clientJobs.length;
+          }
+        }
+        setSheetsSyncStatus({ ok: true, msg: `✓ Successfully synced ${totalSynced} jobs across all enrolled client sheets!` });
+      } else {
+        const client = allEnrolledClients.find(c => c.name === selectedClientSync);
+        if (!client) {
+          setSheetsSyncStatus({ ok: false, msg: 'Selected client not found.' });
+          return;
+        }
+        setSheetsProgress(`Fetching jobs for "${client.name}"…`);
+        const rawJobs = await fetchAllFromSupabase(selectedWorker, client.name, setSheetsProgress);
+        const clientJobs = rawJobs.filter(j => j.description && j.description.trim() !== '');
+        if (clientJobs.length === 0) {
+          setSheetsSyncStatus({ ok: false, msg: `No jobs found in Supabase with non-empty descriptions for client "${client.name}".` });
+          return;
+        }
+
+        const CHUNK = 1000;
+        const totalChunks = Math.ceil(clientJobs.length / CHUNK);
+        for (let i = 0; i < clientJobs.length; i += CHUNK) {
+          const chunkNum = Math.floor(i / CHUNK) + 1;
+          setSheetsProgress(`Sending chunk ${chunkNum}/${totalChunks} to "${client.name}" Sheet…`);
+          await sendToGoogleSheets(clientJobs.slice(i, i + CHUNK), {
+            webAppUrl: client.apps_script_url,
+            spreadsheetId: client.spreadsheet_id || '',
+            sheetName: client.sheet_name || 'Sheet1',
+          });
+        }
+        setSheetsSyncStatus({ ok: true, msg: `✓ Sent ${clientJobs.length} jobs to client "${client.name}" Sheet successfully!` });
       }
-
-      // Chunk into 1000-row payloads (Apps Script execution limit)
-      const CHUNK = 1000;
-      const totalChunks = Math.ceil(cloudJobs.length / CHUNK);
-      for (let i = 0; i < cloudJobs.length; i += CHUNK) {
-        const chunkNum = Math.floor(i / CHUNK) + 1;
-        setSheetsProgress(`Sending chunk ${chunkNum}/${totalChunks} to Sheets…`);
-        await sendToGoogleSheets(cloudJobs.slice(i, i + CHUNK), {
-          ...sheetsConfig,
-          sheetName: sheetsConfig.sheetName || 'Sheet1',
-        });
-      }
-
-      setSheetsSyncStatus({ ok: true, msg: `✓ Sent ${cloudJobs.length} jobs to "${sheetsConfig.sheetName || 'Sheet1'}" successfully!` });
     } catch (err) {
       setSheetsSyncStatus({ ok: false, msg: `Sync failed: ${(err as Error).message}` });
     } finally {
@@ -256,56 +323,56 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
   const busy = isExporting || isSheetsSyncing;
 
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
       {/* ── LEFT COLUMN ─────────────────────────────────────────────────────── */}
       <div className="space-y-5">
 
         {/* Cloud Stats */}
-        <div className="bg-[#0d1321] border border-gray-800 rounded-xl p-5 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <div className="text-4xl font-bold text-gray-100 font-mono">
+              <div className="text-3xl font-medium text-gray-900 font-mono">
                 {workerCount === null
-                  ? <span className="text-gray-600 text-2xl animate-pulse">—</span>
+                  ? <span className="text-gray-500 text-2xl animate-pulse">—</span>
                   : workerCount.toLocaleString()}
               </div>
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-widest mt-1">
+              <div className="text-[11px] font-medium text-gray-600 uppercase tracking-widest mt-1">
                 {selectedWorker === 'all' ? 'Total Cloud Jobs' : `Jobs by "${selectedWorker}"`}
               </div>
             </div>
-            <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-              <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center border border-gray-200">
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
               </svg>
             </div>
           </div>
           {totalCloudCount !== null && selectedWorker !== 'all' && (
-            <div className="text-xs text-gray-600 font-mono">
+            <div className="text-[12px] text-gray-600 font-mono">
               {workerCount?.toLocaleString()} / {totalCloudCount.toLocaleString()} total cloud jobs
             </div>
           )}
           <button
             onClick={refreshCount}
             disabled={busy}
-            className="mt-3 text-xs text-gray-600 hover:text-cyan-400 transition-colors flex items-center gap-1"
+            className="mt-3 text-[12px] text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Refresh count
           </button>
         </div>
 
         {/* Extension Node Filter */}
-        <div className="bg-[#0d1321] border border-gray-800 rounded-xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>
+        <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+            <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
               Filter by Extension Node
             </h2>
             {loadingWorkers && (
-              <span className="text-xs text-gray-600 animate-pulse">Loading…</span>
+              <span className="text-[11px] text-gray-500 animate-pulse">Loading…</span>
             )}
           </div>
 
@@ -313,7 +380,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
             value={selectedWorker}
             onChange={e => setSelectedWorker(e.target.value)}
             disabled={busy || loadingWorkers}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all appearance-none font-mono"
+            className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all appearance-none font-mono"
           >
             <option value="all">🌐 All Extensions (full cloud)</option>
             {workers.length === 0 && !loadingWorkers && (
@@ -325,45 +392,81 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
           </select>
 
           {workers.length === 0 && !loadingWorkers && (
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Extension nodes appear here once each laptop scrapes its first job with a <span className="text-gray-400 font-mono">friendName</span> configured in Engine Settings.
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Extension nodes appear here once each laptop scrapes its first job with a <span className="font-mono text-gray-700">friendName</span> configured in Engine Settings.
             </p>
           )}
         </div>
 
         {/* Google Sheets Sync */}
-        <div className="bg-[#0d1321] border border-gray-800 rounded-xl p-5 shadow-lg space-y-4">
-          <div className="flex items-center gap-2 border-b border-gray-800 pb-2">
-            <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="currentColor">
+        <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+            <svg className="w-4 h-4 text-green-600" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V7h10v2z"/>
             </svg>
-            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Google Sheets Sync</h2>
+            <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">Google Sheets Sync</h2>
           </div>
 
-          <div className="space-y-2.5">
-            <input type="text" placeholder="Apps Script Web App URL"
-              value={sheetsConfig.webAppUrl}
-              onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-gray-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
-            />
-            <div className="flex gap-3">
-              <input type="text" placeholder="Spreadsheet ID (optional)"
-                value={sheetsConfig.spreadsheetId}
-                onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
-                className="flex-1 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-gray-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
-              />
-              <input type="text" placeholder="Sheet1"
-                value={sheetsConfig.sheetName}
-                onChange={e => updateSheetsConfig('sheetName', e.target.value)}
-                className="w-1/3 bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-sm text-gray-300 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
-              />
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-gray-700 font-bold uppercase tracking-wider block">Target Client Sheet</label>
+              <select
+                value={selectedClientSync}
+                onChange={e => setSelectedClientSync(e.target.value)}
+                disabled={busy}
+                className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all appearance-none cursor-pointer"
+              >
+                <option value="all">🔁 All Enrolled Clients (Automatic Grouping)</option>
+                <option value="custom">✏️ Custom Sheet Settings (Manual)</option>
+                {allEnrolledClients.map(c => (
+                  <option key={c.id} value={c.name}>💼 {c.name}</option>
+                ))}
+              </select>
             </div>
+
+            {selectedClientSync === 'custom' ? (
+              <div className="space-y-2.5 pt-1">
+                <input type="text" placeholder="Apps Script Web App URL"
+                  value={sheetsConfig.webAppUrl}
+                  onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+                />
+                <div className="flex gap-2">
+                  <input type="text" placeholder="Spreadsheet ID (optional)"
+                    value={sheetsConfig.spreadsheetId}
+                    onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+                  />
+                  <input type="text" placeholder="Sheet1"
+                    value={sheetsConfig.sheetName}
+                    onChange={e => updateSheetsConfig('sheetName', e.target.value)}
+                    className="w-1/3 bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+                  />
+                </div>
+              </div>
+            ) : selectedClientSync === 'all' ? (
+              <div className="bg-green-50 border border-green-100 rounded-md p-3 text-[12px] text-green-800 leading-relaxed">
+                🚀 This will automatically group your jobs by client and sync them to each enrolled client's Google Sheet in parallel.
+              </div>
+            ) : (
+              (() => {
+                const client = allEnrolledClients.find(c => c.name === selectedClientSync);
+                return client ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-[12px] text-gray-700 space-y-1">
+                    <div><span className="font-semibold text-gray-900">Enrolled Client:</span> {client.name}</div>
+                    <div className="truncate"><span className="font-semibold text-gray-900">Script URL:</span> {client.apps_script_url || '—'}</div>
+                    <div className="truncate"><span className="font-semibold text-gray-900">Spreadsheet ID:</span> {client.spreadsheet_id || '—'}</div>
+                    <div><span className="font-semibold text-gray-900">Sheet Name:</span> {client.sheet_name || 'Sheet1'}</div>
+                  </div>
+                ) : null;
+              })()
+            )}
           </div>
 
           {sheetsProgress && (
-            <div className="text-xs font-mono text-amber-400 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5 flex items-center gap-2">
+            <div className="text-[12px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-center gap-2">
               <svg className="animate-spin w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
               {sheetsProgress}
@@ -372,8 +475,8 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
           <button
             onClick={handleSyncToSheets}
-            disabled={busy || workerCount === 0 || !sheetsConfig.webAppUrl}
-            className="w-full bg-green-600/90 hover:bg-green-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-500/10 border border-green-500/30 disabled:border-transparent"
+            disabled={busy || workerCount === 0 || (selectedClientSync === 'custom' && !sheetsConfig.webAppUrl)}
+            className="w-full bg-white hover:bg-gray-50 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500 font-medium py-2 rounded-md transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm text-[13px]"
           >
             {isSheetsSyncing ? (
               <>
@@ -394,7 +497,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
           </button>
 
           {sheetsSyncStatus && !sheetsProgress && (
-            <div className={`text-xs font-mono p-3 rounded-lg text-center font-medium ${sheetsSyncStatus.ok ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+            <div className={`text-[12px] font-mono p-2 rounded-md text-center font-medium ${sheetsSyncStatus.ok ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
               {sheetsSyncStatus.msg}
             </div>
           )}
@@ -406,15 +509,15 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
       <div className="space-y-5">
 
         {/* Format + Download */}
-        <div className="bg-[#0d1321] border border-gray-800 rounded-xl p-5 shadow-lg space-y-4">
-          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest border-b border-gray-800 pb-2">Download Format</h2>
-          <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-4">
+          <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-200 pb-2">Download Format</h2>
+          <div className="grid grid-cols-3 gap-2">
             {(['csv', 'json', 'xlsx'] as ExportFormat[]).map(fmt => (
               <button key={fmt} onClick={() => setFormat(fmt)}
-                className={`px-4 py-3 rounded-lg text-sm font-bold tracking-wider transition-all border
+                className={`px-3 py-2 rounded-md text-[12px] font-bold tracking-wider transition-all border
                   ${format === fmt
-                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)]'
-                    : 'bg-gray-900 border-gray-800 text-gray-500 hover:text-gray-300 hover:border-gray-700 hover:bg-gray-800'}`}
+                    ? 'bg-gray-100 text-gray-900 border-gray-300 shadow-sm'
+                    : 'bg-white border-gray-200 text-gray-600 hover:text-gray-700 hover:bg-gray-50'}`}
               >
                 {fmt.toUpperCase()}
               </button>
@@ -422,9 +525,9 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
           </div>
 
           {exportProgress && (
-            <div className="text-xs font-mono text-amber-400 bg-amber-500/5 border border-amber-500/20 rounded-lg p-2.5 flex items-center gap-2">
+            <div className="text-[12px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-center gap-2">
               <svg className="animate-spin w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
               {exportProgress}
@@ -434,7 +537,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
           <button
             onClick={handleExport}
             disabled={busy || workerCount === 0 || selectedJobsCount === 0}
-            className="w-full bg-purple-600/90 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-500/20 border border-purple-500/30 disabled:border-transparent"
+            className="w-full bg-white hover:bg-gray-50 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500 font-medium py-2 rounded-md transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm text-[13px]"
           >
             {isExporting ? (
               <>
@@ -455,25 +558,25 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
           </button>
 
           {exportStatus && !exportProgress && (
-            <div className={`text-xs font-mono p-3 rounded-lg text-center font-medium ${exportStatus.ok ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+            <div className={`text-[12px] font-mono p-2 rounded-md text-center font-medium ${exportStatus.ok ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
               {exportStatus.msg}
             </div>
           )}
         </div>
 
         {/* Field selection */}
-        <div className="bg-[#0d1321] border border-gray-800 rounded-xl p-5 shadow-lg flex flex-col h-[380px]">
-          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-widest border-b border-gray-800 pb-2 mb-4 flex justify-between">
+        <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm flex flex-col h-[380px]">
+          <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3 flex justify-between">
             <span>Fields Matrix</span>
-            <span className="text-purple-400 font-mono text-xs bg-purple-500/10 px-2 py-0.5 rounded">{selectedJobsCount} Included</span>
+            <span className="text-gray-600 font-mono text-[10px] bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{selectedJobsCount} Included</span>
           </h2>
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {fields.map(field => (
-              <label key={field.key} className="flex items-center gap-3 cursor-pointer group hover:bg-gray-800/50 p-2 rounded-lg transition-colors">
+              <label key={field.key} className="flex items-center gap-2.5 cursor-pointer group hover:bg-gray-50 p-1.5 rounded-md transition-colors">
                 <input type="checkbox" checked={field.enabled} onChange={() => toggleField(field.key)}
-                  className="form-checkbox h-5 w-5 text-purple-500 rounded bg-gray-900 border-gray-700 hover:border-purple-500 transition-colors cursor-pointer"
+                  className="form-checkbox h-4 w-4 rounded border-gray-300 bg-white cursor-pointer"
                 />
-                <span className="text-sm font-medium text-gray-400 group-hover:text-gray-200 transition-colors">{field.label}</span>
+                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{field.label}</span>
               </label>
             ))}
           </div>

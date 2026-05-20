@@ -1,55 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabaseClient } from '../shared/supabase';
 
-// ── Animated Grid Background ──────────────────────────────────────────────────
-function AnimatedGrid() {
+// ── Animated Background ──────────────────────────────────────────────────
+function SubtleGrid() {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Grid lines */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none bg-gray-50">
+      {/* Subtle grid lines */}
       <div
-        className="absolute inset-0 opacity-[0.04]"
+        className="absolute inset-0 opacity-50"
         style={{
           backgroundImage: `
-            linear-gradient(to right, #60a5fa 1px, transparent 1px),
-            linear-gradient(to bottom, #60a5fa 1px, transparent 1px)
+            linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+            linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
           `,
           backgroundSize: '48px 48px',
-        }}
-      />
-      {/* Radial gradient overlay */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%)',
-        }}
-      />
-      {/* Bottom fade */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(6,182,212,0.08) 0%, transparent 60%)',
-        }}
-      />
-      {/* Floating orbs */}
-      <div
-        className="absolute w-96 h-96 rounded-full opacity-10 blur-3xl animate-pulse"
-        style={{
-          background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)',
-          top: '-10%',
-          left: '15%',
-          animationDuration: '4s',
-        }}
-      />
-      <div
-        className="absolute w-80 h-80 rounded-full opacity-10 blur-3xl animate-pulse"
-        style={{
-          background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)',
-          bottom: '0%',
-          right: '10%',
-          animationDuration: '6s',
-          animationDelay: '2s',
         }}
       />
     </div>
@@ -135,8 +99,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-[#080C14] overflow-hidden font-sans">
-      <AnimatedGrid />
+    <div className="relative flex items-center justify-center min-h-screen bg-gray-50 overflow-hidden font-sans">
+      <SubtleGrid />
 
       {/* Card */}
       <div
@@ -145,45 +109,24 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           animation: shake ? 'shake 0.5s ease' : undefined,
         }}
       >
-        {/* Glow border effect */}
-        <div
-          className="absolute inset-0 rounded-2xl blur-sm opacity-30"
-          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)' }}
-        />
-
-        <div
-          className="relative rounded-2xl border border-white/10 overflow-hidden"
-          style={{ background: 'rgba(13, 19, 33, 0.85)', backdropFilter: 'blur(24px)' }}
-        >
-          {/* Top gradient bar */}
-          <div
-            className="h-0.5 w-full"
-            style={{ background: 'linear-gradient(90deg, #6366f1, #06b6d4, #6366f1)' }}
-          />
+        <div className="relative rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
 
           <div className="px-8 py-10">
             {/* Logo */}
             <div className="flex flex-col items-center mb-8">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(6,182,212,0.2) 100%)',
-                  border: '1px solid rgba(99,102,241,0.3)',
-                }}
-              >
-                <span className="text-indigo-400">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-3 border border-gray-200 bg-gray-50 shadow-sm">
+                <span className="text-gray-700">
                   <ServerIcon />
                 </span>
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">RecruitScout</h1>
-              <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-semibold">
+              <h1 className="text-xl font-medium text-gray-900 tracking-tight">RecruitScout</h1>
+              <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-widest font-bold">
                 Command Center
               </p>
             </div>
 
-            {/* Error banner */}
             {error && (
-              <div className="mb-5 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3">
+              <div className="mb-5 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-[13px] rounded-md px-4 py-3">
                 <span className="mt-0.5 shrink-0">⚠</span>
                 <span>{error}</span>
               </div>
@@ -193,11 +136,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
                   Email address
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                     <MailIcon />
                   </span>
                   <input
@@ -209,19 +152,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm text-gray-200 placeholder-gray-600
-                      focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                    className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-4 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
+                      focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
                   Password
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
                     <LockIcon />
                   </span>
                   <input
@@ -232,13 +175,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl pl-10 pr-11 py-3 text-sm text-gray-200 placeholder-gray-600
-                      focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                    className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-11 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
+                      focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass(v => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     tabIndex={-1}
                   >
                     <EyeIcon show={showPass} />
@@ -246,30 +189,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </div>
               </div>
 
-              {/* Submit */}
               <button
                 id="login-submit"
                 type="submit"
                 disabled={loading || !email.trim() || !password}
-                className="w-full relative flex items-center justify-center gap-2.5 py-3 rounded-xl font-semibold text-sm transition-all
+                className="w-full relative flex items-center justify-center gap-2 py-2.5 rounded-md font-medium text-[13px] transition-all
                   disabled:opacity-50 disabled:cursor-not-allowed
-                  focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-[#0d1321]
-                  overflow-hidden group"
-                style={{
-                  background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #06b6d4 100%)',
-                  boxShadow: loading ? 'none' : '0 0 24px rgba(99,102,241,0.4)',
-                }}
+                  bg-gray-900 text-white hover:bg-gray-800 shadow-sm border border-transparent"
               >
-                {/* Shimmer overlay on hover */}
-                <span
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
-                  }}
-                />
                 {loading ? (
                   <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
@@ -281,8 +211,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </button>
             </form>
 
-            {/* Footer note */}
-            <p className="mt-6 text-center text-xs text-gray-600">
+            <p className="mt-5 text-center text-[12px] text-gray-500">
               Access is restricted to authorised users.
             </p>
           </div>
