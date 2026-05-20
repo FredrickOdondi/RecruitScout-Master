@@ -183,7 +183,7 @@ CREATE POLICY "Allow public read and write" ON public.clients FOR ALL USING (tru
   };
 
   return (
-    <div className="w-full max-w-5xl space-y-6">
+    <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto space-y-6">
       
       {/* Table Missing Alert (Self-Healing UI) */}
       {tableMissing && (

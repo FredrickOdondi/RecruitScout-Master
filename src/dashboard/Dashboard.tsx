@@ -248,7 +248,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
+    <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans min-w-0">
       
       {/* Mobile overlay backdrop */}
       {isMobileMenuOpen && (
@@ -259,7 +259,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 z-50 border-r border-gray-200 bg-white flex flex-col ${isSidebarCollapsed ? 'md:w-20 w-64' : 'w-64'}`}>
+      <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 z-50 border-r border-gray-200 bg-white flex flex-col flex-shrink-0 ${isSidebarCollapsed ? 'md:w-20 w-64' : 'w-64 xl:w-72'}`}>
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className="hidden md:flex absolute -right-3 top-8 bg-white rounded-full p-1 border border-gray-200 text-gray-600 hover:text-gray-900 z-30 shadow-sm"
@@ -383,7 +383,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative overflow-hidden bg-gray-50 w-full">
+      <main className="flex-1 flex flex-col relative overflow-hidden bg-gray-50 min-w-0">
         <header className="h-16 border-b border-gray-200 flex items-center px-4 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 transition-colors gap-3 w-full">
           <button 
             className="md:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100"
@@ -396,11 +396,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </h2>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 xl:p-10 2xl:p-12">
           
           {/* BULK SEARCH MODE */}
           {activeTab === 'search' && (
-            <div className="w-full max-w-5xl space-y-6">
+            <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto space-y-6">
               <div className="bg-white rounded-xl p-1 border border-gray-200 shadow-sm transition-all">
                 <div className="bg-white rounded-lg p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center gap-2">
@@ -555,7 +555,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     </button>
                   </div>
                   
-                  <div className="overflow-x-auto overflow-y-auto max-h-[500px] rounded-md border border-gray-200 w-full relative">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] rounded-md border border-gray-200 w-full relative">
                     <table className="w-full text-left text-[13px] text-gray-700 min-w-[800px]">
                       <thead className="text-[11px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
                         <tr>
@@ -652,7 +652,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* SETTINGS */}
           {activeTab === 'settings' && (
-             <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* General Settings */}
                 <div className="bg-white rounded-md p-5 border border-gray-200 shadow-sm space-y-4">
@@ -755,7 +755,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* JOBS VIEWER */}
           {activeTab === 'jobs' && (
-             <div className="w-full max-w-[1400px] bg-white p-6 rounded-md border border-gray-200 shadow-sm mt-4">
+             <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto bg-white p-6 rounded-md border border-gray-200 shadow-sm mt-4">
                <JobsTab 
                  jobs={jobs} 
                  onJobsUpdate={setJobs} 
@@ -766,7 +766,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* DATA EXPORT & SYNC */}
           {activeTab === 'export' && (
-             <div className="w-full max-w-[1400px] bg-white p-6 rounded-md border border-gray-200 shadow-sm mt-4">
+             <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto bg-white p-6 rounded-md border border-gray-200 shadow-sm mt-4">
                <ExportTab 
                  jobs={jobs} 
                  settings={settings} 
@@ -777,14 +777,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* SUPABASE VIEWER */}
           {activeTab === 'supabase' && (
-            <div className="w-full max-w-[1600px]">
+            <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
               <SupabaseTab />
             </div>
           )}
 
           {/* CLIENT ENROLLMENT */}
           {activeTab === 'clients' && (
-            <div className="w-full max-w-[1600px]">
+            <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
               <ClientEnrollmentTab sendMessage={bridgeSendMessage} />
             </div>
           )}
