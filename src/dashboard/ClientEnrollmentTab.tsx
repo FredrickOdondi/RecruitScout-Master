@@ -358,7 +358,7 @@ CREATE POLICY "Allow public read and write" ON public.clients FOR ALL USING (tru
               </div>
             ) : (
               <div className="overflow-x-auto rounded-lg border border-gray-200 flex-1">
-                <table className="w-full text-left text-xs text-gray-700">
+                <table className="w-full text-left text-xs text-gray-700 min-w-[600px]">
                   <thead className="text-[10px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3">Client</th>

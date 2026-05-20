@@ -20,7 +20,8 @@ interface DashboardProps {
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('search');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Inputs matching old extension
   const [bulkTitles, setBulkTitles] = useState('');
@@ -249,11 +250,19 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
       
+      {/* Mobile overlay backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-900/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`border-r border-gray-200 bg-white flex flex-col transition-all duration-300 relative z-20 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 z-50 border-r border-gray-200 bg-white flex flex-col ${isSidebarCollapsed ? 'md:w-20 w-64' : 'w-64'}`}>
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3 top-8 bg-white rounded-full p-1 border border-gray-200 text-gray-600 hover:text-gray-900 z-30 shadow-sm"
+          className="hidden md:flex absolute -right-3 top-8 bg-white rounded-full p-1 border border-gray-200 text-gray-600 hover:text-gray-900 z-30 shadow-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`}>
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -277,18 +286,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
           
           <button 
-            onClick={() => setActiveTab('search')}
+            onClick={() => { setActiveTab('search'); setIsMobileMenuOpen(false); }}
             title="Bulk Priority Queue"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${activeTab === 'search' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'search' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
           >
             <div className="shrink-0"><SearchIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Bulk Priority Queue</span>}
           </button>
           
           <button 
-            onClick={() => setActiveTab('settings')}
+            onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
             title="Engine Settings"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${activeTab === 'settings' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'settings' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
           >
             <div className="shrink-0"><SettingsIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Engine Settings</span>}
@@ -299,9 +308,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
           
           <button 
-            onClick={() => setActiveTab('jobs')}
+            onClick={() => { setActiveTab('jobs'); setIsMobileMenuOpen(false); }}
             title="Extracted Jobs"
-            className={`w-full flex items-center py-2 rounded-md transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3 justify-between'} ${activeTab === 'jobs' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+            className={`w-full flex items-center py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0 justify-between md:justify-center' : 'px-3 justify-between'} ${activeTab === 'jobs' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
           >
             <div className="flex items-center gap-3 shrink-0">
               <div className="shrink-0 relative">
@@ -318,9 +327,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </button>
 
           <button 
-            onClick={() => setActiveTab('export')}
+            onClick={() => { setActiveTab('export'); setIsMobileMenuOpen(false); }}
             title="Export & Sync"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${activeTab === 'export' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'export' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
           >
             <div className="shrink-0"><DownloadIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Export & Sync</span>}
@@ -331,9 +340,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
           
           <button 
-            onClick={() => setActiveTab('supabase')}
+            onClick={() => { setActiveTab('supabase'); setIsMobileMenuOpen(false); }}
             title="Supabase Viewer"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${activeTab === 'supabase' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'supabase' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
           >
             <div className="shrink-0"><CloudDbIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Supabase Viewer</span>}
@@ -344,9 +353,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
           
           <button 
-            onClick={() => setActiveTab('clients')}
+            onClick={() => { setActiveTab('clients'); setIsMobileMenuOpen(false); }}
             title="Client Enrollment"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'} ${activeTab === 'clients' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'clients' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
           >
             <div className="shrink-0"><BriefcasePlusIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Client Enrollment</span>}
@@ -359,7 +368,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button
             onClick={onLogout}
             title="Sign Out"
-            className={`flex items-center justify-center gap-3 py-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all text-sm font-medium group ${isSidebarCollapsed ? 'w-10 h-10 px-0' : 'w-full px-4'}`}
+            className={`flex items-center justify-center gap-3 py-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all text-sm font-medium group ${isSidebarCollapsed ? 'md:w-10 md:h-10 md:px-0 w-full px-4' : 'w-full px-4'}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -374,9 +383,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative overflow-hidden bg-gray-50">
-        <header className="h-16 border-b border-gray-200 flex items-center px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 transition-colors">
-          <h2 className="text-lg font-semibold text-gray-900 capitalize font-mono tracking-tight">
+      <main className="flex-1 flex flex-col relative overflow-hidden bg-gray-50 w-full">
+        <header className="h-16 border-b border-gray-200 flex items-center px-4 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 transition-colors gap-3 w-full">
+          <button 
+            className="md:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <h2 className="text-lg font-semibold text-gray-900 capitalize font-mono tracking-tight truncate">
             / {activeTab.replace('-', ' ')}
           </h2>
         </header>
@@ -527,8 +542,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     </button>
                   </div>
                   
-                  <div className="overflow-x-auto rounded-md border border-gray-200">
-                    <table className="w-full text-left text-[13px] text-gray-700">
+                  <div className="overflow-x-auto rounded-md border border-gray-200 w-full">
+                    <table className="w-full text-left text-[13px] text-gray-700 min-w-[800px]">
                       <thead className="text-[11px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-3 py-2">Task</th>
