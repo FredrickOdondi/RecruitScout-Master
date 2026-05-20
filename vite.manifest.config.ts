@@ -36,7 +36,8 @@ export default defineManifest({
     'https://careers.apple.com/*',
     'https://jobs.netflix.com/*',
     'https://www.amazon.jobs/*',
-    'http://localhost:5173/*'
+    'http://localhost:5173/*',
+    'http://72.60.215.34/*'
   ],
   background: {
     service_worker: 'src/background/service-worker.ts',
@@ -67,7 +68,8 @@ export default defineManifest({
         'https://careers.apple.com/*',
         'https://jobs.netflix.com/*',
         'https://www.amazon.jobs/*',
-        'http://localhost:5173/*'
+        'http://localhost:5173/*',
+        'http://72.60.215.34/*'
       ],
       js: ['src/content/index.ts'],
       run_at: 'document_end'
