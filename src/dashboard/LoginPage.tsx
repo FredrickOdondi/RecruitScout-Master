@@ -63,7 +63,7 @@ const ServerIcon = () => (
 );
 
 // ── Component ─────────────────────────────────────────────────────────────────
-type ViewState = 'login' | 'forgot-password' | 'update-password';
+type ViewState = 'login' | 'forgot-password' | 'update-password' | 'invite';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -82,20 +82,43 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Parse URL hash on mount for password recovery tokens
+    // Parse URL hash on mount for password recovery tokens or user invites
     const hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
+    if (hash) {
       const params = new URLSearchParams(hash.substring(1));
       const token = params.get('access_token');
+      const type = params.get('type');
+      
       if (token) {
-        setAccessToken(token);
-        setView('update-password');
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        if (type === 'recovery') {
+          setAccessToken(token);
+          setView('update-password');
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } else if (type === 'invite') {
+          // It's an invitation! Let's get the email associated with this token
+          setAccessToken(token);
+          supabaseClient.getUserByToken(token).then(({ user, error: fetchErr }) => {
+            if (user && user.email) {
+              setEmail(user.email);
+            } else if (fetchErr) {
+              setError('Failed to securely fetch invitation details: ' + fetchErr);
+            }
+          });
+          setView('invite');
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
       }
     }
   }, []);
 
-  useEffect(() => { emailRef.current?.focus(); }, [view]);
+  useEffect(() => { 
+    // Don't focus email on invite view since it's locked, focus password instead
+    if (view === 'invite') {
+      document.getElementById('login-password')?.focus();
+    } else {
+      emailRef.current?.focus(); 
+    }
+  }, [view]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +150,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setSuccess('Password reset link sent! Please check your email.');
       }
     }
-    else if (view === 'update-password') {
+    else if (view === 'update-password' || view === 'invite') {
       if (!password || !accessToken) { setLoading(false); return; }
       const { error: updateError } = await supabaseClient.updateUserPassword(password, accessToken);
       setLoading(false);
@@ -136,7 +159,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         setShake(true);
         setTimeout(() => setShake(false), 600);
       } else {
-        setSuccess('Password updated successfully! You can now sign in.');
+        setSuccess(view === 'invite' ? 'Account created! You can now sign in.' : 'Password updated successfully! You can now sign in.');
         setView('login');
         setPassword('');
         setAccessToken(null);
@@ -165,7 +188,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
               <h1 className="text-xl font-medium text-gray-900 tracking-tight">RecruitScout</h1>
               <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-widest font-bold text-center">
-                {view === 'login' ? 'Command Center' : view === 'forgot-password' ? 'Password Recovery' : 'Set New Password'}
+                {view === 'login' ? 'Command Center' : view === 'forgot-password' ? 'Password Recovery' : view === 'invite' ? 'Accept Invitation' : 'Set New Password'}
               </p>
             </div>
 
@@ -186,8 +209,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               
-              {/* Email (Login & Forgot Password) */}
-              {(view === 'login' || view === 'forgot-password') && (
+              {/* Email (Login, Forgot Password & Invite) */}
+              {(view === 'login' || view === 'forgot-password' || view === 'invite') && (
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
                     Email address
@@ -202,22 +225,24 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                       type="email"
                       autoComplete="email"
                       required
+                      disabled={view === 'invite'}
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-4 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
-                        focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
+                        focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm
+                        disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Password (Login & Update Password) */}
-              {(view === 'login' || view === 'update-password') && (
+              {/* Password (Login, Update Password & Invite) */}
+              {(view === 'login' || view === 'update-password' || view === 'invite') && (
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
-                      {view === 'update-password' ? 'New Password' : 'Password'}
+                      {view === 'update-password' || view === 'invite' ? 'Create Password' : 'Password'}
                     </label>
                     {view === 'login' && (
                       <button
@@ -236,7 +261,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     <input
                       id="login-password"
                       type={showPass ? 'text' : 'password'}
-                      autoComplete={view === 'update-password' ? 'new-password' : 'current-password'}
+                      autoComplete={view === 'update-password' || view === 'invite' ? 'new-password' : 'current-password'}
                       required
                       value={password}
                       onChange={e => setPassword(e.target.value)}
@@ -259,7 +284,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <button
                 id="login-submit"
                 type="submit"
-                disabled={loading || (view === 'login' && (!email.trim() || !password)) || (view === 'forgot-password' && !email.trim()) || (view === 'update-password' && !password)}
+                disabled={loading || (view === 'login' && (!email.trim() || !password)) || (view === 'forgot-password' && !email.trim()) || ((view === 'update-password' || view === 'invite') && !password)}
                 className="w-full relative flex items-center justify-center gap-2 py-2.5 rounded-md font-medium text-[13px] transition-all
                   disabled:opacity-50 disabled:cursor-not-allowed
                   bg-gray-900 text-white hover:bg-gray-800 shadow-sm border border-transparent"
@@ -274,13 +299,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   </>
                 ) : (
                   <span>
-                    {view === 'login' ? 'Sign In' : view === 'forgot-password' ? 'Send Reset Link' : 'Update Password'}
+                    {view === 'login' ? 'Sign In' : view === 'forgot-password' ? 'Send Reset Link' : view === 'invite' ? 'Accept Invitation' : 'Update Password'}
                   </span>
                 )}
               </button>
             </form>
             
-            {view !== 'login' && view !== 'update-password' && (
+            {view !== 'login' && (
               <div className="mt-5 text-center">
                 <button
                   type="button"

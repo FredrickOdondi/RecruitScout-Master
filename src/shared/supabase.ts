@@ -813,6 +813,32 @@ export class SupabaseClient {
   }
 
   /**
+   * Retrieves user details (like email) using an access token (e.g. from an invite link).
+   */
+  async getUserByToken(accessToken: string): Promise<{ user: any; error: string | null }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/v1/user`, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return { user: null, error: err.error_description || err.msg || `HTTP ${response.status}: Failed to fetch user` };
+      }
+
+      const user = await response.json();
+      return { user, error: null };
+    } catch (error) {
+      return { user: null, error: error instanceof Error ? error.message : 'Failed to fetch user' };
+    }
+  }
+
+  /**
    * Sign out — clears the stored session.
    */
   signOut(): void {
