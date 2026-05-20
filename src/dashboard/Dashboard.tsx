@@ -488,46 +488,59 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               
               <div className="bg-white rounded-xl p-1 border border-gray-200 shadow-sm mt-6">
                 <div className="bg-white rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                      Queue Status
-                      <button 
-                        onClick={() => {
-                          bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any }).then(r => {
-                            if (Array.isArray(r)) setQueue(r);
-                            else if (r?.data) setQueue(r.data);
-                          });
-                          bridgeSendMessage<any>({ type: 'SUPABASE_GET_AGENTS' as any }).then(r => {
-                            if (Array.isArray(r)) setActiveAgents(r);
-                            else if (r?.data) setActiveAgents(r.data);
-                          });
-                        }} 
-                        className="text-gray-600 hover:text-gray-800 text-[12px] px-2"
-                      >
-                        ↻ Refresh
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm('↺ Reset all completed/failed tasks back to pending?\n\nThis will re-queue every job title for today\'s run.')) return;
-                          try {
-                            const res = await bridgeSendMessage<any>({ type: 'SUPABASE_RESET_QUEUE' as any });
-                            if (res?.error) {
-                              alert('⚠️ Reset failed: ' + res.error);
-                            } else {
-                              const q = await bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any });
-                              if (Array.isArray(q)) setQueue(q);
-                              else if (q?.data) setQueue(q.data);
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        Queue Status
+                        <button 
+                          onClick={() => {
+                            bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any }).then(r => {
+                              if (Array.isArray(r)) setQueue(r);
+                              else if (r?.data) setQueue(r.data);
+                            });
+                            bridgeSendMessage<any>({ type: 'SUPABASE_GET_AGENTS' as any }).then(r => {
+                              if (Array.isArray(r)) setActiveAgents(r);
+                              else if (r?.data) setActiveAgents(r.data);
+                            });
+                          }} 
+                          className="text-gray-600 hover:text-gray-800 text-[12px] px-2"
+                        >
+                          ↻ Refresh
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('↺ Reset all completed/failed tasks back to pending?\n\nThis will re-queue every job title for today\'s run.')) return;
+                            try {
+                              const res = await bridgeSendMessage<any>({ type: 'SUPABASE_RESET_QUEUE' as any });
+                              if (res?.error) {
+                                alert('⚠️ Reset failed: ' + res.error);
+                              } else {
+                                const q = await bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any });
+                                if (Array.isArray(q)) setQueue(q);
+                                else if (q?.data) setQueue(q.data);
+                              }
+                            } catch (err) {
+                              alert('⚠️ Error: ' + (err as Error).message);
                             }
-                          } catch (err) {
-                            alert('⚠️ Error: ' + (err as Error).message);
-                          }
-                        }}
-                        className="bg-amber-50 text-amber-700 hover:bg-amber-100 px-2 py-1 rounded text-[11px] font-medium border border-amber-200 transition-all"
-                        title="Reset all completed tasks back to pending so they run again today"
-                      >
-                        ↺ Reset to Pending
-                      </button>
-                    </h3>
+                          }}
+                          className="bg-amber-50 text-amber-700 hover:bg-amber-100 px-2 py-1 rounded text-[11px] font-medium border border-amber-200 transition-all"
+                          title="Reset all completed tasks back to pending so they run again today"
+                        >
+                          ↺ Reset to Pending
+                        </button>
+                      </h3>
+                      <div className="flex gap-3 mt-2 text-[12px]">
+                        <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-medium border border-gray-200">
+                          Total: {queue.length}
+                        </span>
+                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium border border-blue-200">
+                          Pending: {queue.filter(q => q.status === 'pending').length}
+                        </span>
+                        <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-medium border border-green-200">
+                          Completed: {queue.filter(q => q.status === 'completed').length}
+                        </span>
+                      </div>
+                    </div>
                     <button 
                       onClick={() => {
                         bridgeSendMessage({ type: 'STOP_EXTRACTION' as any }).then(() => {
@@ -542,17 +555,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     </button>
                   </div>
                   
-                  <div className="overflow-x-auto rounded-md border border-gray-200 w-full">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[500px] rounded-md border border-gray-200 w-full relative">
                     <table className="w-full text-left text-[13px] text-gray-700 min-w-[800px]">
-                      <thead className="text-[11px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200">
+                      <thead className="text-[11px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
                         <tr>
-                          <th className="px-3 py-2">Task</th>
-                          <th className="px-3 py-2">Client</th>
-                          <th className="px-3 py-2">Location</th>
-                          <th className="px-3 py-2">Status</th>
-                          <th className="px-3 py-2">Worker ID</th>
-                          <th className="px-3 py-2">Created</th>
-                          <th className="px-3 py-2 text-right">Actions</th>
+                          <th className="px-3 py-2 bg-gray-50">Task</th>
+                          <th className="px-3 py-2 bg-gray-50">Client</th>
+                          <th className="px-3 py-2 bg-gray-50">Location</th>
+                          <th className="px-3 py-2 bg-gray-50">Status</th>
+                          <th className="px-3 py-2 bg-gray-50">Worker ID</th>
+                          <th className="px-3 py-2 bg-gray-50">Created</th>
+                          <th className="px-3 py-2 bg-gray-50 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
