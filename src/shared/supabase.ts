@@ -580,7 +580,7 @@ export class SupabaseClient {
    */
   async getQueueStatus(): Promise<SupabaseResponse<BulkQueueRecord[]>> {
     try {
-      const url = `${this.baseUrl}/rest/v1/BulkQueue?order=created_at.desc&limit=50`;
+      const url = `${this.baseUrl}/rest/v1/BulkQueue?order=created_at.desc&limit=1000`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
