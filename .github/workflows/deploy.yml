@@ -1,0 +1,35 @@
+name: Deploy Dashboard to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Execute deployment commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            # Navigate to the project directory
+            cd ~/RecruitScout-Master
+            
+            # Pull the latest code
+            git pull origin main
+            
+            # Rebuild the Docker image
+            docker build -t recruitscout-dashboard .
+            
+            # Stop and remove the existing container (ignore error if it doesn't exist)
+            docker rm -f dashboard || true
+            
+            # Start the new container
+            docker run -d -p 80:80 --name dashboard --restart unless-stopped recruitscout-dashboard
