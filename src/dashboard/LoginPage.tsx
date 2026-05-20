@@ -63,39 +63,85 @@ const ServerIcon = () => (
 );
 
 // ── Component ─────────────────────────────────────────────────────────────────
+type ViewState = 'login' | 'forgot-password' | 'update-password';
+
 interface LoginPageProps {
   onLoginSuccess: () => void;
 }
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+  const [view, setView]           = useState<ViewState>('login');
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
   const [showPass, setShowPass]   = useState(false);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState<string | null>(null);
+  const [success, setSuccess]     = useState<string | null>(null);
   const [shake, setShake]         = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { emailRef.current?.focus(); }, []);
+  useEffect(() => {
+    // Parse URL hash on mount for password recovery tokens
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      if (token) {
+        setAccessToken(token);
+        setView('update-password');
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
+  }, []);
+
+  useEffect(() => { emailRef.current?.focus(); }, [view]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) return;
-
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
-    const { error: authError } = await supabaseClient.signIn(email.trim(), password);
-
-    if (authError) {
-      setError(authError);
+    if (view === 'login') {
+      if (!email.trim() || !password) { setLoading(false); return; }
+      const { error: authError } = await supabaseClient.signIn(email.trim(), password);
+      if (authError) {
+        setError(authError);
+        setLoading(false);
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+        return;
+      }
+      onLoginSuccess();
+    } 
+    else if (view === 'forgot-password') {
+      if (!email.trim()) { setLoading(false); return; }
+      const { error: resetError } = await supabaseClient.resetPasswordForEmail(email.trim(), window.location.origin);
       setLoading(false);
-      setShake(true);
-      setTimeout(() => setShake(false), 600);
-      return;
+      if (resetError) {
+        setError(resetError);
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+      } else {
+        setSuccess('Password reset link sent! Please check your email.');
+      }
     }
-
-    onLoginSuccess();
+    else if (view === 'update-password') {
+      if (!password || !accessToken) { setLoading(false); return; }
+      const { error: updateError } = await supabaseClient.updateUserPassword(password, accessToken);
+      setLoading(false);
+      if (updateError) {
+        setError(updateError);
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+      } else {
+        setSuccess('Password updated successfully! You can now sign in.');
+        setView('login');
+        setPassword('');
+        setAccessToken(null);
+      }
+    }
   };
 
   return (
@@ -105,9 +151,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       {/* Card */}
       <div
         className={`relative z-10 w-full max-w-md mx-4 transition-transform ${shake ? 'animate-[shake_0.5s_ease]' : ''}`}
-        style={{
-          animation: shake ? 'shake 0.5s ease' : undefined,
-        }}
+        style={{ animation: shake ? 'shake 0.5s ease' : undefined }}
       >
         <div className="relative rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
 
@@ -120,8 +164,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 </span>
               </div>
               <h1 className="text-xl font-medium text-gray-900 tracking-tight">RecruitScout</h1>
-              <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-widest font-bold">
-                Command Center
+              <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-widest font-bold text-center">
+                {view === 'login' ? 'Command Center' : view === 'forgot-password' ? 'Password Recovery' : 'Set New Password'}
               </p>
             </div>
 
@@ -131,68 +175,91 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 <span>{error}</span>
               </div>
             )}
+            
+            {success && (
+              <div className="mb-5 flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-700 text-[13px] rounded-md px-4 py-3">
+                <span className="mt-0.5 shrink-0">✓</span>
+                <span>{success}</span>
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
-                  Email address
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                    <MailIcon />
-                  </span>
-                  <input
-                    ref={emailRef}
-                    id="login-email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-4 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
-                      focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
-                  />
+              
+              {/* Email (Login & Forgot Password) */}
+              {(view === 'login' || view === 'forgot-password') && (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                      <MailIcon />
+                    </span>
+                    <input
+                      ref={emailRef}
+                      id="login-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-4 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
+                        focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Password */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
-                  Password
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                    <LockIcon />
-                  </span>
-                  <input
-                    id="login-password"
-                    type={showPass ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-11 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
-                      focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(v => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    tabIndex={-1}
-                  >
-                    <EyeIcon show={showPass} />
-                  </button>
+              {/* Password (Login & Update Password) */}
+              {(view === 'login' || view === 'update-password') && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
+                      {view === 'update-password' ? 'New Password' : 'Password'}
+                    </label>
+                    {view === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => { setView('forgot-password'); setError(null); setSuccess(null); }}
+                        className="text-[11px] font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+                      <LockIcon />
+                    </span>
+                    <input
+                      id="login-password"
+                      type={showPass ? 'text' : 'password'}
+                      autoComplete={view === 'update-password' ? 'new-password' : 'current-password'}
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-11 py-2.5 text-[13px] text-gray-900 placeholder-gray-400
+                        focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(v => !v)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      tabIndex={-1}
+                    >
+                      <EyeIcon show={showPass} />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <button
                 id="login-submit"
                 type="submit"
-                disabled={loading || !email.trim() || !password}
+                disabled={loading || (view === 'login' && (!email.trim() || !password)) || (view === 'forgot-password' && !email.trim()) || (view === 'update-password' && !password)}
                 className="w-full relative flex items-center justify-center gap-2 py-2.5 rounded-md font-medium text-[13px] transition-all
                   disabled:opacity-50 disabled:cursor-not-allowed
                   bg-gray-900 text-white hover:bg-gray-800 shadow-sm border border-transparent"
@@ -203,17 +270,33 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    <span>Signing in…</span>
+                    <span>Processing…</span>
                   </>
                 ) : (
-                  <span>Sign In</span>
+                  <span>
+                    {view === 'login' ? 'Sign In' : view === 'forgot-password' ? 'Send Reset Link' : 'Update Password'}
+                  </span>
                 )}
               </button>
             </form>
+            
+            {view !== 'login' && view !== 'update-password' && (
+              <div className="mt-5 text-center">
+                <button
+                  type="button"
+                  onClick={() => { setView('login'); setError(null); setSuccess(null); }}
+                  className="text-[12px] font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  &larr; Back to Login
+                </button>
+              </div>
+            )}
 
-            <p className="mt-5 text-center text-[12px] text-gray-500">
-              Access is restricted to authorised users.
-            </p>
+            {view === 'login' && (
+              <p className="mt-5 text-center text-[12px] text-gray-500">
+                Access is restricted to authorised users.
+              </p>
+            )}
           </div>
         </div>
       </div>

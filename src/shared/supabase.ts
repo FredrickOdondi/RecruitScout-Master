@@ -754,6 +754,65 @@ export class SupabaseClient {
   }
 
   /**
+   * Request a password reset email.
+   * If redirectTo is provided, Supabase appends it to the recovery link in the email.
+   */
+  async resetPasswordForEmail(email: string, redirectTo?: string): Promise<{ error: string | null }> {
+    try {
+      const url = new URL(`${this.baseUrl}/auth/v1/recover`);
+      if (redirectTo) {
+        url.searchParams.append('redirect_to', redirectTo);
+      }
+      
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'apikey': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return { error: err.error_description || err.msg || `HTTP ${response.status}: Failed to send reset email` };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to send reset email' };
+    }
+  }
+
+  /**
+   * Update the user's password using the access token obtained from the recovery email.
+   */
+  async updateUserPassword(password: string, accessToken: string): Promise<{ error: string | null }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/v1/user`, {
+        method: 'PUT',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        return { error: err.error_description || err.msg || `HTTP ${response.status}: Failed to update password` };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to update password' };
+    }
+  }
+
+  /**
    * Sign out — clears the stored session.
    */
   signOut(): void {
