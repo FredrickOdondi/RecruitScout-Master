@@ -27,6 +27,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [bulkTitles, setBulkTitles] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [targetSite, setTargetSite] = useState('indeed');
   
   // State
   const [settings, setSettings] = useState<any>({});
@@ -164,7 +165,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         titles: tasksToEnqueue, 
         assigned_to: assignedTo.trim() || undefined, 
         location: location || undefined,
-        client_id: selectedClient || undefined
+        client_id: selectedClient || undefined,
+        target_site: targetSite || 'indeed'
       };
       const res = await bridgeSendMessage<any>({ type: 'SUPABASE_ENQUEUE_TASKS' as any, payload });
       if (res && !res.error) {
@@ -211,6 +213,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       job_title: task.job_title,
       client_id: task.client_id || '',
       location: task.location || '',
+      target_site: task.target_site || 'indeed',
     });
   };
 
@@ -228,6 +231,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           job_title: editTaskDraft.job_title,
           client_id: editTaskDraft.client_id || null,
           location: editTaskDraft.location || null,
+          target_site: editTaskDraft.target_site || 'indeed',
         }
       };
       const res = await bridgeSendMessage<any>({ type: 'SUPABASE_UPDATE_QUEUE_TASK' as any, payload });
@@ -418,7 +422,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   />
                   
                   <div className="mt-4 md:grid md:grid-cols-12 md:gap-4 md:items-end">
-                    <div className="col-span-12 md:col-span-3">
+                    <div className="col-span-12 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
                         Associated Client
                       </label>
@@ -435,7 +439,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         ))}
                       </select>
                     </div>
-                    <div className="col-span-12 md:col-span-3">
+                    <div className="col-span-12 md:col-span-2">
+                      <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
+                        Target Site
+                      </label>
+                      <select 
+                        value={targetSite} 
+                        onChange={(e) => setTargetSite(e.target.value)} 
+                        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm" 
+                      >
+                        <option value="indeed">Indeed</option>
+                        <option value="trovolavoro">TrovoLavoro</option>
+                      </select>
+                    </div>
+                    <div className="col-span-12 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
                         Location Filter
                       </label>
@@ -560,6 +577,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       <thead className="text-[11px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
                         <tr>
                           <th className="px-3 py-2 bg-gray-50">Task</th>
+                          <th className="px-3 py-2 bg-gray-50">Site</th>
                           <th className="px-3 py-2 bg-gray-50">Client</th>
                           <th className="px-3 py-2 bg-gray-50">Location</th>
                           <th className="px-3 py-2 bg-gray-50">Status</th>
@@ -584,6 +602,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       onChange={e => setEditTaskDraft({...editTaskDraft, job_title: e.target.value})}
                                       className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[13px] text-gray-900 shadow-sm"
                                     />
+                                  </td>
+                                  <td className="px-3 py-1.5">
+                                    <select 
+                                      value={editTaskDraft.target_site} 
+                                      onChange={e => setEditTaskDraft({...editTaskDraft, target_site: e.target.value})}
+                                      className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[13px] text-gray-900 shadow-sm"
+                                    >
+                                      <option value="indeed">Indeed</option>
+                                      <option value="trovolavoro">TrovoLavoro</option>
+                                    </select>
                                   </td>
                                   <td className="px-3 py-1.5">
                                     <select 
@@ -615,6 +643,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                               ) : (
                                 <>
                                   <td className="px-3 py-1.5 font-medium text-gray-900 truncate max-w-[200px]">{q.job_title}</td>
+                                  <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-[10px] uppercase font-bold bg-purple-50 text-purple-700 border-purple-200">{q.target_site || 'indeed'}</span></td>
                                   <td className="px-3 py-1.5 text-gray-700 font-semibold">{clientRecord ? clientRecord.name : <span className="text-gray-400 italic font-normal">—</span>}</td>
                                   <td className="px-3 py-1.5 text-gray-700">{q.location || '-'}</td>
                                   <td className="px-3 py-1.5">

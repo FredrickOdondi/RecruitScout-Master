@@ -140,6 +140,59 @@ async function fetchDomainFromIndeedProfile(profileUrl: string): Promise<string>
   return '';
 }
 
+async function fetchDomainFromLinkedIn(companyName: string): Promise<string> {
+  if (!companyName) return '';
+  const cacheKey = `linkedin:${companyName}`;
+  const cached = _domainCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  try {
+    // Normalize company name for URL, keeping dots
+    const normalized = normalizeCompanyName(companyName)
+      .toLowerCase()
+      .replace(/[^a-z0-9.]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    if (!normalized) return '';
+
+    const url = `https://www.linkedin.com/company/${normalized}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+
+    if (response.ok) {
+      const html = await response.text();
+      // Look for the website URL in the JSON-LD or raw text
+      const jsonLdMatch = html.match(/"@type"\s*:\s*"Organization"[^}]*"url"\s*:\s*"([^"]+)"/);
+      if (jsonLdMatch && !jsonLdMatch[1].includes('linkedin.com')) {
+        const domain = extractDomainFromUrl(jsonLdMatch[1]);
+        if (domain) {
+          _domainCache.set(cacheKey, domain);
+          return domain;
+        }
+      }
+
+      // Fallback: look for "companyPageUrl":"https://www.bairesdev.com/"
+      const companyUrlMatch = html.match(/"companyPageUrl"\s*:\s*"([^"]+)"/);
+      if (companyUrlMatch && !companyUrlMatch[1].includes('linkedin.com')) {
+        const domain = extractDomainFromUrl(companyUrlMatch[1]);
+        if (domain) {
+          _domainCache.set(cacheKey, domain);
+          return domain;
+        }
+      }
+    }
+  } catch { /* fetch failed */ }
+
+  _domainCache.set(cacheKey, '');
+  return '';
+}
+
 // Supabase config
 const SUPABASE_URL = 'https://qyceqgttvvairnaxwicm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5Y2VxZ3R0dnZhaXJuYXh3aWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDM4MTQsImV4cCI6MjA4ODMxOTgxNH0.cm8dVGQtAZoLwuhbpsD6uZeFXWPp25LOMCZlyR3aRf0';
@@ -245,10 +298,12 @@ async function fetchDomainFromWikidata(companyName: string): Promise<string> {
   return '';
 }
 
+const STOP_WORDS = new Set(['the', 'and', 'for', 'group', 'services', 'company', 'inc', 'llc', 'corp', 'ltd', 'spa', 'srl']);
+
 /** Compute word-overlap similarity between two company names (0–1) */
 function nameSimilarity(a: string, b: string): number {
   if (!a || !b) return 0;
-  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
   const wordsA = new Set(normalize(a));
   const wordsB = new Set(normalize(b));
   if (wordsA.size === 0 || wordsB.size === 0) return 0;
@@ -273,7 +328,7 @@ async function validateDomain(domain: string, companyName: string): Promise<bool
   const companyWords = companyName.toLowerCase()
     .replace(/[^a-z0-9\s]/g, '') // Keep letters, numbers, and spaces
     .split(/\s+/)
-    .filter(word => word.length > 2); // Filter out short words
+    .filter(word => word.length > 2 && !STOP_WORDS.has(word)); // Filter out short and stop words
 
   // Check if domain contains any significant company word
   // Use original domain with hyphens preserved for word comparison
@@ -284,13 +339,8 @@ async function validateDomain(domain: string, companyName: string): Promise<bool
       foundMatch = true;
       break;
     }
-    // Word starts with domainCore (e.g., "tesla" in "teslamotors")
-    if (word.startsWith(domainCore)) {
-      foundMatch = true;
-      break;
-    }
-    // DomainCore starts with word (e.g., "tesla" in "tesla.com")
-    if (domainCore.startsWith(word)) {
+    // Strict containment (only for longer significant words)
+    if (word.length >= 4 && domainCore.includes(word)) {
       foundMatch = true;
       break;
     }
@@ -298,7 +348,7 @@ async function validateDomain(domain: string, companyName: string): Promise<bool
 
   // Additional check: if company is a single word, do direct comparison
   if (!foundMatch && companyWords.length === 1) {
-    foundMatch = domainCore === companyWords[0] || domainCore.startsWith(companyWords[0]);
+    foundMatch = domainCore === companyWords[0];
   }
 
   _domainCache.set(cacheKey, foundMatch ? '1' : '0');
@@ -317,7 +367,7 @@ async function resolveCompanyDomain(companyName: string): Promise<string> {
 
   const { domain: clearbitDomain, matchedName } = clearbitResult;
   const similarity = nameSimilarity(companyName, matchedName);
-  const clearbitConfident = !!clearbitDomain && similarity >= 0.4;
+  const clearbitConfident = !!clearbitDomain && similarity >= 0.6;
 
   console.log(`[RecruitScout] ${companyName}: clearbit="${clearbitDomain}"(sim=${similarity.toFixed(2)}) wikidata="${wikidataDomain}"`);
 
@@ -465,8 +515,38 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
       const jobWithMeta = { ...job, metadata, workerId };
 
       if (!jobWithMeta.company) return jobWithMeta;
+
+      // PRE-ENRICHMENT: Clean messy company names (e.g. "Munters Humidity Control Italy S.r.l. (IT02)") 
+      // by extracting the clean canonical name directly from the Indeed profile URL if it exists.
+      const profileUrl = jobWithMeta.metadata?.companyProfileLink as string | undefined;
+      if (profileUrl) {
+        const match = profileUrl.match(/\/cmp\/([^/?]+)/);
+        if (match && match[1]) {
+          const cleanName = decodeURIComponent(match[1]).replace(/-/g, ' ').trim();
+          if (cleanName && cleanName.length > 1) {
+            console.log(`[RecruitScout] Cleaned company name: "${jobWithMeta.company}" -> "${cleanName}"`);
+            jobWithMeta.company = cleanName;
+          }
+        }
+      }
+
       try {
-        // Priority 1: Indeed company profile page
+        // Priority 1: Guess LinkedIn profile and fetch
+        const linkedInDomain = await fetchDomainFromLinkedIn(jobWithMeta.company);
+        if (linkedInDomain) {
+          console.log(`[RecruitScout] ${jobWithMeta.company}: domain from LinkedIn -> ${linkedInDomain}`);
+          saveToSupabase(jobWithMeta.company, linkedInDomain);
+          return { ...jobWithMeta, companyDomain: linkedInDomain };
+        }
+
+        // Priority 1.5: Clearbit + Wikidata in parallel with cross-validation
+        const resolvedDomain = await resolveCompanyDomain(jobWithMeta.company);
+        if (resolvedDomain) {
+          saveToSupabase(jobWithMeta.company, resolvedDomain);
+          return { ...jobWithMeta, companyDomain: resolvedDomain };
+        }
+
+        // Priority 2+3: Indeed company profile page
         const profileUrl = jobWithMeta.metadata?.companyProfileLink as string | undefined;
         if (profileUrl) {
           const domain = await fetchDomainFromIndeedProfile(profileUrl);
@@ -475,13 +555,6 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
             saveToSupabase(jobWithMeta.company, domain);
             return { ...jobWithMeta, companyDomain: domain };
           }
-        }
-
-        // Priority 2+3: Clearbit + Wikidata in parallel with cross-validation
-        const resolvedDomain = await resolveCompanyDomain(jobWithMeta.company);
-        if (resolvedDomain) {
-          saveToSupabase(jobWithMeta.company, resolvedDomain);
-          return { ...jobWithMeta, companyDomain: resolvedDomain };
         }
 
         // Priority 4: Supabase internal company DB
@@ -880,8 +953,8 @@ class ServiceWorker {
     });
 
     messageRouter.on('SUPABASE_ENQUEUE_TASKS' as MessageType, async (message) => {
-      const { titles, assigned_to, location, client_id } = message.payload;
-      return await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id);
+      const { titles, assigned_to, location, client_id, target_site } = message.payload;
+      return await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id, target_site);
     });
 
     messageRouter.on('SUPABASE_GET_QUEUE' as MessageType, async () => {
@@ -1087,14 +1160,15 @@ class ServiceWorker {
 
           let tabId = this.currentTabId;
           if (!tabId) {
-            const newTab = await chrome.tabs.create({ url: 'https://it.indeed.com', active: false });
+            const startUrl = queueTask.target_site === 'trovolavoro' ? 'https://offerte-di-lavoro.trovolavoro.com' : 'https://it.indeed.com';
+            const newTab = await chrome.tabs.create({ url: startUrl, active: false });
             tabId = newTab.id;
             this.currentTabId = tabId;
           }
 
           try {
             activeClientNameForScraping = clientName;
-            await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location }, tabId }, undefined);
+            await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location, target_site: queueTask.target_site }, tabId }, undefined);
 
             const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
             await supabaseClient.markTaskComplete(queueTask.id, wasAborted);
@@ -1243,10 +1317,17 @@ class ServiceWorker {
       for (let i = 0; i < titles.length; i++) {
         const title = (titles[i] || '').trim();
         const locationParam = options?.location ? `&l=${encodeURIComponent(options.location)}` : '';
-        // Location-only mode: if no title provided, scrape all jobs in the location
-        const searchUrl = title
-          ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`
-          : `${baseUrl}/jobs?l=${encodeURIComponent(options?.location || '')}`;
+        
+        let searchUrl = '';
+        if (options?.target_site === 'trovolavoro' || baseUrl.includes('trovolavoro')) {
+          searchUrl = title 
+            ? `https://offerte-di-lavoro.trovolavoro.com/offerte-lavoro?q=${encodeURIComponent(title)}${locationParam}`
+            : `https://offerte-di-lavoro.trovolavoro.com/offerte-lavoro?l=${encodeURIComponent(options?.location || '')}`;
+        } else {
+          searchUrl = title
+            ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`
+            : `${baseUrl}/jobs?l=${encodeURIComponent(options?.location || '')}`;
+        }
 
         const label = title || `[All Jobs${options?.location ? ' in ' + options.location : ''}]`;
         console.log(`[RecruitScout] Bulk Search ${i + 1}/${titles.length}: ${label}`);

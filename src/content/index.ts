@@ -3,6 +3,7 @@ import { SchemaParser } from './extraction/schema-parser';
 import { HeuristicEngine } from './extraction/heuristic-engine';
 import { FieldExtractors } from './extraction/field-extractors';
 import { IndeedExtractor } from './extraction/indeed-extractor';
+import { TrovolavoroExtractor } from './extraction/trovolavoro-extractor';
 import { ClickThroughExtractor } from './extraction/click-extractor';
 import { SalaryParser } from './extraction/salary-parser';
 import { NLPExtractor } from './extraction/nlp-extractor';
@@ -178,6 +179,10 @@ class ContentScript {
       const indeedJobs = IndeedExtractor.extractAllJobs();
       console.log(`[RecruitScout] IndeedExtractor found ${indeedJobs.length} jobs`);
       jobs.push(...indeedJobs);
+    } else if (window.location.hostname.includes('trovolavoro.')) {
+      const trovoJobs = TrovolavoroExtractor.extractAllJobs();
+      console.log(`[RecruitScout] TrovolavoroExtractor found ${trovoJobs.length} jobs`);
+      jobs.push(...trovoJobs);
     }
 
     // Strategy 3: Heuristic engine

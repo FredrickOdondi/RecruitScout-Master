@@ -90,6 +90,7 @@ export interface BulkQueueRecord {
   assigned_to?: string;
   location?: string;
   client_id?: string;
+  target_site?: string;
   created_at: string;
   started_at?: string;
   completed_at?: string;
