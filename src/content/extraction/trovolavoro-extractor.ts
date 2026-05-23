@@ -37,27 +37,59 @@ export class TrovolavoroExtractor {
            url = new URL(url, window.location.origin).href;
         }
 
-        const company = companyEl?.textContent?.trim() || 'Unknown Company';
         const description = snippetEl?.textContent?.trim() || '';
 
-        // Extract location robustly by finding the "Site:" or "Sede:" label
+        let company = '';
         let location = '';
-        const detailsHead = card.querySelector('.detailsHead');
-        if (detailsHead) {
-            const labels = detailsHead.querySelectorAll('label');
-            for (const label of Array.from(labels)) {
-                if (label.textContent?.includes('Site:') || label.textContent?.includes('Sede:')) {
-                    const parent = label.parentElement;
-                    if (parent) {
-                        const clone = parent.cloneNode(true) as HTMLElement;
-                        const innerLabel = clone.querySelector('label');
-                        if (innerLabel) innerLabel.remove();
-                        // Clean up whitespace and commas
-                        location = clone.textContent?.replace(/\s+/g, ' ').replace(/^[\s,]+|[\s,]+$/g, '').trim() || '';
-                        break;
+
+        // First try explicit company link (already selected as companyEl above)
+        if (companyEl) {
+            company = companyEl.textContent?.replace(/^[\s-]+/, '').trim() || '';
+        }
+
+        // Robustly extract location by finding the map icon and walking sibling nodes
+        const mapIcon = card.querySelector('.google-maps, [class*="map-marker"], [class*="location"]');
+        if (mapIcon && mapIcon.parentElement) {
+            let current: Node | null = mapIcon.nextSibling;
+            let locLine = '';
+            
+            // Walk siblings until we hit a break, a div, or another icon
+            while (current) {
+                const nodeName = current.nodeName.toUpperCase();
+                const isIcon = (current as Element).classList?.contains('glyphicon') || 
+                               (current as Element).classList?.contains('fa') ||
+                               (current as Element).tagName?.toLowerCase() === 'i';
+                               
+                if (nodeName === 'BR' || nodeName === 'DIV' || isIcon) {
+                    break;
+                }
+                
+                locLine += current.textContent || '';
+                current = current.nextSibling;
+            }
+            
+            // Clean up common prefixes and whitespace
+            locLine = locLine.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+            locLine = locLine.replace(/^(Site|Sede):\s*/i, '');
+            
+            if (locLine) {
+                // If it contains a " - ", the last part is usually the company name
+                if (locLine.includes(' - ')) {
+                    const parts = locLine.split(' - ');
+                    const potentialCompany = parts.pop()?.trim();
+                    location = parts.join(' - ').trim();
+                    
+                    if (!company && potentialCompany) {
+                        company = potentialCompany;
                     }
+                } else {
+                    location = locLine;
                 }
             }
+        }
+
+        if (!company) {
+            company = 'Unknown Company';
         }
 
         // Only parse what looks like a valid job
