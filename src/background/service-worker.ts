@@ -969,6 +969,12 @@ class ServiceWorker {
       return await supabaseClient.updateQueueTask(id, updates);
     });
 
+    messageRouter.on('SUPABASE_DELETE_QUEUE_TASK' as any, async (message: any) => {
+      // Handle cases where payload might be missing or structured differently
+      const taskId = message.id || (message.payload && message.payload.id);
+      return await supabaseClient.deleteQueueTask(taskId);
+    });
+
     messageRouter.on('SUPABASE_UPDATE_QUEUE_LOCATION' as any, async (message) => {
       const { location } = message.payload;
       return await supabaseClient.updateQueueLocation(location);
