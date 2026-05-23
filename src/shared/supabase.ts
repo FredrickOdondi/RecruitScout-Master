@@ -628,6 +628,26 @@ export class SupabaseClient {
   }
 
   /**
+   * Delete a specific queue task
+   */
+  async deleteQueueTask(id: string): Promise<SupabaseResponse<{ deleted: boolean }>> {
+    try {
+      const res = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
+      return { data: { deleted: true }, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
    * Update a specific queue task
    */
   async updateQueueTask(id: string, updates: Partial<BulkQueueRecord>): Promise<SupabaseResponse<{ updated: boolean }>> {

@@ -209,12 +209,24 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const handleEditClick = (task: any) => {
     setEditingTaskId(task.id);
-    setEditTaskDraft({
-      job_title: task.job_title,
-      client_id: task.client_id || '',
-      location: task.location || '',
-      target_site: task.target_site || 'indeed',
-    });
+    setEditTaskDraft({...task});
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this queued task?')) return;
+    try {
+      const res = await bridgeSendMessage<any>({ type: 'SUPABASE_DELETE_QUEUE_TASK', id } as any);
+      if (res?.error) alert('Error deleting task: ' + res.error);
+      else {
+        // Refresh queue
+        bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any }).then(r => {
+          if (Array.isArray(r)) setQueue(r);
+          else if (r?.data) setQueue(r.data);
+        });
+      }
+    } catch (err) {
+      alert('Error: ' + (err as Error).message);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -661,6 +673,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       title={q.status === 'running' ? 'Cannot edit running tasks' : 'Edit task'}
                                     >
                                       Edit
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteTask(q.id)}
+                                      className="text-red-600 hover:text-red-800 font-medium text-[12px] px-2 py-1 ml-1"
+                                      disabled={q.status === 'running'}
+                                      title={q.status === 'running' ? 'Cannot delete running tasks' : 'Delete task'}
+                                    >
+                                      Delete
                                     </button>
                                   </td>
                                 </>
