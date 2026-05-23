@@ -63,7 +63,7 @@ export class TrovolavoroExtractor {
         // Only parse what looks like a valid job
         if (title && url) {
           const job: JobData = {
-            id: generateId(url),
+            id: generateId(),
             title,
             company,
             location,
