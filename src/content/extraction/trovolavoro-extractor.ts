@@ -102,6 +102,7 @@ export class TrovolavoroExtractor {
             url,
             description,
             source: 'trovolavoro.it',
+            status: 'active',
             extractedAt: now,
           };
 
