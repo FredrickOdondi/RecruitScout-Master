@@ -1320,9 +1320,7 @@ class ServiceWorker {
         
         let searchUrl = '';
         if (options?.target_site === 'trovolavoro' || baseUrl.includes('trovolavoro')) {
-          searchUrl = title 
-            ? `https://offerte-di-lavoro.trovolavoro.com/offerte-lavoro?q=${encodeURIComponent(title)}${locationParam}`
-            : `https://offerte-di-lavoro.trovolavoro.com/offerte-lavoro?l=${encodeURIComponent(options?.location || '')}`;
+          searchUrl = `https://www.trovolavoro.com/#recruitscout-search?q=${encodeURIComponent(title)}${locationParam}`;
         } else {
           searchUrl = title
             ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`
