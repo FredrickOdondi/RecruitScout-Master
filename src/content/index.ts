@@ -123,8 +123,9 @@ class ContentScript {
       const keywordInput = document.querySelector('input[name="cand_search-keyword"]') as HTMLInputElement;
       const cityInput = document.querySelector('input[name="cand_search-job_city"]') as HTMLInputElement;
       const form = document.querySelector('form#iframeLisJobsFilter') as HTMLFormElement;
+      const submitButton = document.querySelector('button[type="submit"], #submit') as HTMLButtonElement;
 
-      if (keywordInput && form) {
+      if (keywordInput && form && submitButton) {
         clearInterval(checkInterval);
         
         // Fill inputs
@@ -137,9 +138,13 @@ class ContentScript {
         // Dispatch change events to ensure frameworks pick it up
         keywordInput.dispatchEvent(new Event('input', { bubbles: true }));
         keywordInput.dispatchEvent(new Event('change', { bubbles: true }));
+        if (cityInput) {
+          cityInput.dispatchEvent(new Event('input', { bubbles: true }));
+          cityInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         
-        // Submit
-        form.submit();
+        // Click the submit button (form.submit() bypasses JS event listeners on modern sites)
+        submitButton.click();
       }
     }, 500);
     
