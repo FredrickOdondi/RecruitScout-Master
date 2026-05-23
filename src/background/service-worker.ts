@@ -399,6 +399,9 @@ async function resolveCompanyDomain(companyName: string): Promise<string> {
 
 /** Fire-and-forget: upsert a newly resolved domain into Supabase so the DB grows over time */
 async function saveToSupabase(companyName: string, domain: string): Promise<void> {
+  // Instantly cache it in memory to prevent race conditions (duplicate saves for the same company in a single batch)
+  _domainCache.set(`supa:${companyName}`, domain);
+
   try {
     const response = await fetch(
       `${SUPABASE_URL}/rest/v1/InternalCompanyDomainDatabase`,
