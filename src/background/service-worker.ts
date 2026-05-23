@@ -28,20 +28,21 @@ function normalizeCompanyName(companyName: string): string {
   if (!companyName) return '';
 
   // Comprehensive list of legal suffixes (order matters - most specific first)
+  // Using case-insensitive /i flag to catch S.R.L., s.r.l., S.p.A., s.p.a., etc.
   const legalSuffixes = [
     // Italian suffixes with dots (most precise)
-    /\bS\.p\.A\.$/, /\bS\.r\.l\.$/, /\bS\.c\.a\.$/, /\bS\.c\.p\.A\.$/,
-    /\bS\.p\.A$/, /\bS\.r\.l$/, /\bS\.c\.a$/, /\bS\.c\.p\.A$/,
+    /\bs\.p\.a\.$/i, /\bs\.r\.l\.$/i, /\bs\.c\.a\.$/i, /\bs\.c\.p\.a\.$/i,
+    /\bs\.p\.a$/i, /\bs\.r\.l$/i, /\bs\.c\.a$/i, /\bs\.c\.p\.a$/i,
 
-    // Italian suffixes with case-specific patterns to avoid false positives
-    /\bSpA$/, /\bSrl$/, /\bSPA$/, /\bSRL$/, /\bsrl$/,
+    // Italian suffixes without dots
+    /\bspa$/i, /\bsrl$/i,
 
     // French SA variations
-    /\bS\.A\.$/, /\bS\.A$/, /\bSA$/,
+    /\bs\.a\.$/i, /\bs\.a$/i, /\bsa$/i,
 
-    // English/American suffixes with dots
-    /\bL\.L\.C\.$/, /\bCo\.$/, /\bLtd\.$/, /\bCorp\.$/, /\bInc\.$/,
-    /\bCo$/, /\bLtd$/, /\bCorp$/, /\bInc$/,
+    // English/American suffixes
+    /\bl\.l\.c\.$/i, /\bco\.$/i, /\bltd\.$/i, /\bcorp\.$/i, /\binc\.$/i,
+    /\bllc$/i, /\bco$/i, /\bltd$/i, /\bcorp$/i, /\binc$/i,
 
     // Two-letter international abbreviations (case-specific to avoid false positives)
     /\bPLC$/, /\bAG$/, /\bGmbH$/, /\bLLC$/,
