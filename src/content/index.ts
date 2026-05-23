@@ -282,19 +282,27 @@ class ContentScript {
    * Find the next page URL for pagination
    */
   private findNextPageUrl(): string | undefined {
-    // Indeed specific next button robust fallback
+    // Indeed & Trovolavoro specific next button robust fallback
     const nextPatterns = [
       'a[data-testid="pagination-page-next"]',
       'a[aria-label="Next Page"]',
       'a[aria-label="Next"]',
       'a[aria-label*="next" i]',
       'a.pagination-next',
-      '.pagination a:last-child'
+      '.pagination a:last-child',
+      // Trovolavoro / Italian fallbacks
+      'a[aria-label="Avanti"]',
+      'a[aria-label*="successiva" i]',
+      'li.next a',
+      'a.next',
+      '.next a',
+      '.pagination .next a',
+      '.pagNext a'
     ];
 
     for (const selector of nextPatterns) {
       const btn = document.querySelector(selector) as HTMLAnchorElement;
-      if (btn && btn.href && !btn.classList.contains('disabled')) {
+      if (btn && btn.href && !btn.classList.contains('disabled') && !btn.hasAttribute('disabled')) {
         return btn.href;
       }
     }
@@ -302,12 +310,28 @@ class ContentScript {
     // Aggressive text search fallback
     const allLinks = document.querySelectorAll('a');
     for (const link of Array.from(allLinks)) {
-      if (link.textContent?.toLowerCase().trim().includes('next') && link.href && !link.href.includes('javascript:')) {
+      if (link.hasAttribute('disabled') || link.classList.contains('disabled')) continue;
+      
+      const text = link.textContent?.toLowerCase().trim() || '';
+      if ((text.includes('next') || text.includes('avanti') || text.includes('successiva')) && link.href && !link.href.includes('javascript:')) {
         // Ensure it's inside a pagination block to avoid random "Next steps" links
         const parent = link.parentElement;
         if (parent && (parent.className.toLowerCase().includes('pag') || document.querySelector('nav[role="navigation"]')?.contains(link))) {
           return link.href;
         }
+      }
+    }
+
+    // Hash-based URL increment fallback for Trovolavoro
+    if (window.location.hostname.includes('trovolavoro.')) {
+      const currentUrl = window.location.href;
+      const match = currentUrl.match(/&page=(\d+)/);
+      if (match) {
+        // If we are here, we didn't find an explicit "Next" button. 
+        // We shouldn't blindly increment forever, but if the DOM is heavily obfuscated, 
+        // we can increment it. The background worker will naturally stop when it finds 0 jobs.
+        const currentPage = parseInt(match[1], 10);
+        return currentUrl.replace(`&page=${currentPage}`, `&page=${currentPage + 1}`);
       }
     }
 
