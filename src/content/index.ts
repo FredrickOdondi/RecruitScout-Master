@@ -113,58 +113,8 @@ class ContentScript {
     return { pageInfo };
   }
 
-  private handleTrovolavoroSearchAutomation() {
-    console.log('[RecruitScout] Starting TrovoLavoro search automation');
-    const hashParams = new URLSearchParams(window.location.hash.replace('#recruitscout-search', ''));
-    const q = hashParams.get('q') || '';
-    const l = hashParams.get('l') || '';
-
-    const checkInterval = setInterval(() => {
-      const keywordInput = document.querySelector('input[name="cand_search-keyword"]') as HTMLInputElement;
-      const cityInput = document.querySelector('input[name="cand_search-job_city"]') as HTMLInputElement;
-      const form = document.querySelector('form#iframeLisJobsFilter') as HTMLFormElement;
-      const submitButton = document.querySelector('button[type="submit"], #submit') as HTMLButtonElement;
-
-      if (keywordInput && form && submitButton) {
-        clearInterval(checkInterval);
-        
-        // Fill inputs
-        keywordInput.value = q;
-        if (cityInput) {
-            cityInput.value = l;
-        }
-        
-        console.log(`[RecruitScout] Submitting TrovoLavoro search form for: ${q} in ${l}`);
-        // Dispatch change events to ensure frameworks pick it up
-        keywordInput.dispatchEvent(new Event('input', { bubbles: true }));
-        keywordInput.dispatchEvent(new Event('change', { bubbles: true }));
-        if (cityInput) {
-          cityInput.dispatchEvent(new Event('input', { bubbles: true }));
-          cityInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        
-        // Click the submit button (form.submit() bypasses JS event listeners on modern sites)
-        submitButton.click();
-      }
-    }, 500);
-    
-    setTimeout(() => clearInterval(checkInterval), 10000);
-  }
-
-  /**
-   * Handle job extraction request
-   */
   private async handleExtractJobs(payload: any) {
     const { mode, options } = payload;
-
-    // Automation: If we are on Trovolavoro homepage with search hash, execute UI automation instead of extraction
-    if (window.location.hostname.includes('trovolavoro.com') && window.location.hash.includes('#recruitscout-search')) {
-      console.log('[RecruitScout] Search automation active. Deferring extraction and executing UI automation...');
-      this.handleTrovolavoroSearchAutomation();
-      // Return unresolved promise. Form submission will navigate the page, closing the message port,
-      // which safely triggers the background worker's native retry mechanism on the new page!
-      return new Promise(() => {});
-    }
 
     if (this.isExtracting) {
       return { error: 'Extraction already in progress' };
