@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:dashboard": "tsc && vite build -c vite.dashboard.config.ts",
+    "build:blue": "tsc && vite build -c vite.blue.config.ts",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest",

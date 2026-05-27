@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabaseClient } from '../shared/supabase';
 import { BlueCcClient } from '../shared/bluecc';
 
-export default function BlueCCTab() {
+export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   

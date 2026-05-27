@@ -13,6 +13,9 @@ COPY . .
 # Build the dashboard specifically
 RUN npm run build:dashboard
 
+# Build the standalone Blue.cc app
+RUN npm run build:blue
+
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
 
@@ -22,6 +25,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy the built assets from the dashboard output directory
 # (vite.dashboard.config.ts roots in src/dashboard, so dist is there)
 COPY --from=builder /app/src/dashboard/dist /usr/share/nginx/html
+
+# Copy the built assets for the Blue.cc app to the /blue subpath
+COPY --from=builder /app/src/blue/dist /usr/share/nginx/html/blue
 
 EXPOSE 80
 

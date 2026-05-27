@@ -4,7 +4,6 @@ import JobsTab from '../popup/components/JobsTab';
 import ExportTab from '../popup/components/ExportTab';
 import SupabaseTab from './SupabaseTab';
 import ClientEnrollmentTab from './ClientEnrollmentTab';
-import BlueCCTab from './BlueCCTab';
 import { supabaseClient } from '../shared/supabase';
 
 // Icons 
@@ -15,7 +14,6 @@ const DatabaseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" he
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
 const CloudDbIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>;
 const BriefcasePlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>;
-const LayersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>;
 
 interface DashboardProps {
   onLogout: () => void;
@@ -61,9 +59,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       // Auto timeout after 5 seconds if no extension picks it up
       const timeout = setTimeout(() => {
         window.removeEventListener('message', listener);
-        // Silently resolve instead of rejecting so the independent dashboard doesn't throw scary red errors
-        console.warn(`[Bridge] No extension detected for ${message.type}. Proceeding independently.`);
-        resolve(null as unknown as T);
+        reject(new Error(`Bridge timeout: ${message.type}. Is the extension fully reloaded?`));
       }, 5000);
 
       const listener = (event: MessageEvent) => {
@@ -128,21 +124,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
              if (Array.isArray(res)) setQueue(res);
              else if (res && res.data) setQueue(res.data);
            })
-           .catch(() => {}); // Silenced for independent dashboard testing
+           .catch(console.error);
         
         bridgeSendMessage<any>({ type: 'SUPABASE_GET_AGENTS' as any })
            .then(res => {
              if (Array.isArray(res)) setActiveAgents(res);
              else if (res && res.data) setActiveAgents(res.data);
            })
-           .catch(() => {}); // Silenced for independent dashboard testing
+           .catch(console.error);
 
         bridgeSendMessage<any>({ type: 'SUPABASE_GET_CLIENTS' as any })
            .then(res => {
              if (Array.isArray(res)) setClients(res);
              else if (res && res.data) setClients(res.data);
            })
-           .catch(() => {}); // Silenced for independent dashboard testing
+           .catch(console.error);
       };
 
       // Fetch immediately on mount
@@ -373,15 +369,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           >
             <div className="shrink-0"><CloudDbIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Supabase Viewer</span>}
-          </button>
-
-          <button 
-            onClick={() => { setActiveTab('bluecc'); setIsMobileMenuOpen(false); }}
-            title="Blue.cc Platform"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'bluecc' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
-          >
-            <div className="shrink-0"><LayersIcon /></div>
-            {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Blue.cc Platform</span>}
           </button>
 
           <div className={`text-xs font-bold text-gray-700 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
@@ -860,13 +847,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {activeTab === 'clients' && (
             <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
               <ClientEnrollmentTab sendMessage={bridgeSendMessage} />
-            </div>
-          )}
-
-          {/* BLUE.CC INTEGRATION */}
-          {activeTab === 'bluecc' && (
-            <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto h-[calc(100vh-64px)]">
-              <BlueCCTab />
             </div>
           )}
 
