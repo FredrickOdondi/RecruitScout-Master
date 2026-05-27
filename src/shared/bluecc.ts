@@ -34,9 +34,12 @@ export class BlueCcClient {
 
   // Workspaces (Projects in Blue.cc schema)
   async getWorkspaces() {
+    // Note: ProjectListFilter requires companyIds as an array of strings.
+    // If we have a specific companyId saved, we use it. Otherwise, we can pass an empty array
+    // (though passing an empty array might return no projects depending on Blue's API behavior).
     const query = `
-      query GetWorkspaces($companyId: String) {
-        projectList(filter: { companyId: $companyId }, first: 50) {
+      query GetWorkspaces($companyIds: [String!]!) {
+        projectList(filter: { companyIds: $companyIds }, first: 50) {
           items {
             id
             name
@@ -47,7 +50,8 @@ export class BlueCcClient {
         }
       }
     `;
-    const data = await this.request(query, { companyId: this.companyId || null });
+    const companyIds = this.companyId ? [this.companyId] : [];
+    const data = await this.request(query, { companyIds });
     return data.projectList?.items || [];
   }
 
