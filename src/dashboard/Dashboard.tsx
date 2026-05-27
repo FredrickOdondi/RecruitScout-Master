@@ -61,7 +61,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       // Auto timeout after 5 seconds if no extension picks it up
       const timeout = setTimeout(() => {
         window.removeEventListener('message', listener);
-        reject(new Error(`Bridge timeout: ${message.type}. Is the extension fully reloaded?`));
+        // Silently resolve instead of rejecting so the independent dashboard doesn't throw scary red errors
+        console.warn(`[Bridge] No extension detected for ${message.type}. Proceeding independently.`);
+        resolve(null as unknown as T);
       }, 5000);
 
       const listener = (event: MessageEvent) => {
@@ -126,21 +128,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
              if (Array.isArray(res)) setQueue(res);
              else if (res && res.data) setQueue(res.data);
            })
-           .catch(console.error);
+           .catch(() => {}); // Silenced for independent dashboard testing
         
         bridgeSendMessage<any>({ type: 'SUPABASE_GET_AGENTS' as any })
            .then(res => {
              if (Array.isArray(res)) setActiveAgents(res);
              else if (res && res.data) setActiveAgents(res.data);
            })
-           .catch(console.error);
+           .catch(() => {}); // Silenced for independent dashboard testing
 
         bridgeSendMessage<any>({ type: 'SUPABASE_GET_CLIENTS' as any })
            .then(res => {
              if (Array.isArray(res)) setClients(res);
              else if (res && res.data) setClients(res.data);
            })
-           .catch(console.error);
+           .catch(() => {}); // Silenced for independent dashboard testing
       };
 
       // Fetch immediately on mount
