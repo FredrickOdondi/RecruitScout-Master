@@ -35,27 +35,19 @@ export class BlueCcClient {
   // Workspaces (Projects in Blue.cc schema)
   async getWorkspaces() {
     const query = `
-      query GetWorkspaces {
-        projectList(first: 50) {
+      query GetWorkspaces($companyId: String) {
+        projectList(filter: { companyId: $companyId }, first: 50) {
           items {
             id
             name
             description
-            isArchived
+            archived
             updatedAt
-            users {
-              user {
-                id
-                firstName
-                lastName
-                email
-              }
-            }
           }
         }
       }
     `;
-    const data = await this.request(query);
+    const data = await this.request(query, { companyId: this.companyId || null });
     return data.projectList?.items || [];
   }
 
@@ -65,18 +57,8 @@ export class BlueCcClient {
         project(id: $projectId) {
           id
           name
-          todoLists {
-            id
-            title
-          }
-          users {
-            id
-            role
-            user {
-              id
-              email
-            }
-          }
+          description
+          archived
         }
       }
     `;
