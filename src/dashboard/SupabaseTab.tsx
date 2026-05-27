@@ -242,9 +242,13 @@ export default function SupabaseTab() {
       `${(supabaseClient as any).baseUrl}/rest/v1/jobs?select=source&limit=5000`,
       { headers: { apikey: (supabaseClient as any).apiKey, Authorization: `Bearer ${(supabaseClient as any).apiKey}`, Accept: 'application/json' } }
     ).then(r => r.json())
-      .then((rows: { source: string }[]) =>
-        setAllSources(Array.from(new Set(rows.map(r => (r.source ?? '').toLowerCase()).filter(Boolean))).sort())
-      ).catch(() => {});
+      .then((rows: { source: string }[]) => {
+        const fetchedSources = rows.map(r => (r.source ?? '').toLowerCase()).filter(Boolean);
+        const knownSources = ['indeed', 'trovolavoro.it'];
+        setAllSources(Array.from(new Set([...knownSources, ...fetchedSources])).sort());
+      }).catch(() => {
+        setAllSources(['indeed', 'trovolavoro.it']);
+      });
     // Load unique worker_ids
     supabaseClient.getUniqueWorkers().then(setAllWorkers);
     // Load unique enrolled clients
@@ -645,7 +649,13 @@ export default function SupabaseTab() {
           <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value); setPage(1); }}
             className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-cyan-500 cursor-pointer shadow-sm">
             <option value="all">All Sources</option>
-            {allSources.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+            {allSources.map(s => {
+              let displaySource = s;
+              if (s === 'trovolavoro.it') displaySource = 'TrovoLavoro';
+              else if (s === 'indeed') displaySource = 'Indeed';
+              else displaySource = s.charAt(0).toUpperCase() + s.slice(1);
+              return <option key={s} value={s}>{displaySource}</option>;
+            })}
           </select>
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none"><ChevronDownIcon /></span>
         </div>
