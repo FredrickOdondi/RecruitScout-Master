@@ -184,18 +184,42 @@ export default function App() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {workspaces.map(ws => (
-                        <div key={ws.id} className={`border rounded-lg p-4 cursor-pointer transition-colors ${selectedWorkspace?.id === ws.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`} onClick={() => setSelectedWorkspace(ws)}>
-                          <div className="font-semibold text-gray-900">{ws.name}</div>
-                          {ws.description && <div className="text-xs text-gray-500 mt-1 line-clamp-2">{ws.description}</div>}
-                          <div className="text-xs text-gray-400 mt-2">ID: {ws.id}</div>
+                        <div key={ws.id} className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${selectedWorkspace?.id === ws.id ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300'}`} onClick={() => setSelectedWorkspace(ws)}>
+                          <div>
+                            <div className="font-semibold text-gray-900">{ws.name}</div>
+                            <div className="text-xs text-gray-400 mt-1">ID: {ws.id}</div>
+                          </div>
+                          {selectedWorkspace?.id === ws.id && (
+                            <span className="text-blue-600 text-xs font-medium bg-blue-100 px-2 py-1 rounded">Selected</span>
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
                   {selectedWorkspace && (
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <h4 className="font-medium text-gray-900 mb-2">Selected: {selectedWorkspace.name}</h4>
-                      <p className="text-sm text-gray-600">Use the Members or Webhooks tabs to manage this workspace.</p>
+                    <div className="mt-6 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="font-bold text-xl text-gray-900">{selectedWorkspace.name}</h4>
+                          <span className="text-xs text-gray-500 font-mono mt-1 block">ID: {selectedWorkspace.id}</span>
+                        </div>
+                        {selectedWorkspace.archived && (
+                          <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded border border-red-200 font-medium">Archived</span>
+                        )}
+                      </div>
+                      
+                      {selectedWorkspace.description ? (
+                        <div 
+                          className="prose prose-sm max-w-none mb-6 border-t border-gray-100 pt-4" 
+                          dangerouslySetInnerHTML={{ __html: selectedWorkspace.description }} 
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-500 italic mb-6 border-t border-gray-100 pt-4">No description provided.</p>
+                      )}
+
+                      <div className="bg-blue-50 p-4 rounded-md border border-blue-100 text-sm">
+                        <p className="text-blue-800 m-0">Use the <strong>Members</strong> or <strong>Webhooks</strong> tabs above to manage this workspace.</p>
+                      </div>
                     </div>
                   )}
                 </div>
