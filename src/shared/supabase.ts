@@ -888,6 +888,69 @@ export class SupabaseClient {
   // ────────────────────────────────────────────────────────────────────────────
 
   /**
+   * Get user integrations (e.g., Blue.cc credentials) for the current user
+   */
+  async getUserIntegration(userId: string): Promise<SupabaseResponse<any>> {
+    try {
+      // Must use authenticated token, not just apikey, to bypass RLS properly
+      const session = this.getSession();
+      const token = session?.access_token || this.apiKey;
+      
+      const response = await fetch(`${this.baseUrl}/rest/v1/user_integrations?user_id=eq.${userId}&select=*`, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+
+      const data = await response.json();
+      return { data: data[0] || null, error: null };
+    } catch (error) {
+      console.error('[Supabase] Get user integration error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Upsert user integrations
+   */
+  async upsertUserIntegration(integration: any): Promise<SupabaseResponse<any>> {
+    try {
+      const session = this.getSession();
+      const token = session?.access_token || this.apiKey;
+
+      const response = await fetch(`${this.baseUrl}/rest/v1/user_integrations`, {
+        method: 'POST',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=representation',
+        },
+        body: JSON.stringify(integration),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+
+      const data = await response.json();
+      return { data: data[0], error: null };
+    } catch (error) {
+      console.error('[Supabase] Upsert user integration error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
    * Check if Supabase connection is working
    */
   async healthCheck(): Promise<boolean> {
