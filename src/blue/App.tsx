@@ -30,7 +30,7 @@ export default function App() {
     setLoadingWorkspace(true);
     setWorkspaceData(null);
     try {
-      const data = await client.getWorkspaceContent(ws.id);
+      const data = await client.getWorkspaceContent(ws.id, ws.companyId);
       setWorkspaceData(data);
     } catch (err) {
       console.error(err);

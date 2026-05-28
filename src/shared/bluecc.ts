@@ -76,6 +76,7 @@ export class BlueCcClient {
             description
             archived
             updatedAt
+            companyId
           }
         }
       }
@@ -84,8 +85,12 @@ export class BlueCcClient {
     return data.projectList?.items || [];
   }
 
-  async getWorkspaceContent(projectId: string) {
-    await this.ensureCompanyId();
+  async getWorkspaceContent(projectId: string, overrideCompanyId?: string) {
+    if (overrideCompanyId) {
+      this.companyId = overrideCompanyId;
+    } else {
+      await this.ensureCompanyId();
+    }
     
     const query = `
       query GetWorkspaceContent($projectId: String!) {
