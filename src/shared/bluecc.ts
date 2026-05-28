@@ -144,8 +144,25 @@ export class BlueCcClient {
   }
 
   async createWorkspace(name: string, description?: string) {
-    if (!this.companyId) {
-      throw new Error("A Company ID is strictly required by Blue.cc to create a workspace. Please add your Company ID in the Blue.cc Integration Settings panel first.");
+    let targetCompanyId = this.companyId;
+
+    // Auto-fetch the company ID if the user didn't provide one in the settings
+    if (!targetCompanyId) {
+      const companyQuery = `
+        query GetCompanies {
+          companies {
+            items {
+              id
+            }
+          }
+        }
+      `;
+      const companyData = await this.request(companyQuery);
+      if (companyData.companies?.items?.length > 0) {
+        targetCompanyId = companyData.companies.items[0].id;
+      } else {
+        throw new Error("Could not automatically find your Company ID. Please add it manually in the settings.");
+      }
     }
 
     const query = `
@@ -160,7 +177,7 @@ export class BlueCcClient {
       input: {
         name,
         description,
-        companyId: this.companyId
+        companyId: targetCompanyId
       }
     });
     return data.createProject;
