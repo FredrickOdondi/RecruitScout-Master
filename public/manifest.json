@@ -35,7 +35,8 @@
     "https://www.amazon.jobs/*",
     "https://autocomplete.clearbit.com/*",
     "https://qyceqgttvvairnaxwicm.supabase.co/*",
-    "https://www.wikidata.org/*"
+    "https://www.wikidata.org/*",
+    "https://html.duckduckgo.com/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",
