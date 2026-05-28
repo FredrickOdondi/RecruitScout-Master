@@ -99,21 +99,51 @@ export class BlueCcClient {
       
       try {
         const listsWithTodos = await Promise.all(fullLists.map(async (list: any) => {
-          const todosQuery = `
-            query GetListTodos($listId: [String!]) {
-              todos(filter: { todoListIds: $listId }, limit: 50) {
-                items {
-                  id
-                  title
-                  done
+          let todos = [];
+          try {
+            // Attempt 1: Fetch rich data
+            const richTodosQuery = `
+              query GetRichListTodos($listId: [String!]) {
+                todos(filter: { todoListIds: $listId }, limit: 50) {
+                  items {
+                    id
+                    title
+                    done
+                    position
+                    tags {
+                      items {
+                        id
+                        name
+                        color
+                      }
+                    }
+                  }
                 }
               }
-            }
-          `;
-          const todosData = await this.request(todosQuery, { listId: [list.id] });
+            `;
+            const todosData = await this.request(richTodosQuery, { listId: [list.id] });
+            todos = todosData.todos?.items || [];
+          } catch (richErr) {
+            // Attempt 2: Fallback to basic data if the rich query fails due to schema differences
+            console.warn("Rich query failed, falling back to basic query for list:", list.id);
+            const basicTodosQuery = `
+              query GetListTodos($listId: [String!]) {
+                todos(filter: { todoListIds: $listId }, limit: 50) {
+                  items {
+                    id
+                    title
+                    done
+                  }
+                }
+              }
+            `;
+            const todosData = await this.request(basicTodosQuery, { listId: [list.id] });
+            todos = todosData.todos?.items || [];
+          }
+
           return {
             ...list,
-            todos: todosData.todos?.items || []
+            todos
           };
         }));
         fullLists = listsWithTodos;

@@ -250,24 +250,63 @@ export default function App() {
                           )}
 
                           {workspaceData?.lists && workspaceData.lists.length > 0 && (
-                            <div className="mb-8">
-                              <h3 className="text-lg font-medium text-gray-900 mb-4">Lists & Todos</h3>
-                              <div className="flex overflow-x-auto pb-4 gap-4">
-                                {workspaceData.lists.map((list: any) => (
-                                  <div key={list.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 min-w-[250px] max-h-[400px] overflow-y-auto">
-                                    <h4 className="font-bold text-gray-800 mb-3">{list.name || list.title}</h4>
-                                    <div className="space-y-2">
-                                      {list.todos?.map((todo: any) => (
-                                        <div key={todo.id} className="bg-white p-2 rounded border border-gray-100 shadow-sm text-sm text-gray-700">
-                                          {todo.title}
-                                        </div>
-                                      ))}
-                                      {(!list.todos || list.todos.length === 0) && (
-                                        <p className="text-xs text-gray-400 italic">No todos</p>
-                                      )}
+                            <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                                <h3 className="text-lg font-bold text-gray-900 tracking-tight">Kanban Board</h3>
+                              </div>
+                              <div className="p-6 overflow-x-auto">
+                                <div className="flex gap-6 min-w-max pb-2">
+                                  {workspaceData.lists
+                                    // Sort lists by position if available
+                                    .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+                                    .map((list: any) => (
+                                    <div key={list.id} className="w-[300px] flex-shrink-0 flex flex-col bg-gray-50/80 border border-gray-200 rounded-xl max-h-[600px]">
+                                      <div className="p-4 border-b border-gray-200 bg-gray-100/50 rounded-t-xl flex justify-between items-center">
+                                        <h4 className="font-semibold text-gray-800 text-sm tracking-wide">{list.name || list.title}</h4>
+                                        <span className="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">{list.todos?.length || 0}</span>
+                                      </div>
+                                      <div className="p-3 space-y-3 overflow-y-auto flex-grow custom-scrollbar">
+                                        {list.todos?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0)).map((todo: any) => (
+                                          <div key={todo.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer relative overflow-hidden">
+                                            {todo.done && <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>}
+                                            
+                                            {/* Tags row */}
+                                            {todo.tags?.items && todo.tags.items.length > 0 && (
+                                              <div className="flex flex-wrap gap-1 mb-2">
+                                                {todo.tags.items.map((tag: any) => (
+                                                  <span key={tag.id} className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider" style={{ backgroundColor: tag.color ? `${tag.color}20` : '#f3f4f6', color: tag.color || '#4b5563', border: `1px solid ${tag.color ? `${tag.color}40` : '#e5e7eb'}` }}>
+                                                    {tag.name}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            )}
+                                            
+                                            <h5 className={`text-sm font-medium ${todo.done ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                              {todo.title}
+                                            </h5>
+                                            
+                                            {/* Assignees */}
+                                            {todo.assignees?.items && todo.assignees.items.length > 0 && (
+                                              <div className="flex -space-x-2 mt-3 justify-end">
+                                                {todo.assignees.items.map((user: any) => (
+                                                  <div key={user.id} className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-800" title={`${user.firstName} ${user.lastName}`}>
+                                                    {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                        {(!list.todos || list.todos.length === 0) && (
+                                          <div className="py-6 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                                            <svg className="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                            <span className="text-xs font-medium">Empty List</span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           )}
