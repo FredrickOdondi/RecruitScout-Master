@@ -72,7 +72,6 @@ export default function App() {
     if (session?.user?.id) {
       const payload = {
         user_id: session.user.id,
-        integration_name: 'bluecc',
         bluecc_token_id: tokenId,
         bluecc_secret_id: secretId,
         bluecc_company_id: companyId
