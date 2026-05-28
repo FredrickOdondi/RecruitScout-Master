@@ -7,7 +7,7 @@ export class BlueCcClient {
     private companyId?: string
   ) {}
 
-  async request<T = any>(query: string, variables: any = {}): Promise<T> {
+  async request<T = any>(query: string, variables: any = {}, projectId?: string): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Bloo-Token-ID': this.tokenId,
@@ -16,6 +16,9 @@ export class BlueCcClient {
 
     if (this.companyId) {
       headers['X-Bloo-Company-ID'] = this.companyId;
+    }
+    if (projectId) {
+      headers['X-Bloo-Project-ID'] = projectId;
     }
 
     const response = await fetch(this.baseUrl, {
@@ -98,102 +101,44 @@ export class BlueCcClient {
       await this.ensureCompanyId();
     }
     
+    // The correct way to fetch lists and their todos in Blue.cc is via the root todoLists query
+    // This entirely bypasses the broken project(id) and projectList(ids) resolvers
     const query = `
-      query GetWorkspaceContent($projectId: [String!]) {
-        projectList(filter: { ids: $projectId }, first: 1) {
-          items {
+      query GetWorkspaceContent($projectId: String!) {
+        todoLists(projectId: $projectId) {
+          id
+          title
+          todos {
             id
-            name
-            description
-            archived
-            todoLists {
+            title
+            done
+            position
+            tags {
               id
               title
+              color
             }
           }
         }
       }
     `;
+    
     try {
-      const data = await this.request(query, { projectId: [projectId] });
+      // Must pass projectId as the third arg so X-Bloo-Project-ID is sent!
+      const data = await this.request(query, { projectId }, projectId);
       
-      // Because we want the todos for each list, and they might be paginated in TodosResult,
-      // let's fetch todos for each list via the root todos query.
-      let fullLists = data.projectList?.items?.[0]?.todoLists || [];
+      const fullLists = data.todoLists || [];
       
-      try {
-        const listsWithTodos = await Promise.all(fullLists.map(async (list: any) => {
-          let todos = [];
-          try {
-            // Attempt 1: Fetch rich data
-            const richTodosQuery = `
-              query GetRichListTodos($listId: [String!]) {
-                todos(filter: { todoListIds: $listId }, limit: 50) {
-                  items {
-                    id
-                    title
-                    done
-                    position
-                    tags {
-                      items {
-                        id
-                        name
-                        color
-                      }
-                    }
-                  }
-                }
-              }
-            `;
-            const todosData = await this.request(richTodosQuery, { listId: [list.id] });
-            todos = todosData.todos?.items || [];
-          } catch (richErr) {
-            // Attempt 2: Fallback to basic data if the rich query fails due to schema differences
-            console.warn("Rich query failed, falling back to basic query for list:", list.id);
-            const basicTodosQuery = `
-              query GetListTodos($listId: [String!]) {
-                todos(filter: { todoListIds: $listId }, limit: 50) {
-                  items {
-                    id
-                    title
-                    done
-                  }
-                }
-              }
-            `;
-            const todosData = await this.request(basicTodosQuery, { listId: [list.id] });
-            todos = todosData.todos?.items || [];
-          }
-
-          return {
-            ...list,
-            todos
-          };
-        }));
-        fullLists = listsWithTodos;
-      } catch (todoErr) {
-        console.warn("Failed to fetch nested todos for lists", todoErr);
-      }
-
       return {
-        ...data.project,
-        lists: fullLists
+        id: projectId,
+        lists: fullLists.map((list: any) => ({
+          ...list,
+          todos: list.todos || []
+        }))
       };
-    } catch (error) {
-      console.error("Failed to fetch full workspace data:", error);
-      // Fallback query if todoLists still fails
-      const fallbackQuery = `
-        query GetWorkspaceContentFallback($projectId: String!) {
-          project(id: $projectId) {
-            id
-            name
-            description
-            archived
-          }
-        }
-      `;
-      const fallbackData = await this.request(fallbackQuery, { projectId });
-      return { ...fallbackData.project, schemaError: (error as Error).message };
+    } catch (err) {
+      console.error('Failed to fetch full workspace data:', err);
+      throw err;
     }
   }
 
