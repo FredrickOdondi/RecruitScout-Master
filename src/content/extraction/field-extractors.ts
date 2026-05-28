@@ -76,10 +76,7 @@ export class FieldExtractors {
       }
     }
 
-    if (companyName && companyName !== 'Unknown') {
-      const generated = generateCompanyDomain(companyName);
-      if (generated) return generated;
-    }
+
 
     return undefined;
   }

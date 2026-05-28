@@ -168,7 +168,7 @@ async function fetchDomainFromLinkedIn(companyName: string): Promise<string> {
     if (response.ok) {
       const html = await response.text();
       // Look for the website URL in the JSON-LD or raw text
-      const jsonLdMatch = html.match(/"@type"\s*:\s*"Organization"[^}]*"url"\s*:\s*"([^"]+)"/);
+      const jsonLdMatch = html.match(/"sameAs"\s*:\s*"([^"]+)"/);
       if (jsonLdMatch && !jsonLdMatch[1].includes('linkedin.com')) {
         const domain = extractDomainFromUrl(jsonLdMatch[1]);
         if (domain) {
@@ -328,7 +328,7 @@ async function validateDomain(domain: string, companyName: string): Promise<bool
   const companyWords = companyName.toLowerCase()
     .replace(/[^a-z0-9\s]/g, '') // Keep letters, numbers, and spaces
     .split(/\s+/)
-    .filter(word => word.length > 2 && !STOP_WORDS.has(word)); // Filter out short and stop words
+    .filter(word => word.length > 1 && !STOP_WORDS.has(word)); // Filter out short and stop words
 
   // Check if domain contains any significant company word
   // Use original domain with hyphens preserved for word comparison
@@ -346,9 +346,11 @@ async function validateDomain(domain: string, companyName: string): Promise<bool
     }
   }
 
-  // Additional check: if company is a single word, do direct comparison
-  if (!foundMatch && companyWords.length === 1) {
-    foundMatch = domainCore === companyWords[0];
+  if (!foundMatch && companyWords.length > 0) {
+    const joined = companyWords.join('');
+    if (domainCore === joined || domainCore.startsWith(joined) || joined.startsWith(domainCore)) {
+      foundMatch = true;
+    }
   }
 
   _domainCache.set(cacheKey, foundMatch ? '1' : '0');
@@ -367,7 +369,7 @@ async function resolveCompanyDomain(companyName: string): Promise<string> {
 
   const { domain: clearbitDomain, matchedName } = clearbitResult;
   const similarity = nameSimilarity(companyName, matchedName);
-  const clearbitConfident = !!clearbitDomain && similarity >= 0.6;
+  const clearbitConfident = !!clearbitDomain && similarity >= 0.45;
 
   console.log(`[RecruitScout] ${companyName}: clearbit="${clearbitDomain}"(sim=${similarity.toFixed(2)}) wikidata="${wikidataDomain}"`);
 

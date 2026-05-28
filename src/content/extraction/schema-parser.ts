@@ -64,9 +64,6 @@ export class SchemaParser {
 
     const companyText = company ? extractText({ textContent: company } as Element) : 'Unknown';
     let companyDomain = data.hiringOrganization?.url || data.hiringOrganization?.sameAs;
-    if (!companyDomain && companyText !== 'Unknown') {
-      companyDomain = generateCompanyDomain(companyText) || undefined;
-    }
 
     return {
       id: this.generateId(url),
