@@ -510,7 +510,7 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
   const skippedCount = jobs.length - trulyNew.length;
   const newCount = trulyNew.length;
 
-  let enriched = trulyNew;
+  let enriched: any[] = trulyNew.map(t => t.job);
   if (newCount > 0) {
     console.log(`[RecruitScout] 🆕 ${newCount} new jobs to enrich, ${skippedCount} already known — skipping duplicates.`);
 
@@ -578,7 +578,21 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
   // ── Step 5: Persist ──────────────────────────────────────────────────────
   // We always perform the upsert even if newCount is 0, because Click-Through 
   // might be sending an "upgrade" to an existing job (adding the description).
-  const finalJobs = enriched.length > 0 ? enriched : processedJobs;
+  const finalJobs = incomingWithIds.map(({ job, id }) => {
+    const newlyEnriched = enriched.find(e => generateJobId(e.url || '', e.title || '', e.company || '') === id);
+    if (newlyEnriched) return newlyEnriched;
+
+    const existing = localJobs.find((j: any) => generateJobId(j.url || '', j.title || '', j.company || '') === id);
+    if (existing) {
+      return {
+        ...existing,
+        description: job.description || existing.description,
+        salary: job.salary || existing.salary,
+        metadata: { ...existing.metadata, ...job.metadata }
+      };
+    }
+    return job;
+  });
   await storage.addJobs(finalJobs);
 
   supabaseClient.upsertJobs(finalJobs, workerId).then(result => {
