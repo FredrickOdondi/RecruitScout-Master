@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabaseClient } from '../shared/supabase';
 import { BlueCcClient } from '../shared/bluecc';
 
@@ -15,6 +15,7 @@ export default function App() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<any | null>(null);
   const [workspaceData, setWorkspaceData] = useState<any | null>(null);
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
+  const requestIdRef = useRef(0);
 
   // Sub tabs: 'workspaces', 'create', 'members', 'webhooks'
   const [activeSubTab, setActiveSubTab] = useState('workspaces');
@@ -29,13 +30,22 @@ export default function App() {
     if (!client) return;
     setLoadingWorkspace(true);
     setWorkspaceData(null);
+    // Increment request ID so stale responses from previous clicks are discarded
+    const thisRequestId = ++requestIdRef.current;
     try {
       const data = await client.getWorkspaceContent(ws.id, ws.companyId);
-      setWorkspaceData(data);
+      // Only update state if this is still the most recent request
+      if (thisRequestId === requestIdRef.current) {
+        setWorkspaceData(data);
+      }
     } catch (err) {
-      console.error(err);
+      if (thisRequestId === requestIdRef.current) {
+        console.error(err);
+      }
     }
-    setLoadingWorkspace(false);
+    if (thisRequestId === requestIdRef.current) {
+      setLoadingWorkspace(false);
+    }
   };
 
   useEffect(() => {
@@ -269,12 +279,12 @@ export default function App() {
                                           <div key={todo.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer relative overflow-hidden">
                                             {todo.done && <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>}
                                             
-                                            {/* Tags row */}
-                                            {todo.tags?.items && todo.tags.items.length > 0 && (
+                                            {/* Tags row - API returns tags as a flat array with 'title' field */}
+                                            {todo.tags && todo.tags.length > 0 && (
                                               <div className="flex flex-wrap gap-1 mb-2">
-                                                {todo.tags.items.map((tag: any) => (
+                                                {todo.tags.map((tag: any) => (
                                                   <span key={tag.id} className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider" style={{ backgroundColor: tag.color ? `${tag.color}20` : '#f3f4f6', color: tag.color || '#4b5563', border: `1px solid ${tag.color ? `${tag.color}40` : '#e5e7eb'}` }}>
-                                                    {tag.name}
+                                                    {tag.title}
                                                   </span>
                                                 ))}
                                               </div>
