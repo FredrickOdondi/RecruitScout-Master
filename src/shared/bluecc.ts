@@ -84,10 +84,63 @@ export class BlueCcClient {
           description
           archived
         }
+        todoLists(projectId: $projectId) {
+          id
+          title
+        }
       }
     `;
-    const data = await this.request(query, { projectId });
-    return data.project;
+    try {
+      const data = await this.request(query, { projectId });
+      
+      // Because we want the todos for each list, and they might be paginated in TodosResult,
+      // let's fetch todos for each list via the root todos query.
+      let fullLists = data.todoLists || [];
+      
+      try {
+        const listsWithTodos = await Promise.all(fullLists.map(async (list: any) => {
+          const todosQuery = `
+            query GetListTodos($listId: [String!]) {
+              todos(filter: { todoListIds: $listId }, limit: 50) {
+                items {
+                  id
+                  title
+                  done
+                }
+              }
+            }
+          `;
+          const todosData = await this.request(todosQuery, { listId: [list.id] });
+          return {
+            ...list,
+            todos: todosData.todos?.items || []
+          };
+        }));
+        fullLists = listsWithTodos;
+      } catch (todoErr) {
+        console.warn("Failed to fetch nested todos for lists", todoErr);
+      }
+
+      return {
+        ...data.project,
+        lists: fullLists
+      };
+    } catch (error) {
+      console.error("Failed to fetch full workspace data:", error);
+      // Fallback query if todoLists still fails
+      const fallbackQuery = `
+        query GetWorkspaceContentFallback($projectId: String!) {
+          project(id: $projectId) {
+            id
+            name
+            description
+            archived
+          }
+        }
+      `;
+      const fallbackData = await this.request(fallbackQuery, { projectId });
+      return { ...fallbackData.project, schemaError: (error as Error).message };
+    }
   }
 
   async createWorkspace(name: string, description?: string) {

@@ -13,6 +13,8 @@ export default function App() {
   const [client, setClient] = useState<BlueCcClient | null>(null);
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<any | null>(null);
+  const [workspaceData, setWorkspaceData] = useState<any | null>(null);
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
 
   // Sub tabs: 'workspaces', 'create', 'members', 'webhooks'
   const [activeSubTab, setActiveSubTab] = useState('workspaces');
@@ -22,6 +24,20 @@ export default function App() {
   const [newWorkspaceDesc, setNewWorkspaceDesc] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
+
+  const handleSelectWorkspace = async (ws: any) => {
+    setSelectedWorkspace(ws);
+    if (!client) return;
+    setLoadingWorkspace(true);
+    setWorkspaceData(null);
+    try {
+      const data = await client.getWorkspaceContent(ws.id);
+      setWorkspaceData(data);
+    } catch (err) {
+      console.error(err);
+    }
+    setLoadingWorkspace(false);
+  };
 
   useEffect(() => {
     loadCredentials();
@@ -184,7 +200,7 @@ export default function App() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {workspaces.map(ws => (
-                        <div key={ws.id} className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${selectedWorkspace?.id === ws.id ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300'}`} onClick={() => setSelectedWorkspace(ws)}>
+                        <div key={ws.id} className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${selectedWorkspace?.id === ws.id ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300'}`} onClick={() => handleSelectWorkspace(ws)}>
                           <div>
                             <div className="font-semibold text-gray-900">{ws.name}</div>
                             <div className="text-xs text-gray-400 mt-1">ID: {ws.id}</div>
@@ -217,7 +233,44 @@ export default function App() {
                         <p className="text-sm text-gray-500 italic mb-6 border-t border-gray-100 pt-4 pb-4 border-b">No description provided.</p>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {loadingWorkspace ? (
+                        <div className="py-8 text-center text-gray-500 text-sm">
+                          Loading workspace data...
+                        </div>
+                      ) : (
+                        <>
+                          {workspaceData?.schemaError && (
+                            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md mb-6 text-sm font-mono overflow-x-auto">
+                              <strong>Schema Error:</strong><br/>
+                              The query failed because I guessed the schema incorrectly. Please share this exact error message with Antigravity:<br/><br/>
+                              {workspaceData.schemaError}
+                            </div>
+                          )}
+
+                          {workspaceData?.lists && workspaceData.lists.length > 0 && (
+                            <div className="mb-8">
+                              <h3 className="text-lg font-medium text-gray-900 mb-4">Lists & Todos</h3>
+                              <div className="flex overflow-x-auto pb-4 gap-4">
+                                {workspaceData.lists.map((list: any) => (
+                                  <div key={list.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 min-w-[250px] max-h-[400px] overflow-y-auto">
+                                    <h4 className="font-bold text-gray-800 mb-3">{list.name}</h4>
+                                    <div className="space-y-2">
+                                      {list.todos?.items?.map((todo: any) => (
+                                        <div key={todo.id} className="bg-white p-2 rounded border border-gray-100 shadow-sm text-sm text-gray-700">
+                                          {todo.title}
+                                        </div>
+                                      ))}
+                                      {(!list.todos?.items || list.todos.items.length === 0) && (
+                                        <p className="text-xs text-gray-400 italic">No todos</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Members Inline */}
                         <div>
                           <h3 className="text-lg font-medium text-gray-900 mb-4">Invite Members</h3>
@@ -248,6 +301,8 @@ export default function App() {
                           </form>
                         </div>
                       </div>
+                      </>
+                    )}
                     </div>
                   )}
                 </div>
