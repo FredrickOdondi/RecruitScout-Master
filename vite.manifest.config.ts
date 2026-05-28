@@ -11,8 +11,7 @@ export default defineManifest({
     'activeTab',
     'tabs',
     'scripting',
-    'offscreen',
-    'alarms'
+    'offscreen'
   ],
   host_permissions: [
     'https://www.linkedin.com/*',
@@ -39,10 +38,6 @@ export default defineManifest({
     'https://careers.apple.com/*',
     'https://jobs.netflix.com/*',
     'https://www.amazon.jobs/*',
-    'https://autocomplete.clearbit.com/*',
-    'https://qyceqgttvvairnaxwicm.supabase.co/*',
-    'https://www.wikidata.org/*',
-    'https://html.duckduckgo.com/*',
     'http://localhost:5173/*',
     'http://72.60.215.34/*'
   ],
@@ -110,5 +105,4 @@ export default defineManifest({
     persistent: false
   },
   options_page: 'src/dashboard/index.html'
-} as any);
-
+});
