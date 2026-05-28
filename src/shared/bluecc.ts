@@ -245,4 +245,34 @@ export class BlueCcClient {
     const data = await this.request(query, { input: { url, events, projectId } });
     return data.createWebhook;
   }
+
+  async getMentions(limit = 20) {
+    const query = `
+      query GetMentions($limit: Int) {
+        mentions(filter: {}, limit: $limit) {
+          items {
+            id
+            createdAt
+            isRead
+            mentioner {
+              firstName
+              lastName
+            }
+            targetWorkspace {
+              id
+              name
+            }
+          }
+          pageInfo {
+            totalItems
+          }
+        }
+      }
+    `;
+    const data = await this.request(query, { limit });
+    return {
+      items: data.mentions?.items || [],
+      total: data.mentions?.pageInfo?.totalItems || 0,
+    };
+  }
 }
