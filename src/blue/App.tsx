@@ -2,9 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabaseClient } from '../shared/supabase';
 import { BlueCcClient } from '../shared/bluecc';
 
+// ── Column colour palette (cycles through for unlabelled lists) ─────────────
+const COLUMN_COLORS = [
+  { bg: '#EFF6FF', border: '#BFDBFE', dot: '#3B82F6' },
+  { bg: '#FFF7ED', border: '#FED7AA', dot: '#F97316' },
+  { bg: '#F0FDF4', border: '#BBF7D0', dot: '#22C55E' },
+  { bg: '#FDF4FF', border: '#E9D5FF', dot: '#A855F7' },
+  { bg: '#FFF1F2', border: '#FECDD3', dot: '#F43F5E' },
+  { bg: '#F0F9FF', border: '#BAE6FD', dot: '#0EA5E9' },
+];
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const [tokenId, setTokenId] = useState('');
   const [secretId, setSecretId] = useState('');
@@ -15,42 +26,25 @@ export default function App() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<any | null>(null);
   const [workspaceData, setWorkspaceData] = useState<any | null>(null);
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const requestIdRef = useRef(0);
-
-  // Sub tabs: 'workspaces', 'create', 'members', 'webhooks'
-  const [activeSubTab, setActiveSubTab] = useState('workspaces');
-
-  const [newWorkspaceName, setNewWorkspaceName] = useState('');
-  const [newWorkspaceDesc, setNewWorkspaceDesc] = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [webhookUrl, setWebhookUrl] = useState('');
 
   const handleSelectWorkspace = async (ws: any) => {
     setSelectedWorkspace(ws);
     if (!client) return;
     setLoadingWorkspace(true);
     setWorkspaceData(null);
-    // Increment request ID so stale responses from previous clicks are discarded
     const thisRequestId = ++requestIdRef.current;
     try {
       const data = await client.getWorkspaceContent(ws.id, ws.companyId);
-      // Only update state if this is still the most recent request
-      if (thisRequestId === requestIdRef.current) {
-        setWorkspaceData(data);
-      }
+      if (thisRequestId === requestIdRef.current) setWorkspaceData(data);
     } catch (err) {
-      if (thisRequestId === requestIdRef.current) {
-        console.error(err);
-      }
+      if (thisRequestId === requestIdRef.current) console.error(err);
     }
-    if (thisRequestId === requestIdRef.current) {
-      setLoadingWorkspace(false);
-    }
+    if (thisRequestId === requestIdRef.current) setLoadingWorkspace(false);
   };
 
-  useEffect(() => {
-    loadCredentials();
-  }, []);
+  useEffect(() => { loadCredentials(); }, []);
 
   const loadCredentials = async () => {
     setLoading(true);
@@ -61,16 +55,15 @@ export default function App() {
         setTokenId(res.data.bluecc_token_id || '');
         setSecretId(res.data.bluecc_secret_id || '');
         setCompanyId(res.data.bluecc_company_id || '');
-        
         if (res.data.bluecc_token_id && res.data.bluecc_secret_id) {
-          const newClient = new BlueCcClient(
-            res.data.bluecc_token_id, 
-            res.data.bluecc_secret_id, 
-            res.data.bluecc_company_id || undefined
-          );
-          setClient(newClient);
-          fetchWorkspaces(newClient);
+          const c = new BlueCcClient(res.data.bluecc_token_id, res.data.bluecc_secret_id, res.data.bluecc_company_id || undefined);
+          setClient(c);
+          fetchWorkspaces(c);
+        } else {
+          setShowSettings(true);
         }
+      } else {
+        setShowSettings(true);
       }
     }
     setLoading(false);
@@ -80,20 +73,15 @@ export default function App() {
     setSaving(true);
     const session = supabaseClient.getSession();
     if (session?.user?.id) {
-      const payload = {
-        user_id: session.user.id,
-        bluecc_token_id: tokenId,
-        bluecc_secret_id: secretId,
-        bluecc_company_id: companyId
-      };
+      const payload = { user_id: session.user.id, bluecc_token_id: tokenId, bluecc_secret_id: secretId, bluecc_company_id: companyId };
       const res = await supabaseClient.upsertUserIntegration(payload);
       if (res.error) {
         alert('Error saving credentials: ' + res.error);
       } else {
-        alert('Credentials saved successfully!');
-        const newClient = new BlueCcClient(tokenId, secretId, companyId || undefined);
-        setClient(newClient);
-        fetchWorkspaces(newClient);
+        const c = new BlueCcClient(tokenId, secretId, companyId || undefined);
+        setClient(c);
+        fetchWorkspaces(c);
+        setShowSettings(false);
       }
     }
     setSaving(false);
@@ -108,295 +96,269 @@ export default function App() {
     }
   };
 
-  const handleCreateWorkspace = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!client || !newWorkspaceName) return;
-    try {
-      await client.createWorkspace(newWorkspaceName, newWorkspaceDesc);
-      alert('Workspace created!');
-      setNewWorkspaceName('');
-      setNewWorkspaceDesc('');
-      fetchWorkspaces(client);
-      setActiveSubTab('workspaces');
-    } catch (err) {
-      alert('Error creating workspace: ' + (err as Error).message);
-    }
-  };
-
-  const handleInviteUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!client || !selectedWorkspace || !inviteEmail) return;
-    try {
-      await client.inviteUser(selectedWorkspace.id, inviteEmail);
-      alert(`Invited ${inviteEmail} to workspace!`);
-      setInviteEmail('');
-    } catch (err) {
-      alert('Error inviting user: ' + (err as Error).message);
-    }
-  };
-
-  const handleRegisterWebhook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!client || !selectedWorkspace || !webhookUrl) return;
-    try {
-      await client.registerWebhook(selectedWorkspace.id, webhookUrl);
-      alert('Webhook registered successfully!');
-      setWebhookUrl('');
-    } catch (err) {
-      alert('Error registering webhook: ' + (err as Error).message);
-    }
-  };
-
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading Blue.cc configurations...</div>;
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+        <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
+        Loading Blue.cc…
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto">
-      <div className="max-w-4xl w-full mx-auto p-6 space-y-6">
-        
-        {/* Settings Panel */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path><path d="M7 7h.01"></path></svg>
-            Blue.cc Integration Settings
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Token ID</label>
-              <input type="text" value={tokenId} onChange={e => setTokenId(e.target.value)} placeholder="e.g. key_..." className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Secret ID</label>
-              <input type="password" value={secretId} onChange={e => setSecretId(e.target.value)} placeholder="••••••••" className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Company ID (Optional)</label>
-              <input type="text" value={companyId} onChange={e => setCompanyId(e.target.value)} placeholder="Company ID" className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-            </div>
-          </div>
-          <button onClick={handleSaveCredentials} disabled={saving} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors disabled:opacity-50">
-            {saving ? 'Saving...' : 'Save Credentials'}
+    <div className="flex h-full min-h-0 bg-gray-50" style={{ minHeight: '600px' }}>
+
+      {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      <aside
+        className="flex flex-col border-r border-gray-200 bg-white transition-all duration-200 flex-shrink-0"
+        style={{ width: sidebarOpen ? '220px' : '52px' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100">
+          {sidebarOpen && (
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Workspaces</span>
+          )}
+          <button
+            onClick={() => setSidebarOpen(v => !v)}
+            className="ml-auto p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+            title={sidebarOpen ? 'Collapse' : 'Expand'}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              {sidebarOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+                : <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>}
+            </svg>
           </button>
         </div>
 
-        {/* Dashboard Sections */}
-        {client && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200 flex overflow-x-auto">
-              {['workspaces', 'create', 'members', 'webhooks'].map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveSubTab(tab)}
-                  className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeSubTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
+        {/* Workspace list */}
+        <div className="flex-1 overflow-y-auto py-2">
+          {workspaces.length === 0 && client && (
+            <p className="px-3 py-4 text-xs text-gray-400 text-center">No workspaces</p>
+          )}
+          {workspaces.map((ws, i) => {
+            const color = COLUMN_COLORS[i % COLUMN_COLORS.length];
+            const isSelected = selectedWorkspace?.id === ws.id;
+            return (
+              <button
+                key={ws.id}
+                onClick={() => handleSelectWorkspace(ws)}
+                title={ws.name}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors text-sm ${
+                  isSelected ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="flex-shrink-0 w-2 h-2 rounded-full" style={{ backgroundColor: color.dot }} />
+                {sidebarOpen && (
+                  <span className="truncate">{ws.name}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Refresh + Settings */}
+        <div className="border-t border-gray-100 p-2 space-y-1">
+          {client && (
+            <button
+              onClick={() => fetchWorkspaces(client)}
+              title="Refresh workspaces"
+              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded transition-colors"
+            >
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              {sidebarOpen && 'Refresh'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowSettings(v => !v)}
+            title="API Settings"
+            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded transition-colors"
+          >
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            {sidebarOpen && 'API Settings'}
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN AREA ────────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Settings panel (overlay) */}
+        {showSettings && (
+          <div className="border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-800">Blue.cc API Credentials</h2>
+              <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-gray-600">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Token ID</label>
+                <input type="text" value={tokenId} onChange={e => setTokenId(e.target.value)} placeholder="Token ID" className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Secret ID</label>
+                <input type="password" value={secretId} onChange={e => setSecretId(e.target.value)} placeholder="••••••••" className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Company ID <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+                <input type="text" value={companyId} onChange={e => setCompanyId(e.target.value)} placeholder="Auto-detected" className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
+            </div>
+            <button onClick={handleSaveCredentials} disabled={saving} className="mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1.5 rounded transition-colors disabled:opacity-50">
+              {saving ? 'Saving…' : 'Save & Connect'}
+            </button>
+          </div>
+        )}
 
-            <div className="p-6">
-              {/* Workspaces List */}
-              {activeSubTab === 'workspaces' && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Your Workspaces</h3>
-                    <button onClick={() => fetchWorkspaces(client)} className="text-sm text-blue-600 hover:text-blue-800">Refresh</button>
-                  </div>
-                  {workspaces.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                      <p className="text-gray-500 mb-2">No workspaces found.</p>
-                      <button onClick={() => setActiveSubTab('create')} className="text-blue-600 font-medium hover:underline">Create your first workspace</button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {workspaces.map(ws => (
-                        <div key={ws.id} className={`border rounded-lg p-4 cursor-pointer transition-colors flex justify-between items-center ${selectedWorkspace?.id === ws.id ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-blue-300'}`} onClick={() => handleSelectWorkspace(ws)}>
-                          <div>
-                            <div className="font-semibold text-gray-900">{ws.name}</div>
-                            <div className="text-xs text-gray-400 mt-1">ID: {ws.id}</div>
-                          </div>
-                          {selectedWorkspace?.id === ws.id && (
-                            <span className="text-blue-600 text-xs font-medium bg-blue-100 px-2 py-1 rounded">Selected</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {selectedWorkspace && (
-                    <div className="mt-6 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="font-bold text-xl text-gray-900">{selectedWorkspace.name}</h4>
-                          <span className="text-xs text-gray-500 font-mono mt-1 block">ID: {selectedWorkspace.id}</span>
-                        </div>
-                        {selectedWorkspace.archived && (
-                          <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded border border-red-200 font-medium">Archived</span>
-                        )}
-                      </div>
-
-                      {selectedWorkspace.description ? (
-                        <div
-                          className="prose prose-sm max-w-none mb-6 border-t border-gray-100 pt-4"
-                          dangerouslySetInnerHTML={{ __html: selectedWorkspace.description }}
-                        />
-                      ) : (
-                        <p className="text-sm text-gray-500 italic mb-6 border-t border-gray-100 pt-4">No description provided.</p>
-                      )}
-
-                      {loadingWorkspace ? (
-                        <div className="py-8 text-center text-gray-500 text-sm">
-                          Loading workspace data...
-                        </div>
-                      ) : (
-                        <>
-                          {workspaceData?.schemaError && (
-                            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md mb-6 text-sm font-mono overflow-x-auto">
-                              <strong>Schema Error:</strong><br/>
-                              The query failed because I guessed the schema incorrectly. Please share this exact error message with Antigravity:<br/><br/>
-                              {workspaceData.schemaError}
-                            </div>
-                          )}
-
-                          {workspaceData?.lists && workspaceData.lists.length > 0 && (
-                            <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                                <h3 className="text-lg font-bold text-gray-900 tracking-tight">Kanban Board</h3>
-                              </div>
-                              <div className="p-6 overflow-x-auto">
-                                <div className="flex gap-6 min-w-max pb-2">
-                                  {workspaceData.lists
-                                    // Sort lists by position if available
-                                    .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
-                                    .map((list: any) => (
-                                    <div key={list.id} className="w-[300px] flex-shrink-0 flex flex-col bg-gray-50/80 border border-gray-200 rounded-xl max-h-[600px]">
-                                      <div className="p-4 border-b border-gray-200 bg-gray-100/50 rounded-t-xl flex justify-between items-center">
-                                        <h4 className="font-semibold text-gray-800 text-sm tracking-wide">{list.name || list.title}</h4>
-                                        <span className="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">{list.todos?.length || 0}</span>
-                                      </div>
-                                      <div className="p-3 space-y-3 overflow-y-auto flex-grow custom-scrollbar">
-                                        {list.todos?.sort((a: any, b: any) => (a.position || 0) - (b.position || 0)).map((todo: any) => (
-                                          <div key={todo.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow group cursor-pointer relative overflow-hidden">
-                                            {todo.done && <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>}
-                                            
-                                            {/* Tags row - API returns tags as a flat array with 'title' field */}
-                                            {todo.tags && todo.tags.length > 0 && (
-                                              <div className="flex flex-wrap gap-1 mb-2">
-                                                {todo.tags.map((tag: any) => (
-                                                  <span key={tag.id} className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider" style={{ backgroundColor: tag.color ? `${tag.color}20` : '#f3f4f6', color: tag.color || '#4b5563', border: `1px solid ${tag.color ? `${tag.color}40` : '#e5e7eb'}` }}>
-                                                    {tag.title}
-                                                  </span>
-                                                ))}
-                                              </div>
-                                            )}
-                                            
-                                            <h5 className={`text-sm font-medium ${todo.done ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                              {todo.title}
-                                            </h5>
-                                            
-                                            {/* Assignees */}
-                                            {todo.assignees?.items && todo.assignees.items.length > 0 && (
-                                              <div className="flex -space-x-2 mt-3 justify-end">
-                                                {todo.assignees.items.map((user: any) => (
-                                                  <div key={user.id} className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-800" title={`${user.firstName} ${user.lastName}`}>
-                                                    {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                        {(!list.todos || list.todos.length === 0) && (
-                                          <div className="py-6 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                                            <svg className="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                            <span className="text-xs font-medium">Empty List</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="bg-blue-50 p-4 rounded-md border border-blue-100 text-sm">
-                            <p className="text-blue-800 m-0">Use the <strong>Members</strong> or <strong>Webhooks</strong> tabs above to manage this workspace.</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Create Workspace */}
-              {activeSubTab === 'create' && (
-                <form onSubmit={handleCreateWorkspace} className="max-w-md space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Workspace</h3>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Workspace Name</label>
-                    <input type="text" required value={newWorkspaceName} onChange={e => setNewWorkspaceName(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-                    <textarea value={newWorkspaceDesc} onChange={e => setNewWorkspaceDesc(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" rows={3}></textarea>
-                  </div>
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Create Workspace</button>
-                </form>
-              )}
-
-              {/* Members */}
-              {activeSubTab === 'members' && (
-                <div className="max-w-md">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Manage Workspace Members</h3>
-                  {!selectedWorkspace ? (
-                    <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">Please select a workspace from the Workspaces tab first.</div>
-                  ) : (
-                    <form onSubmit={handleInviteUser} className="space-y-4">
-                      <div className="text-sm text-gray-600 mb-2">Inviting to: <strong>{selectedWorkspace.name}</strong></div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">User Email Address</label>
-                        <input type="email" required value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="colleague@company.com" />
-                      </div>
-                      <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Send Invitation</button>
-                    </form>
-                  )}
-                </div>
-              )}
-
-              {/* Webhooks */}
-              {activeSubTab === 'webhooks' && (
-                <div className="max-w-md">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Workspace Webhooks</h3>
-                  {!selectedWorkspace ? (
-                    <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">Please select a workspace from the Workspaces tab first.</div>
-                  ) : (
-                    <form onSubmit={handleRegisterWebhook} className="space-y-4">
-                      <div className="text-sm text-gray-600 mb-4">Registering webhook for: <strong>{selectedWorkspace.name}</strong></div>
-
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-                        <h4 className="text-sm font-semibold text-blue-900 mb-1">Supabase Edge Function</h4>
-                        <p className="text-xs text-blue-800 mb-2">Configure this webhook to point to your Supabase Edge Function to process Blue.cc events automatically.</p>
-                        <code className="block bg-white p-2 rounded text-xs text-gray-800 border border-blue-100 overflow-x-auto">
-                          https://[PROJECT_REF].supabase.co/functions/v1/bluecc_webhook
-                        </code>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Payload URL</label>
-                        <input type="url" required value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="https://..." />
-                      </div>
-                      <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Register Webhook</button>
-                    </form>
-                  )}
-                </div>
-              )}
-
+        {/* No client yet */}
+        {!client && !showSettings && (
+          <div className="flex-1 flex items-center justify-center text-center p-8">
+            <div>
+              <svg className="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2zM7 7h.01"/>
+              </svg>
+              <p className="text-gray-500 text-sm mb-3">Connect your Blue.cc account to get started.</p>
+              <button onClick={() => setShowSettings(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
+                Add API Credentials
+              </button>
             </div>
           </div>
         )}
 
+        {/* No workspace selected */}
+        {client && !selectedWorkspace && (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+            ← Select a workspace
+          </div>
+        )}
+
+        {/* Kanban Board */}
+        {client && selectedWorkspace && (
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            {/* Board header */}
+            <div className="px-5 py-3 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
+              <h2 className="font-semibold text-gray-900 text-base truncate">{selectedWorkspace.name}</h2>
+              {loadingWorkspace && (
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Loading…
+                </span>
+              )}
+              {workspaceData?.lists && (
+                <span className="text-xs text-gray-400">{workspaceData.lists.length} lists</span>
+              )}
+            </div>
+
+            {/* Columns scroll area */}
+            <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
+              {loadingWorkspace && (
+                <div className="flex h-full items-center justify-center text-gray-400 text-sm">
+                  <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  Fetching board…
+                </div>
+              )}
+
+              {!loadingWorkspace && workspaceData?.lists && workspaceData.lists.length > 0 && (
+                <div className="flex gap-3 h-full" style={{ minWidth: 'max-content' }}>
+                  {workspaceData.lists
+                    .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+                    .map((list: any, idx: number) => {
+                      const color = COLUMN_COLORS[idx % COLUMN_COLORS.length];
+                      const todos = (list.todos || []).sort((a: any, b: any) => (b.position || 0) - (a.position || 0));
+                      return (
+                        <div
+                          key={list.id}
+                          className="flex flex-col rounded-xl flex-shrink-0 overflow-hidden"
+                          style={{
+                            width: '240px',
+                            background: color.bg,
+                            border: `1px solid ${color.border}`,
+                            maxHeight: '100%',
+                          }}
+                        >
+                          {/* Column header */}
+                          <div className="px-3 py-2.5 flex items-center gap-2 flex-shrink-0" style={{ borderBottom: `1px solid ${color.border}` }}>
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color.dot }}/>
+                            <span className="text-xs font-bold text-gray-700 uppercase tracking-wide truncate flex-1">{list.title}</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                              style={{ background: color.border, color: color.dot }}>
+                              {todos.length}
+                            </span>
+                          </div>
+
+                          {/* Cards */}
+                          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                            {todos.length === 0 && (
+                              <div className="flex items-center justify-center py-6 text-gray-300 text-xs">
+                                Empty
+                              </div>
+                            )}
+                            {todos.map((todo: any) => (
+                              <div
+                                key={todo.id}
+                                className="bg-white rounded-lg px-3 py-2.5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative"
+                              >
+                                {/* Done indicator */}
+                                {todo.done && (
+                                  <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-lg" style={{ backgroundColor: color.dot }}/>
+                                )}
+
+                                {/* Tags */}
+                                {todo.tags && todo.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-1.5">
+                                    {todo.tags.map((tag: any) => (
+                                      <span
+                                        key={tag.id}
+                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                                        style={{
+                                          backgroundColor: tag.color ? `${tag.color}22` : '#f3f4f6',
+                                          color: tag.color || '#6b7280',
+                                        }}
+                                      >
+                                        {tag.title}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Title */}
+                                <p className={`text-xs leading-snug ${todo.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                                  {todo.title}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              {!loadingWorkspace && workspaceData && (!workspaceData.lists || workspaceData.lists.length === 0) && (
+                <div className="flex h-full items-center justify-center text-gray-400 text-sm">
+                  No lists in this workspace.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
