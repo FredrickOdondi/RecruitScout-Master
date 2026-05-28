@@ -32,13 +32,9 @@ export class BlueCcClient {
     return result.data as T;
   }
 
-  // Workspaces (Projects in Blue.cc schema)
-  async getWorkspaces() {
-    let targetCompanyIds = this.companyId ? [this.companyId] : [];
-
-    // If no company ID is provided, fetch the available companies first
-    // because projectList strictly requires companyIds
-    if (targetCompanyIds.length === 0) {
+  async ensureCompanyId() {
+    if (!this.companyId || this.companyId.includes('.')) {
+      // If no companyId or it looks like a domain name ("blue.cc"), auto-fetch the real one
       const companyQuery = `
         query GetCompanies {
           companies {
@@ -48,15 +44,28 @@ export class BlueCcClient {
           }
         }
       `;
-      const companyData = await this.request(companyQuery);
-      if (companyData.companies?.items?.length > 0) {
-        // Collect all available company IDs
-        targetCompanyIds = companyData.companies.items.map((c: any) => c.id);
-      } else {
-        // If they don't belong to any company, they won't have workspaces
-        return [];
+      // Temporarily clear invalid companyId to prevent the 'Company was not found' error during fetch
+      const oldCompanyId = this.companyId;
+      this.companyId = undefined; 
+      try {
+        const companyData = await this.request(companyQuery);
+        if (companyData.companies?.items?.length > 0) {
+          this.companyId = companyData.companies.items[0].id;
+        } else {
+          this.companyId = oldCompanyId; // restore if failed
+        }
+      } catch (err) {
+        this.companyId = oldCompanyId;
       }
     }
+  }
+
+  // Workspaces (Projects in Blue.cc schema)
+  async getWorkspaces() {
+    await this.ensureCompanyId();
+    const targetCompanyIds = this.companyId ? [this.companyId] : [];
+    
+    if (targetCompanyIds.length === 0) return [];
 
     const query = `
       query GetWorkspaces($companyIds: [String!]!) {
@@ -76,6 +85,8 @@ export class BlueCcClient {
   }
 
   async getWorkspaceContent(projectId: string) {
+    await this.ensureCompanyId();
+    
     const query = `
       query GetWorkspaceContent($projectId: String!) {
         project(id: $projectId) {
@@ -174,25 +185,10 @@ export class BlueCcClient {
   }
 
   async createWorkspace(name: string, description?: string) {
-    let targetCompanyId = this.companyId;
+    await this.ensureCompanyId();
 
-    // Auto-fetch the company ID if the user didn't provide one in the settings
-    if (!targetCompanyId) {
-      const companyQuery = `
-        query GetCompanies {
-          companies {
-            items {
-              id
-            }
-          }
-        }
-      `;
-      const companyData = await this.request(companyQuery);
-      if (companyData.companies?.items?.length > 0) {
-        targetCompanyId = companyData.companies.items[0].id;
-      } else {
-        throw new Error("Could not automatically find your Company ID. Please add it manually in the settings.");
-      }
+    if (!this.companyId) {
+      throw new Error("Could not automatically find your Company ID. Please add it manually in the settings.");
     }
 
     const query = `
@@ -207,7 +203,7 @@ export class BlueCcClient {
       input: {
         name,
         description,
-        companyId: targetCompanyId
+        companyId: this.companyId
       }
     });
     return data.createProject;
