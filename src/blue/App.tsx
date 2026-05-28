@@ -160,7 +160,7 @@ export default function App() {
         {client && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200 flex overflow-x-auto">
-              {['workspaces', 'create', 'members', 'webhooks'].map(tab => (
+              {['workspaces', 'create'].map(tab => (
                 <button 
                   key={tab} 
                   onClick={() => setActiveSubTab(tab)}
@@ -210,15 +210,43 @@ export default function App() {
                       
                       {selectedWorkspace.description ? (
                         <div 
-                          className="prose prose-sm max-w-none mb-6 border-t border-gray-100 pt-4" 
+                          className="prose prose-sm max-w-none mb-6 border-t border-gray-100 pt-4 pb-4 border-b" 
                           dangerouslySetInnerHTML={{ __html: selectedWorkspace.description }} 
                         />
                       ) : (
-                        <p className="text-sm text-gray-500 italic mb-6 border-t border-gray-100 pt-4">No description provided.</p>
+                        <p className="text-sm text-gray-500 italic mb-6 border-t border-gray-100 pt-4 pb-4 border-b">No description provided.</p>
                       )}
 
-                      <div className="bg-blue-50 p-4 rounded-md border border-blue-100 text-sm">
-                        <p className="text-blue-800 m-0">Use the <strong>Members</strong> or <strong>Webhooks</strong> tabs above to manage this workspace.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Members Inline */}
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-4">Invite Members</h3>
+                          <form onSubmit={handleInviteUser} className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">User Email Address</label>
+                              <input type="email" required value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="colleague@company.com" />
+                            </div>
+                            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Send Invitation</button>
+                          </form>
+                        </div>
+
+                        {/* Webhooks Inline */}
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-4">Register Webhook</h3>
+                          <form onSubmit={handleRegisterWebhook} className="space-y-4">
+                            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-2">
+                              <h4 className="text-xs font-semibold text-blue-900 mb-1">Supabase Edge Function</h4>
+                              <code className="block bg-white p-1.5 rounded text-[10px] text-gray-800 border border-blue-100 overflow-x-auto">
+                                https://[PROJECT_REF].supabase.co/functions/v1/bluecc_webhook
+                              </code>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Payload URL</label>
+                              <input type="url" required value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="https://..." />
+                            </div>
+                            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Register Webhook</button>
+                          </form>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -239,53 +267,6 @@ export default function App() {
                   </div>
                   <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Create Workspace</button>
                 </form>
-              )}
-
-              {/* Members */}
-              {activeSubTab === 'members' && (
-                <div className="max-w-md">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Manage Workspace Members</h3>
-                  {!selectedWorkspace ? (
-                    <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">Please select a workspace from the Workspaces tab first.</div>
-                  ) : (
-                    <form onSubmit={handleInviteUser} className="space-y-4">
-                      <div className="text-sm text-gray-600 mb-2">Inviting to: <strong>{selectedWorkspace.name}</strong></div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">User Email Address</label>
-                        <input type="email" required value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="colleague@company.com" />
-                      </div>
-                      <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Send Invitation</button>
-                    </form>
-                  )}
-                </div>
-              )}
-
-              {/* Webhooks */}
-              {activeSubTab === 'webhooks' && (
-                <div className="max-w-md">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Workspace Webhooks</h3>
-                  {!selectedWorkspace ? (
-                    <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">Please select a workspace from the Workspaces tab first.</div>
-                  ) : (
-                    <form onSubmit={handleRegisterWebhook} className="space-y-4">
-                      <div className="text-sm text-gray-600 mb-4">Registering webhook for: <strong>{selectedWorkspace.name}</strong></div>
-                      
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
-                        <h4 className="text-sm font-semibold text-blue-900 mb-1">Supabase Edge Function</h4>
-                        <p className="text-xs text-blue-800 mb-2">Configure this webhook to point to your Supabase Edge Function to process Blue.cc events automatically.</p>
-                        <code className="block bg-white p-2 rounded text-xs text-gray-800 border border-blue-100 overflow-x-auto">
-                          https://[PROJECT_REF].supabase.co/functions/v1/bluecc_webhook
-                        </code>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Payload URL</label>
-                        <input type="url" required value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="https://..." />
-                      </div>
-                      <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors">Register Webhook</button>
-                    </form>
-                  )}
-                </div>
               )}
 
             </div>
