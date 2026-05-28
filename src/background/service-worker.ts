@@ -298,6 +298,67 @@ async function fetchDomainFromWikidata(companyName: string): Promise<string> {
   return '';
 }
 
+async function fetchDomainFromSearchEngine(companyName: string, location?: string): Promise<string> {
+  if (!companyName) return '';
+  const cacheKey = `search:${companyName}:${location || ''}`;
+  const cached = _domainCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  try {
+    // Construct search query
+    let query = `"${companyName}"`;
+    if (location) {
+      // Clean location (e.g., "Roma, Lazio" -> "Roma")
+      const cleanLoc = location.split(',')[0].trim();
+      query += ` "${cleanLoc}"`;
+    }
+    query += ` official website Italy`;
+
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+
+    if (response.ok) {
+      const html = await response.text();
+      // Extract DuckDuckGo redirect URLs
+      const urls = [...html.matchAll(/href="\/\/duckduckgo\.com\/l\/\?uddg=([^"&]+)/g)]
+        .map(m => decodeURIComponent(m[1]));
+      
+      // Filter out common directories and social media
+      const validUrls = urls.filter(u => {
+        try {
+          const uObj = new URL(u);
+          const hostname = uObj.hostname.toLowerCase();
+          const skipList = ['linkedin.com', 'wikipedia.org', 'facebook.com', 'instagram.com', 'bloomberg.com', 'crunchbase.com', 'indeed.com', 'glassdoor.com', 'monster.com', 'infojobs.it', 'youtube.com', 'twitter.com', 'tiktok.com', 'bedsandhotels.com'];
+          return !skipList.some(skip => hostname.includes(skip));
+        } catch { return false; }
+      });
+
+      if (validUrls.length > 0) {
+        const domain = extractDomainFromUrl(validUrls[0]);
+        if (domain) {
+          console.log(`[RecruitScout Search Engine] ${companyName}: found -> ${domain}`);
+          _domainCache.set(cacheKey, domain);
+          return domain;
+        }
+      }
+    }
+    console.log(`[RecruitScout Search Engine] ${companyName}: no valid results`);
+  } catch (e) {
+    console.error(`[RecruitScout Search Engine] ${companyName}: error`, e);
+  }
+
+  _domainCache.set(cacheKey, '');
+  return '';
+}
+
+
 const STOP_WORDS = new Set(['the', 'and', 'for', 'group', 'services', 'company', 'inc', 'llc', 'corp', 'ltd', 'spa', 'srl']);
 
 /** Compute word-overlap similarity between two company names (0–1) */
@@ -536,22 +597,21 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
       }
 
       try {
-        // Priority 1: Guess LinkedIn profile and fetch
-        const linkedInDomain = await fetchDomainFromLinkedIn(jobWithMeta.company);
-        if (linkedInDomain) {
-          console.log(`[RecruitScout] ${jobWithMeta.company}: domain from LinkedIn -> ${linkedInDomain}`);
-          saveToSupabase(jobWithMeta.company, linkedInDomain);
-          return { ...jobWithMeta, companyDomain: linkedInDomain };
-        }
-
-        // Priority 1.5: Clearbit + Wikidata in parallel with cross-validation
+        // Priority 1: Clearbit + Wikidata in parallel with cross-validation
         const resolvedDomain = await resolveCompanyDomain(jobWithMeta.company);
         if (resolvedDomain) {
           saveToSupabase(jobWithMeta.company, resolvedDomain);
           return { ...jobWithMeta, companyDomain: resolvedDomain };
         }
 
-        // Priority 2+3: Indeed company profile page
+        // Priority 2: Search Engine Fallback
+        const searchDomain = await fetchDomainFromSearchEngine(jobWithMeta.company, jobWithMeta.location);
+        if (searchDomain) {
+          saveToSupabase(jobWithMeta.company, searchDomain);
+          return { ...jobWithMeta, companyDomain: searchDomain };
+        }
+
+        // Priority 3: Indeed company profile page
         const profileUrl = jobWithMeta.metadata?.companyProfileLink as string | undefined;
         if (profileUrl) {
           const domain = await fetchDomainFromIndeedProfile(profileUrl);
@@ -562,7 +622,15 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
           }
         }
 
-        // Priority 4: Supabase internal company DB
+        // Priority 4: Guess LinkedIn profile and fetch (Last resort)
+        const linkedInDomain = await fetchDomainFromLinkedIn(jobWithMeta.company);
+        if (linkedInDomain) {
+          console.log(`[RecruitScout] ${jobWithMeta.company}: domain from LinkedIn -> ${linkedInDomain}`);
+          saveToSupabase(jobWithMeta.company, linkedInDomain);
+          return { ...jobWithMeta, companyDomain: linkedInDomain };
+        }
+
+        // Priority 5: Supabase internal company DB
         const supaDomain = await fetchDomainFromSupabase(jobWithMeta.company);
         if (supaDomain) {
           console.log(`[RecruitScout] ${jobWithMeta.company}: domain from Supabase -> ${supaDomain}`);
