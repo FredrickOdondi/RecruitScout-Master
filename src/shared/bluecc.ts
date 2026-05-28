@@ -76,13 +76,19 @@ export class BlueCcClient {
             description
             archived
             updatedAt
-            companyId
+            company {
+              id
+            }
           }
         }
       }
     `;
     const data = await this.request(query, { companyIds: targetCompanyIds });
-    return data.projectList?.items || [];
+    // Map the nested company.id to a flat companyId property for the UI to use
+    return (data.projectList?.items || []).map((item: any) => ({
+      ...item,
+      companyId: item.company?.id
+    }));
   }
 
   async getWorkspaceContent(projectId: string, overrideCompanyId?: string) {
