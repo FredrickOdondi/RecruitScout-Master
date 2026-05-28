@@ -99,25 +99,27 @@ export class BlueCcClient {
     }
     
     const query = `
-      query GetWorkspaceContent($projectId: String!) {
-        project(id: $projectId) {
-          id
-          name
-          description
-          archived
-          todoLists {
+      query GetWorkspaceContent($projectId: [String!]) {
+        projectList(filter: { ids: $projectId }, first: 1) {
+          items {
             id
-            title
+            name
+            description
+            archived
+            todoLists {
+              id
+              title
+            }
           }
         }
       }
     `;
     try {
-      const data = await this.request(query, { projectId });
+      const data = await this.request(query, { projectId: [projectId] });
       
       // Because we want the todos for each list, and they might be paginated in TodosResult,
       // let's fetch todos for each list via the root todos query.
-      let fullLists = data.project?.todoLists || [];
+      let fullLists = data.projectList?.items?.[0]?.todoLists || [];
       
       try {
         const listsWithTodos = await Promise.all(fullLists.map(async (list: any) => {
