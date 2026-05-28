@@ -94,10 +94,10 @@ export class BlueCcClient {
           name
           description
           archived
-        }
-        todoLists(projectId: $projectId) {
-          id
-          title
+          todoLists {
+            id
+            title
+          }
         }
       }
     `;
@@ -106,7 +106,7 @@ export class BlueCcClient {
       
       // Because we want the todos for each list, and they might be paginated in TodosResult,
       // let's fetch todos for each list via the root todos query.
-      let fullLists = data.todoLists || [];
+      let fullLists = data.project?.todoLists || [];
       
       try {
         const listsWithTodos = await Promise.all(fullLists.map(async (list: any) => {
