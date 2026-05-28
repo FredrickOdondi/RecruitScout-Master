@@ -110,4 +110,5 @@ export default defineManifest({
     persistent: false
   },
   options_page: 'src/dashboard/index.html'
-});
+} as any);
+
