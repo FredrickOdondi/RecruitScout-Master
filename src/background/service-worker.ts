@@ -306,7 +306,8 @@ async function fetchDomainFromSearchEngine(companyName: string, location?: strin
 
   try {
     // Construct search query
-    let query = `"${companyName}"`;
+    const cleanName = normalizeCompanyName(companyName);
+    let query = `"${cleanName}"`;
     if (location) {
       // Clean location (e.g., "Roma, Lazio" -> "Roma")
       const cleanLoc = location.split(',')[0].trim();
@@ -335,7 +336,7 @@ async function fetchDomainFromSearchEngine(companyName: string, location?: strin
         try {
           const uObj = new URL(u);
           const hostname = uObj.hostname.toLowerCase();
-          const skipList = ['linkedin.com', 'wikipedia.org', 'facebook.com', 'instagram.com', 'bloomberg.com', 'crunchbase.com', 'indeed.com', 'glassdoor.com', 'monster.com', 'infojobs.it', 'youtube.com', 'twitter.com', 'tiktok.com', 'bedsandhotels.com'];
+          const skipList = ['linkedin.com', 'wikipedia.org', 'facebook.com', 'instagram.com', 'bloomberg.com', 'crunchbase.com', 'indeed.com', 'glassdoor.com', 'monster.com', 'infojobs.it', 'youtube.com', 'twitter.com', 'tiktok.com', 'bedsandhotels.com', 'dnb.com', 'zoominfo.com', 'apollo.io', 'cerved.com', 'ufficiocamerale.it', 'registroimprese.it', 'paginegialle.it', 'kompass.com', 'pitchbook.com', 'reuters.com', 'cibus.it', 'usetorg.com', 'databasesets.com'];
           return !skipList.some(skip => hostname.includes(skip));
         } catch { return false; }
       });
