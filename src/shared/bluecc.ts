@@ -144,6 +144,10 @@ export class BlueCcClient {
   }
 
   async createWorkspace(name: string, description?: string) {
+    if (!this.companyId) {
+      throw new Error("A Company ID is strictly required by Blue.cc to create a workspace. Please add your Company ID in the Blue.cc Integration Settings panel first.");
+    }
+
     const query = `
       mutation CreateWorkspace($input: CreateProjectInput!) {
         createProject(input: $input) {
@@ -152,14 +156,12 @@ export class BlueCcClient {
         }
       }
     `;
-    // Note: The exact input structure for CreateProjectInput requires 'name' and often 'companyId'.
-    // We pass what we have. If it fails, the error will help us correct the exact fields.
-    const data = await this.request(query, { 
-      input: { 
+    const data = await this.request(query, {
+      input: {
         name,
         description,
         companyId: this.companyId
-      } 
+      }
     });
     return data.createProject;
   }

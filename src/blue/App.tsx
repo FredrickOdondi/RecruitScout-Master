@@ -162,7 +162,7 @@ export default function App() {
               <input type="password" value={secretId} onChange={e => setSecretId(e.target.value)} placeholder="••••••••" className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Company ID (Optional)</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Company ID (Required to create workspaces)</label>
               <input type="text" value={companyId} onChange={e => setCompanyId(e.target.value)} placeholder="Company ID" className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
             </div>
           </div>
