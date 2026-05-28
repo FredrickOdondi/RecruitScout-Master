@@ -740,6 +740,17 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
       'source'
     ];
 
+    // Ensure all jobs have the absolute correct domain by consulting Supabase's domain DB one last time
+    // This prevents the Google Sheet from receiving raw/wrong domains from local storage cache
+    for (const job of clientJobs) {
+      if (job.company) {
+        const supaDomain = await fetchDomainFromSupabase(job.company);
+        if (supaDomain) {
+          job.companyDomain = supaDomain;
+        }
+      }
+    }
+
     const rows = [
       headers,
       ...clientJobs.map(job => [
