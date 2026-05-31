@@ -353,21 +353,17 @@ export class BlueCcClient {
     const query = `
       query GetWorkspaceUsers($projectId: String!) {
         projectUserList(projectId: $projectId, first: 100) {
-          items {
-            user {
-              id
-              firstName
-              lastName
-            }
+          users {
+            id
+            firstName
+            lastName
           }
         }
       }
     `;
     try {
       const data = await this.request(query, { projectId }, projectId);
-      return (data.projectUserList?.items || [])
-        .map((i: any) => i.user)
-        .filter(Boolean);
+      return data.projectUserList?.users || [];
     } catch (err) {
       console.warn("Failed to fetch workspace users via projectUserList", err);
       return [];
