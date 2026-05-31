@@ -72,8 +72,10 @@ export class BlueCcClient {
           id
           firstName
           lastName
-          avatar
           email
+          image {
+            small
+          }
         }
       }
     `;

@@ -111,7 +111,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             if (me) {
               const name = [me.firstName, me.lastName].filter(Boolean).join(' ');
               if (name) setUserEmail(name);
-              if (me.avatar) setUserAvatar(me.avatar);
+              if (me.image?.small || me.image?.thumbnail || me.image?.original) {
+                setUserAvatar(me.image.small || me.image.thumbnail || me.image.original);
+              }
             }
           }).catch(console.error);
         }
