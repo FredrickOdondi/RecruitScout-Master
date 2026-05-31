@@ -41,6 +41,9 @@ export default function App() {
   const [selectedTodo, setSelectedTodo] = useState<any | null>(null);
   const [todoDetail, setTodoDetail] = useState<{ text: string; comments: any[] } | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [replyingToComment, setReplyingToComment] = useState<{ id: string, name: string } | null>(null);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Notifications
   const [mentions, setMentions] = useState<any[]>([]);
@@ -142,6 +145,8 @@ export default function App() {
     setSelectedTodo(todo);
     setTodoDetail(null);
     setLoadingDetail(true);
+    setNewCommentText('');
+    setReplyingToComment(null);
     try {
       if (!client || !selectedWorkspace) return;
       const result = await client.getTodoComments(todo.id, selectedWorkspace.id);
@@ -151,6 +156,29 @@ export default function App() {
       setTodoDetail({ text: todo.text || '', comments: [] });
     } finally {
       setLoadingDetail(false);
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!newCommentText.trim() || !client || !selectedWorkspace || !selectedTodo) return;
+    setIsSubmittingComment(true);
+    try {
+      const category = replyingToComment ? 'COMMENT' : 'TODO';
+      const categoryId = replyingToComment ? replyingToComment.id : selectedTodo.id;
+      await client.createComment(categoryId, category, newCommentText, selectedWorkspace.id);
+      
+      // Refresh comments
+      const result = await client.getTodoComments(selectedTodo.id, selectedWorkspace.id);
+      setTodoDetail(prev => ({ text: prev?.text || '', comments: result?.comments || [] }));
+      
+      // Reset input
+      setNewCommentText('');
+      setReplyingToComment(null);
+    } catch (err) {
+      console.error('Failed to post comment:', err);
+      alert('Failed to post comment.');
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -610,6 +638,12 @@ export default function App() {
                             <p className="text-[11px] text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
                               {comment.text}
                             </p>
+                            <button
+                              onClick={() => setReplyingToComment({ id: comment.id, name })}
+                              className="mt-1 text-[10px] font-bold text-gray-400 hover:text-blue-500 transition-colors uppercase tracking-wide"
+                            >
+                              Reply
+                            </button>
                             {/* Replies */}
                             {comment.replies?.length > 0 && (
                               <div className="mt-3 pl-3 border-l-2 border-gray-100 space-y-3">
@@ -643,6 +677,49 @@ export default function App() {
                     })}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Comment Input Area */}
+            <div className="border-t border-gray-200 bg-gray-50 p-4 flex-shrink-0">
+              {replyingToComment && (
+                <div className="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded-md mb-2 border border-blue-100">
+                  <span className="text-[10px] font-semibold text-blue-700">
+                    Replying to {replyingToComment.name}
+                  </span>
+                  <button 
+                    onClick={() => setReplyingToComment(null)}
+                    className="text-blue-400 hover:text-blue-600 p-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                  >
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-col gap-2 relative">
+                <textarea
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      handleSubmitComment();
+                    }
+                  }}
+                  placeholder={replyingToComment ? "Write a reply..." : "Write a comment..."}
+                  className="w-full text-xs border border-gray-300 rounded-lg p-3 min-h-[80px] focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 resize-none shadow-sm pb-10"
+                  disabled={isSubmittingComment}
+                />
+                <div className="absolute bottom-2 right-2 flex items-center gap-2">
+                  <span className="text-[9px] text-gray-400 font-medium hidden sm:inline-block mr-1">
+                    Cmd + Enter to post
+                  </span>
+                  <button
+                    onClick={handleSubmitComment}
+                    disabled={isSubmittingComment || !newCommentText.trim()}
+                    className="bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-md shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSubmittingComment ? 'Posting...' : 'Post'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

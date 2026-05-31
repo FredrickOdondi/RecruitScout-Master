@@ -314,4 +314,33 @@ export class BlueCcClient {
       comments: data.commentList?.comments ?? [],
     };
   }
+
+  /**
+   * Create a new comment or reply to an existing one.
+   * To comment on a todo: categoryId = todoId, category = 'TODO'
+   * To reply to a comment: categoryId = commentId, category = 'COMMENT'
+   */
+  async createComment(categoryId: string, category: 'TODO' | 'COMMENT', text: string, projectId?: string) {
+    const query = `
+      mutation CreateComment($input: CreateCommentInput!) {
+        createComment(input: $input) {
+          id
+          text
+          createdAt
+          user {
+            firstName
+            lastName
+          }
+        }
+      }
+    `;
+    const data = await this.request(query, {
+      input: {
+        categoryId,
+        category,
+        text,
+      }
+    }, projectId);
+    return data.createComment;
+  }
 }
