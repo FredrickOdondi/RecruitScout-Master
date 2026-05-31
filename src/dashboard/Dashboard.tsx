@@ -41,6 +41,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTaskDraft, setEditTaskDraft] = useState<any>({});
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string>('');
 
   // Bridge implementation for extension messages
   function bridgeSendMessage<T>(message: ExtensionMessage): Promise<T> {
@@ -90,8 +91,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   
   useEffect(() => {
     const session = supabaseClient.getSession();
-    if (session?.user?.email) {
-      setUserEmail(session.user.email);
+    if (session?.user) {
+      if (session.user.email) setUserEmail(session.user.email);
+      if (session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture) {
+        setUserAvatar(session.user.user_metadata.avatar_url || session.user.user_metadata.picture);
+      }
     }
 
     // Initial fetch of settings and jobs
@@ -401,8 +405,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         {/* Logout */}
         <div className={`p-4 border-t border-gray-200 flex flex-col gap-2`}>
           {!isSidebarCollapsed && userEmail && (
-            <div className="text-xs text-gray-500 font-medium truncate text-center px-2 mb-1" title={userEmail}>
-              {userEmail}
+            <div className="flex items-center gap-2.5 px-2 mb-1.5 overflow-hidden">
+              {userAvatar ? (
+                <img src={userAvatar} alt="Profile" className="w-7 h-7 rounded-full flex-shrink-0 object-cover shadow-sm border border-gray-200" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-[11px] font-bold text-indigo-700 flex-shrink-0 shadow-sm border border-white">
+                  {userEmail[0].toUpperCase()}
+                </div>
+              )}
+              <div className="text-xs text-gray-600 font-medium truncate flex-1 leading-snug" title={userEmail}>
+                {userEmail}
+              </div>
             </div>
           )}
           <button
