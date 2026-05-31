@@ -359,7 +359,7 @@ export class BlueCcClient {
     `;
     const data = await this.request(query, {
       input: {
-        id: todoId,
+        todoId,
         todoListId,
       }
     }, projectId);
