@@ -426,18 +426,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         {/* Logout */}
         <div className={`p-4 border-t border-gray-200 flex flex-col gap-2`}>
-          {!isSidebarCollapsed && userEmail && (
-            <div className="flex items-center gap-2.5 px-2 mb-1.5 overflow-hidden">
+          {userEmail && (
+            <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center mb-2' : 'gap-2.5 px-2 mb-1.5'} overflow-hidden`}>
               {userAvatar ? (
-                <img src={userAvatar} alt="Profile" className="w-7 h-7 rounded-full flex-shrink-0 object-cover shadow-sm border border-gray-200" />
+                <img src={userAvatar} alt="Profile" className="w-7 h-7 rounded-full flex-shrink-0 object-cover shadow-sm border border-gray-200" title={isSidebarCollapsed ? userEmail : undefined} />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-[11px] font-bold text-indigo-700 flex-shrink-0 shadow-sm border border-white">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-[11px] font-bold text-indigo-700 flex-shrink-0 shadow-sm border border-white" title={isSidebarCollapsed ? userEmail : undefined}>
                   {userEmail[0].toUpperCase()}
                 </div>
               )}
-              <div className="text-xs text-gray-600 font-medium truncate flex-1 leading-snug" title={userEmail}>
-                {userEmail}
-              </div>
+              {!isSidebarCollapsed && (
+                <div className="text-xs text-gray-600 font-medium truncate flex-1 leading-snug" title={userEmail}>
+                  {userEmail}
+                </div>
+              )}
             </div>
           )}
           <button
