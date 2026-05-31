@@ -345,4 +345,24 @@ export class BlueCcClient {
     const data = await this.request(query, { input: inputPayload }, projectId);
     return data.createComment;
   }
+
+  /**
+   * Move a todo to a different list (column).
+   */
+  async moveTodo(todoId: string, todoListId: string, projectId: string) {
+    const query = `
+      mutation MoveTodo($input: EditTodoInput!) {
+        editTodo(input: $input) {
+          id
+        }
+      }
+    `;
+    const data = await this.request(query, {
+      input: {
+        id: todoId,
+        todoListId,
+      }
+    }, projectId);
+    return data.editTodo;
+  }
 }

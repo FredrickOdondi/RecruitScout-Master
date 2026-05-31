@@ -44,6 +44,7 @@ export default function App() {
   const [newCommentText, setNewCommentText] = useState('');
   const [replyingToComment, setReplyingToComment] = useState<{ id: string, name: string } | null>(null);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [draggedTodoId, setDraggedTodoId] = useState<string | null>(null);
 
   // Notifications
   const [mentions, setMentions] = useState<any[]>([]);
@@ -451,6 +452,53 @@ export default function App() {
                           key={list.id}
                           className="flex flex-col rounded-xl flex-shrink-0 overflow-hidden"
                           style={{ width: '230px', background: color.bg, border: `1px solid ${color.border}`, maxHeight: '100%' }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                          }}
+                          onDrop={async (e) => {
+                            e.preventDefault();
+                            const todoId = e.dataTransfer.getData('text/plain');
+                            if (!todoId || !workspaceData) return;
+                            
+                            const currentList = workspaceData.lists.find((l: any) => l.todos?.some((t: any) => t.id === todoId));
+                            if (currentList && currentList.id === list.id) return;
+
+                            // Optimistically update
+                            setWorkspaceData((prev: any) => {
+                              if (!prev) return prev;
+                              const newLists = prev.lists.map((l: any) => ({ ...l, todos: [...(l.todos || [])] }));
+                              
+                              let movedTodo = null;
+                              for (const l of newLists) {
+                                const idx = l.todos.findIndex((t: any) => t.id === todoId);
+                                if (idx > -1) {
+                                  movedTodo = l.todos[idx];
+                                  l.todos.splice(idx, 1);
+                                  break;
+                                }
+                              }
+                              if (movedTodo) {
+                                const targetList = newLists.find((l: any) => l.id === list.id);
+                                if (targetList) targetList.todos.unshift(movedTodo);
+                              }
+                              return { ...prev, lists: newLists };
+                            });
+
+                            // API sync
+                            try {
+                              if (client && selectedWorkspace) {
+                                await client.moveTodo(todoId, list.id, selectedWorkspace.id);
+                              }
+                            } catch (err) {
+                              console.error("Failed to move todo", err);
+                              // Refetch to sync state on error
+                              if (client && selectedWorkspace) {
+                                const result = await client.getWorkspaceContent(selectedWorkspace.id);
+                                if (result) setWorkspaceData(result);
+                              }
+                            }
+                          }}
                         >
                           {/* Column header */}
                           <div className="px-3 py-2.5 flex items-center gap-2 flex-shrink-0" style={{ borderBottom: `1px solid ${color.border}` }}>
@@ -471,7 +519,15 @@ export default function App() {
                               <div
                                 key={todo.id}
                                 onClick={() => handleTodoClick(todo)}
-                                className="bg-white rounded-lg px-3 py-2.5 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all relative cursor-pointer group"
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData('text/plain', todo.id);
+                                  setDraggedTodoId(todo.id);
+                                }}
+                                onDragEnd={() => setDraggedTodoId(null)}
+                                className={`bg-white rounded-lg px-3 py-2.5 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all relative cursor-pointer group ${
+                                  draggedTodoId === todo.id ? 'opacity-50 ring-2 ring-blue-400' : ''
+                                }`}
                               >
                                 {todo.done && (
                                   <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-lg" style={{ backgroundColor: color.dot }}/>
