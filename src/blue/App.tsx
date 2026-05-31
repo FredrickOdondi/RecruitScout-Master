@@ -45,6 +45,11 @@ export default function App() {
   const [replyingToComment, setReplyingToComment] = useState<{ id: string, name: string } | null>(null);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [draggedTodoId, setDraggedTodoId] = useState<string | null>(null);
+  
+  // Mentions
+  const [workspaceUsers, setWorkspaceUsers] = useState<any[]>([]);
+  const [mentionSearch, setMentionSearch] = useState<{ query: string, position: number } | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Notifications
   const [mentions, setMentions] = useState<any[]>([]);
@@ -73,6 +78,9 @@ export default function App() {
     try {
       const data = await client.getWorkspaceContent(ws.id, ws.companyId);
       if (thisRequestId === requestIdRef.current) setWorkspaceData(data);
+      
+      const users = await client.getWorkspaceUsers(ws.id);
+      if (thisRequestId === requestIdRef.current) setWorkspaceUsers(users);
     } catch (err) {
       if (thisRequestId === requestIdRef.current) console.error(err);
     }
@@ -176,12 +184,40 @@ export default function App() {
       // Reset input
       setNewCommentText('');
       setReplyingToComment(null);
+      setMentionSearch(null);
     } catch (err) {
       console.error('Failed to post comment:', err);
       alert('Failed to post comment.');
     } finally {
       setIsSubmittingComment(false);
     }
+  };
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setNewCommentText(val);
+
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = val.slice(0, cursorPosition);
+    const match = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9_]*)$/);
+    if (match) {
+      setMentionSearch({ query: match[1].toLowerCase(), position: cursorPosition });
+    } else {
+      setMentionSearch(null);
+    }
+  };
+
+  const insertMention = (user: any) => {
+    if (!mentionSearch || !textareaRef.current) return;
+    const val = newCommentText;
+    const start = val.slice(0, mentionSearch.position - mentionSearch.query.length - 1);
+    const end = val.slice(textareaRef.current.selectionStart);
+    const nameStr = `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`;
+    // Format mention using standard Blue.cc markdown/tagging approach or just raw name
+    const newText = `${start}@${nameStr} ${end}`;
+    setNewCommentText(newText);
+    setMentionSearch(null);
+    textareaRef.current.focus();
   };
 
   const unreadCount = mentions.filter(m => !m.isRead).length;
@@ -753,9 +789,39 @@ export default function App() {
                 </div>
               )}
               <div className="flex flex-col gap-2 relative">
+                
+                {/* Mention Dropdown */}
+                {mentionSearch && (
+                  <div className="absolute bottom-full left-0 mb-1 w-64 max-h-48 overflow-y-auto bg-white border border-gray-200 shadow-xl rounded-lg py-1 z-[60]">
+                    {workspaceUsers
+                      .filter(u => {
+                        const name = `${u.firstName} ${u.lastName || ''}`.toLowerCase();
+                        return name.includes(mentionSearch.query);
+                      })
+                      .map(u => (
+                        <button
+                          key={u.id}
+                          onClick={() => insertMention(u)}
+                          className="w-full text-left px-3 py-1.5 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors flex items-center gap-2"
+                        >
+                          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[9px] font-bold text-blue-700 flex-shrink-0">
+                            {u.firstName?.[0]}{u.lastName?.[0]}
+                          </div>
+                          <span className="text-xs text-gray-800 font-medium">
+                            {u.firstName} {u.lastName}
+                          </span>
+                        </button>
+                      ))}
+                    {workspaceUsers.filter(u => `${u.firstName} ${u.lastName || ''}`.toLowerCase().includes(mentionSearch.query)).length === 0 && (
+                      <div className="px-3 py-2 text-[10px] text-gray-400">No users found</div>
+                    )}
+                  </div>
+                )}
+
                 <textarea
+                  ref={textareaRef}
                   value={newCommentText}
-                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onChange={handleCommentChange}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       handleSubmitComment();

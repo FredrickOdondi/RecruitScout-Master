@@ -347,6 +347,34 @@ export class BlueCcClient {
   }
 
   /**
+   * Get available users in the workspace for mentioning
+   */
+  async getWorkspaceUsers(projectId: string) {
+    const query = `
+      query GetWorkspaceUsers($projectId: String!) {
+        projectUserList(projectId: $projectId, first: 100) {
+          items {
+            user {
+              id
+              firstName
+              lastName
+            }
+          }
+        }
+      }
+    `;
+    try {
+      const data = await this.request(query, { projectId }, projectId);
+      return (data.projectUserList?.items || [])
+        .map((i: any) => i.user)
+        .filter(Boolean);
+    } catch (err) {
+      console.warn("Failed to fetch workspace users via projectUserList", err);
+      return [];
+    }
+  }
+
+  /**
    * Move a todo to a different list (column).
    */
   async moveTodo(todoId: string, todoListId: string, projectId: string) {
