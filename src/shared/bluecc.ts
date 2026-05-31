@@ -339,6 +339,7 @@ export class BlueCcClient {
         categoryId,
         category,
         text,
+        html: `<p>${text}</p>`,
       }
     }, projectId);
     return data.createComment;
