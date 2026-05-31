@@ -68,7 +68,7 @@ export class BlueCcClient {
     // Attempt to fetch standard user profile fields
     const query = `
       query GetMe {
-        me {
+        currentUser {
           id
           firstName
           lastName
@@ -81,12 +81,12 @@ export class BlueCcClient {
     `;
     try {
       const data = await this.request(query);
-      return data.me;
+      return data.currentUser;
     } catch (err) {
-      console.warn("Failed to fetch me with avatar field, trying fallback without avatar", err);
+      console.warn("Failed to fetch currentUser with image field, trying fallback without image", err);
       const fallbackQuery = `
         query GetMeFallback {
-          me {
+          currentUser {
             id
             firstName
             lastName
@@ -96,7 +96,7 @@ export class BlueCcClient {
       `;
       try {
         const fallbackData = await this.request(fallbackQuery);
-        return fallbackData.me;
+        return fallbackData.currentUser;
       } catch (e) {
         console.error("Failed GetMe completely", e);
         return null;
