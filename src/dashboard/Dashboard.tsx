@@ -6,6 +6,7 @@ import SupabaseTab from './SupabaseTab';
 import ClientEnrollmentTab from './ClientEnrollmentTab';
 import BlueApp from '../blue/App';
 import { supabaseClient } from '../shared/supabase';
+import { BlueCcClient } from '../shared/bluecc';
 
 // Icons 
 const ServerIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>;
@@ -93,9 +94,28 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     const session = supabaseClient.getSession();
     if (session?.user) {
       if (session.user.email) setUserEmail(session.user.email);
+      // Fallback to Supabase avatar initially
       if (session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture) {
         setUserAvatar(session.user.user_metadata.avatar_url || session.user.user_metadata.picture);
       }
+
+      // Try fetching Blue.cc profile
+      supabaseClient.getUserIntegration(session.user.id).then(res => {
+        if (res.data?.bluecc_token_id && res.data?.bluecc_secret_id) {
+          const blueClient = new BlueCcClient(
+            res.data.bluecc_token_id, 
+            res.data.bluecc_secret_id, 
+            res.data.bluecc_company_id || undefined
+          );
+          blueClient.getMe().then(me => {
+            if (me) {
+              const name = [me.firstName, me.lastName].filter(Boolean).join(' ');
+              if (name) setUserEmail(name);
+              if (me.avatar) setUserAvatar(me.avatar);
+            }
+          }).catch(console.error);
+        }
+      });
     }
 
     // Initial fetch of settings and jobs

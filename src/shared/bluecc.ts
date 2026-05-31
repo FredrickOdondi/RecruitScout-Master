@@ -63,6 +63,45 @@ export class BlueCcClient {
     }
   }
 
+  // Current User Profile
+  async getMe() {
+    // Attempt to fetch standard user profile fields
+    const query = `
+      query GetMe {
+        me {
+          id
+          firstName
+          lastName
+          avatar
+          email
+        }
+      }
+    `;
+    try {
+      const data = await this.request(query);
+      return data.me;
+    } catch (err) {
+      console.warn("Failed to fetch me with avatar field, trying fallback without avatar", err);
+      const fallbackQuery = `
+        query GetMeFallback {
+          me {
+            id
+            firstName
+            lastName
+            email
+          }
+        }
+      `;
+      try {
+        const fallbackData = await this.request(fallbackQuery);
+        return fallbackData.me;
+      } catch (e) {
+        console.error("Failed GetMe completely", e);
+        return null;
+      }
+    }
+  }
+
   // Workspaces (Projects in Blue.cc schema)
   async getWorkspaces() {
     await this.ensureCompanyId();
