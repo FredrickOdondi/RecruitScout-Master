@@ -318,9 +318,8 @@ export class BlueCcClient {
   /**
    * Create a new comment or reply to an existing one.
    * To comment on a todo: categoryId = todoId, category = 'TODO'
-   * To reply to a comment: categoryId = commentId, category = 'COMMENT'
    */
-  async createComment(categoryId: string, category: 'TODO' | 'COMMENT', text: string, projectId?: string) {
+  async createComment(categoryId: string, category: string, text: string, projectId?: string, parentId?: string) {
     const query = `
       mutation CreateComment($input: CreateCommentInput!) {
         createComment(input: $input) {
@@ -334,14 +333,16 @@ export class BlueCcClient {
         }
       }
     `;
-    const data = await this.request(query, {
-      input: {
-        categoryId,
-        category,
-        text,
-        html: `<p>${text}</p>`,
-      }
-    }, projectId);
+    const inputPayload: any = {
+      categoryId,
+      category,
+      text,
+      html: `<p>${text}</p>`,
+    };
+    if (parentId) {
+      inputPayload.parentId = parentId;
+    }
+    const data = await this.request(query, { input: inputPayload }, projectId);
     return data.createComment;
   }
 }

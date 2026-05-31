@@ -163,9 +163,10 @@ export default function App() {
     if (!newCommentText.trim() || !client || !selectedWorkspace || !selectedTodo) return;
     setIsSubmittingComment(true);
     try {
-      const category = replyingToComment ? 'COMMENT' : 'TODO';
-      const categoryId = replyingToComment ? replyingToComment.id : selectedTodo.id;
-      await client.createComment(categoryId, category, newCommentText, selectedWorkspace.id);
+      const category = 'TODO';
+      const categoryId = selectedTodo.id;
+      const parentId = replyingToComment ? replyingToComment.id : undefined;
+      await client.createComment(categoryId, category, newCommentText, selectedWorkspace.id, parentId);
       
       // Refresh comments
       const result = await client.getTodoComments(selectedTodo.id, selectedWorkspace.id);
