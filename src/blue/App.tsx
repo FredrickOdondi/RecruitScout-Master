@@ -37,6 +37,11 @@ export default function App() {
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Card detail panel
+  const [selectedTodo, setSelectedTodo] = useState<any | null>(null);
+  const [todoDetail, setTodoDetail] = useState<{ text: string; comments: any[] } | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
   // Notifications
   const [mentions, setMentions] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -133,6 +138,22 @@ export default function App() {
     }
   };
 
+  const handleTodoClick = async (todo: any) => {
+    setSelectedTodo(todo);
+    setTodoDetail(null);
+    setLoadingDetail(true);
+    try {
+      if (!client || !selectedWorkspace) return;
+      const result = await client.getTodoComments(todo.id, selectedWorkspace.id);
+      setTodoDetail({ text: todo.text || '', comments: result?.comments || [] });
+    } catch (err) {
+      console.error('Failed to load card detail:', err);
+      setTodoDetail({ text: todo.text || '', comments: [] });
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   const unreadCount = mentions.filter(m => !m.isRead).length;
 
   if (loading) {
@@ -148,6 +169,7 @@ export default function App() {
   }
 
   return (
+    <>
     <div className="flex flex-col bg-gray-50" style={{ height: '100%', minHeight: '600px' }}>
 
       {/* ── TOP BAR ──────────────────────────────────────────────────────── */}
@@ -419,7 +441,8 @@ export default function App() {
                             {todos.map((todo: any) => (
                               <div
                                 key={todo.id}
-                                className="bg-white rounded-lg px-3 py-2.5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative"
+                                onClick={() => handleTodoClick(todo)}
+                                className="bg-white rounded-lg px-3 py-2.5 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all relative cursor-pointer group"
                               >
                                 {todo.done && (
                                   <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-lg" style={{ backgroundColor: color.dot }}/>
@@ -440,6 +463,18 @@ export default function App() {
                                 <p className={`text-[11px] leading-snug ${todo.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                                   {todo.title}
                                 </p>
+                                {/* Bottom meta row */}
+                                <div className="flex items-center justify-between mt-1.5">
+                                  <div className="flex-1" />
+                                  {(todo.commentCount ?? 0) > 0 && (
+                                    <div className="flex items-center gap-0.5 text-gray-300 group-hover:text-blue-400 transition-colors">
+                                      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 16c0 1.1-.9 2-2 2H7l-4 4V6c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z"/>
+                                      </svg>
+                                      <span className="text-[9px] font-semibold">{todo.commentCount}</span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -459,5 +494,160 @@ export default function App() {
         </div>
       </div>
     </div>
+
+      {/* ── CARD DETAIL PANEL ─────────────────────────────────────────────── */}
+      {selectedTodo && (
+        <div className="fixed inset-0 z-50 flex" style={{ fontFamily: 'inherit' }}>
+          {/* Backdrop */}
+          <div
+            className="flex-1 bg-black/25 backdrop-blur-[2px]"
+            onClick={() => setSelectedTodo(null)}
+          />
+          {/* Slide-in panel */}
+          <div className="w-[500px] bg-white flex flex-col shadow-2xl overflow-hidden border-l border-gray-200">
+
+            {/* Header */}
+            <div className="flex items-start gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              {/* Done indicator */}
+              <div className={`mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
+                selectedTodo.done ? 'bg-green-500 border-green-500' : 'border-gray-300'
+              }`}>
+                {selectedTodo.done && (
+                  <svg width="10" height="10" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className={`text-sm font-semibold leading-snug ${
+                  selectedTodo.done ? 'line-through text-gray-400' : 'text-gray-900'
+                }`}>
+                  {selectedTodo.title}
+                </h2>
+                {selectedTodo.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {selectedTodo.tags.map((tag: any) => (
+                      <span
+                        key={tag.id}
+                        className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                        style={{ backgroundColor: tag.color ? `${tag.color}22` : '#f3f4f6', color: tag.color || '#6b7280' }}
+                      >
+                        {tag.title}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedTodo(null)}
+                className="p-1 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+              >
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* Description */}
+              {todoDetail?.text && (
+                <div className="px-5 py-4 border-b border-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Description</p>
+                  <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">{todoDetail.text}</p>
+                </div>
+              )}
+
+              {/* Comments */}
+              <div className="px-5 py-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Comments</p>
+                  {!loadingDetail && todoDetail && (
+                    <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                      {todoDetail.comments.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Loading state */}
+                {loadingDetail && (
+                  <div className="flex items-center gap-2 text-gray-400 text-xs py-6 justify-center">
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                    Loading comments…
+                  </div>
+                )}
+
+                {/* Comment list */}
+                {!loadingDetail && todoDetail && (
+                  <div className="space-y-5">
+                    {todoDetail.comments.length === 0 && (
+                      <p className="text-xs text-gray-300 text-center py-6">No comments yet.</p>
+                    )}
+                    {todoDetail.comments.map((comment: any) => {
+                      const initials = `${comment.user?.firstName?.[0] ?? '?'}${comment.user?.lastName?.[0] ?? ''}`;
+                      const name = `${comment.user?.firstName ?? ''} ${comment.user?.lastName ?? ''}`.trim();
+                      const date = new Date(comment.createdAt).toLocaleString(undefined, {
+                        month: 'short', day: 'numeric', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                      });
+                      return (
+                        <div key={comment.id} className="flex gap-3">
+                          {/* Avatar */}
+                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700 flex-shrink-0 mt-0.5">
+                            {initials}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {/* Author + timestamp */}
+                            <div className="flex items-baseline gap-2 mb-1">
+                              <span className="text-[11px] font-semibold text-gray-800">{name}</span>
+                              <span className="text-[10px] text-gray-400">{date}</span>
+                            </div>
+                            {/* Comment body */}
+                            <p className="text-[11px] text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
+                              {comment.text}
+                            </p>
+                            {/* Replies */}
+                            {comment.replies?.length > 0 && (
+                              <div className="mt-3 pl-3 border-l-2 border-gray-100 space-y-3">
+                                {comment.replies.map((reply: any) => {
+                                  const rInitials = `${reply.user?.firstName?.[0] ?? '?'}${reply.user?.lastName?.[0] ?? ''}`;
+                                  const rName = `${reply.user?.firstName ?? ''} ${reply.user?.lastName ?? ''}`.trim();
+                                  const rDate = new Date(reply.createdAt).toLocaleString(undefined, {
+                                    month: 'short', day: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                  });
+                                  return (
+                                    <div key={reply.id} className="flex gap-2">
+                                      <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[9px] font-bold text-gray-500 flex-shrink-0 mt-0.5">
+                                        {rInitials}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-baseline gap-1.5 mb-0.5">
+                                          <span className="text-[10px] font-semibold text-gray-700">{rName}</span>
+                                          <span className="text-[9px] text-gray-400">{rDate}</span>
+                                        </div>
+                                        <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap break-words">{reply.text}</p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

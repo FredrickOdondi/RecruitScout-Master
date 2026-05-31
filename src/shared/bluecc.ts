@@ -113,6 +113,8 @@ export class BlueCcClient {
             title
             done
             position
+            text
+            commentCount
             tags {
               id
               title
@@ -273,6 +275,43 @@ export class BlueCcClient {
     return {
       items: data.mentions?.items || [],
       total: data.mentions?.pageInfo?.totalItems || 0,
+    };
+  }
+
+  /**
+   * Fetch all comments (with nested replies) for a given todo card.
+   * Uses the Blue.cc commentList query with category=TODO.
+   */
+  async getTodoComments(todoId: string, projectId?: string) {
+    const query = `
+      query GetTodoComments($categoryId: String!) {
+        commentList(category: TODO, categoryId: $categoryId, first: 200) {
+          totalCount
+          comments {
+            id
+            text
+            createdAt
+            user {
+              firstName
+              lastName
+            }
+            replies {
+              id
+              text
+              createdAt
+              user {
+                firstName
+                lastName
+              }
+            }
+          }
+        }
+      }
+    `;
+    const data = await this.request(query, { categoryId: todoId }, projectId);
+    return {
+      totalCount: data.commentList?.totalCount ?? 0,
+      comments: data.commentList?.comments ?? [],
     };
   }
 }
