@@ -5,7 +5,7 @@ import ExportTab from '../popup/components/ExportTab';
 import SupabaseTab from './SupabaseTab';
 import ClientEnrollmentTab from './ClientEnrollmentTab';
 import BlueApp from '../blue/App';
-import AIAgentsTab from './AIAgentsTab';
+import FloatingAIAgent from './FloatingAIAgent';
 import { supabaseClient } from '../shared/supabase';
 import { BlueCcClient } from '../shared/bluecc';
 
@@ -337,16 +337,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             Agent Control
           </div>
           
-          <button 
-            onClick={() => { setActiveTab('ai'); setIsMobileMenuOpen(false); }}
-            title="AI Agents"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'ai' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-indigo-50'}`}
-          >
-            <div className="shrink-0">
-              <RobotIcon />
-            </div>
-            {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap text-indigo-600">AI Knowledge Agent</span>}
-          </button>
+
           
           <button 
             onClick={() => { setActiveTab('search'); setIsMobileMenuOpen(false); }}
@@ -919,16 +910,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             </div>
           )}
 
-          {/* AI AGENTS */}
-          {activeTab === 'ai' && (
-            <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
-              <AIAgentsTab />
-            </div>
-          )}
-
         </div>
       </main>
 
+      <FloatingAIAgent />
     </div>
   );
 }
