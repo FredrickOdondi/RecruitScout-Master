@@ -138,6 +138,20 @@ export const createLangGraphAgent = (
     }
   );
 
+  const deleteClientTool = tool(
+    async ({ id }) => {
+      const res = await supabaseClient.deleteClient(id);
+      return JSON.stringify(res);
+    },
+    {
+      name: "delete_client",
+      description: "Deletes a client by its ID. DESTRUCTIVE ACTION.",
+      schema: z.object({
+        id: z.string().describe("The ID of the client to delete."),
+      }),
+    }
+  );
+
   const knowledgeBaseTool = tool(
     async ({ query }) => {
       try {
@@ -181,6 +195,7 @@ export const createLangGraphAgent = (
     resetCompletedTasksTool,
     getActiveAgentsTool,
     getClientsTool,
+    deleteClientTool,
     knowledgeBaseTool
   ];
 
@@ -205,8 +220,8 @@ CRITICAL FORMATTING RULES:
 - Keep data concise and easy to read in a small chat window.
 
 CRITICAL RULES FOR DESTRUCTIVE ACTIONS:
-Before you call 'delete_queue_task' or 'reset_completed_tasks', you MUST ask the user for confirmation in the chat.
-For example: "Are you sure you want to delete task X?"
+Before you call 'delete_queue_task', 'reset_completed_tasks', or 'delete_client', you MUST ask the user for confirmation in the chat.
+For example: "Are you sure you want to delete client X?"
 Do NOT execute the destructive tool until the user replies with a clear "yes" or "confirm".`;
 
   // ==========================================
