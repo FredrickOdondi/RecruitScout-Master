@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useState, useRef, useEffect } from 'react';
 import OpenAI from 'openai';
 import { Pinecone } from '@pinecone-database/pinecone';
