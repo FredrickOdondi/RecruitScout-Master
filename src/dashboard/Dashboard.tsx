@@ -5,6 +5,7 @@ import ExportTab from '../popup/components/ExportTab';
 import SupabaseTab from './SupabaseTab';
 import ClientEnrollmentTab from './ClientEnrollmentTab';
 import BlueApp from '../blue/App';
+import AIAgentsTab from './AIAgentsTab';
 import { supabaseClient } from '../shared/supabase';
 import { BlueCcClient } from '../shared/bluecc';
 
@@ -16,6 +17,7 @@ const DatabaseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" he
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
 const CloudDbIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>;
 const BriefcasePlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>;
+const RobotIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>;
 
 interface DashboardProps {
   onLogout: () => void;
@@ -334,6 +336,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <div className={`text-xs font-bold text-gray-700 uppercase tracking-widest mb-2 mt-4 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
             Agent Control
           </div>
+          
+          <button 
+            onClick={() => { setActiveTab('ai'); setIsMobileMenuOpen(false); }}
+            title="AI Agents"
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'ai' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:text-gray-900 hover:bg-indigo-50'}`}
+          >
+            <div className="shrink-0">
+              <RobotIcon />
+            </div>
+            {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap text-indigo-600">AI Knowledge Agent</span>}
+          </button>
           
           <button 
             onClick={() => { setActiveTab('search'); setIsMobileMenuOpen(false); }}
@@ -903,6 +916,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {activeTab === 'blue' && (
             <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
               <BlueApp />
+            </div>
+          )}
+
+          {/* AI AGENTS */}
+          {activeTab === 'ai' && (
+            <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
+              <AIAgentsTab />
             </div>
           )}
 
