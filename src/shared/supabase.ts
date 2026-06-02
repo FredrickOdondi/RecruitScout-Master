@@ -1,8 +1,8 @@
 import { JobData, BulkQueueRecord, ClientRecord } from './types';
 
 // Supabase configuration
-const SUPABASE_URL = 'https://qyceqgttvvairnaxwicm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5Y2VxZ3R0dnZhaXJuYXh3aWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDM4MTQsImV4cCI6MjA4ODMxOTgxNH0.cm8dVGQtAZoLwuhbpsD6uZeFXWPp25LOMCZlyR3aRf0';
+export const SUPABASE_URL = 'https://qyceqgttvvairnaxwicm.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5Y2VxZ3R0dnZhaXJuYXh3aWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDM4MTQsImV4cCI6MjA4ODMxOTgxNH0.cm8dVGQtAZoLwuhbpsD6uZeFXWPp25LOMCZlyR3aRf0';
 
 /**
  * Supabase job record - matches CSV export columns exactly

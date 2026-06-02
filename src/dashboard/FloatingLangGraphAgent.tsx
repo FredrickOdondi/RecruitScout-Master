@@ -30,7 +30,7 @@ export default function FloatingLangGraphAgent() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Thread ID for LangGraph memory
-  const threadId = useMemo(() => Date.now().toString(), []);
+  const [threadId, setThreadId] = useState<string>('');
 
   // Settings State
   const [showSettings, setShowSettings] = useState(false);
@@ -62,7 +62,7 @@ export default function FloatingLangGraphAgent() {
         setPineconeIndex(pi);
 
         if (ok && pk) {
-          initializeAgent(ok, pk, pi);
+          initializeAgent(ok, pk, pi, session.user.id);
         } else {
           setShowSettings(true);
         }
@@ -75,10 +75,32 @@ export default function FloatingLangGraphAgent() {
     setLoadingConfig(false);
   };
 
-  const initializeAgent = (ok: string, pk: string, pi: string) => {
+  const initializeAgent = async (ok: string, pk: string, pi: string, uid: string) => {
     try {
-      const app = createLangGraphAgent(ok, pk, pi);
+      const app = createLangGraphAgent(ok, pk, pi, uid);
       setAgentApp(app);
+      setThreadId(uid);
+      
+      // Load previous memory!
+      const agentState = await app.getState({ configurable: { thread_id: uid } });
+      if (agentState?.values?.messages?.length > 0) {
+        const mappedMessages = agentState.values.messages.map((m: any, idx: number) => {
+          const type = typeof m.getType === 'function' ? m.getType() : m.type || '';
+          return {
+            id: `hist-${idx}`,
+            role: type === 'ai' ? 'assistant' : type === 'human' ? 'user' : 'tool',
+            content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+          };
+        }).filter((m: any) => (m.role === 'user' || m.role === 'assistant') && m.content.trim() !== '');
+
+        if (mappedMessages.length > 0) {
+          setMessages([
+            { id: '0', role: 'assistant', content: 'Welcome back! I loaded our previous conversation from memory.' },
+            ...mappedMessages
+          ]);
+        }
+      }
+
       setShowSettings(false);
     } catch (err) {
       console.error('Failed to init LangGraph agent', err);
@@ -101,7 +123,7 @@ export default function FloatingLangGraphAgent() {
       if (res.error) {
         alert('Error saving credentials: ' + res.error);
       } else {
-        initializeAgent(openaiKey, pineconeKey, pineconeIndex);
+        initializeAgent(openaiKey, pineconeKey, pineconeIndex, session.user.id);
       }
     }
     setSavingConfig(false);

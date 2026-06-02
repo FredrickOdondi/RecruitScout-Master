@@ -1,23 +1,26 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
-import { StateGraph, MessagesAnnotation, MemorySaver } from "@langchain/langgraph";
+import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 import { supabaseClient } from "../../shared/supabase";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
 import OpenAI from "openai";
+import { SupabaseCheckpointer } from "./SupabaseCheckpointer";
 
 /**
  * Builds and compiles the LangGraph agent for the Command Center.
  * @param openaiKey - OpenAI API Key
  * @param pineconeKey - Pinecone API Key 
  * @param pineconeIndexName - Pinecone Index Name
+ * @param userId - ID of the logged in user to scope memory
  */
 export const createLangGraphAgent = (
   openaiKey: string,
   pineconeKey: string,
-  pineconeIndexName: string
+  pineconeIndexName: string,
+  userId: string
 ) => {
 
   // --- Initialize Pinecone ---
@@ -263,7 +266,7 @@ Do NOT execute the destructive tool until the user replies with a clear "yes" or
     .addEdge("tools", "agent");
 
   // Compile the graph with memory so it remembers the conversation
-  const checkpointer = new MemorySaver();
+  const checkpointer = new SupabaseCheckpointer();
   const app = workflow.compile({ checkpointer });
 
   return app;
