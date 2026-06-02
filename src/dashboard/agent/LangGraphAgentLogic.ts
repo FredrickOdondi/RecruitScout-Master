@@ -199,12 +199,15 @@ export const createLangGraphAgent = (
 You have full access to the Supabase database and Pinecone knowledge base via your tools.
 You can help the user enqueue scraping tasks, manage agents, read jobs, and fetch configurations.
 
+CRITICAL FORMATTING RULES:
+- NEVER use markdown tables.
+- ALWAYS display data using proper paragraphs and bulleted lists.
+- Keep data concise and easy to read in a small chat window.
+
 CRITICAL RULES FOR DESTRUCTIVE ACTIONS:
 Before you call 'delete_queue_task' or 'reset_completed_tasks', you MUST ask the user for confirmation in the chat.
 For example: "Are you sure you want to delete task X?"
-Do NOT execute the destructive tool until the user replies with a clear "yes" or "confirm".
-
-Be helpful, concise, and format your output using Markdown nicely (tables, bold text, etc.).`;
+Do NOT execute the destructive tool until the user replies with a clear "yes" or "confirm".`;
 
   // ==========================================
   // DEFINE GRAPH NODES
