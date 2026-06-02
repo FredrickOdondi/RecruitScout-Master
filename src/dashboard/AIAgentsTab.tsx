@@ -3,18 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import OpenAI from 'openai';
 import { Pinecone } from '@pinecone-database/pinecone';
 import ReactMarkdown from 'react-markdown';
-
-// Initialize clients (using Vite env variables)
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-  dangerouslyAllowBrowser: true, // required for client-side use
-});
-
-const pinecone = new Pinecone({
-  apiKey: import.meta.env.VITE_PINECONE_API_KEY || '',
-});
-const indexName = import.meta.env.VITE_PINECONE_INDEX || 'recruitscout';
-const index = pinecone.index(indexName);
+import { supabaseClient } from '../shared/supabase';
 
 type Message = {
   id: string;
@@ -23,6 +12,7 @@ type Message = {
 };
 
 export default function AIAgentsTab() {
+  // Chat State
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -34,17 +24,94 @@ export default function AIAgentsTab() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Settings State
+  const [showSettings, setShowSettings] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [pineconeKey, setPineconeKey] = useState('');
+  const [pineconeIndex, setPineconeIndex] = useState('recruitscout');
+  
+  // Clients
+  const [clients, setClients] = useState<{ openai: OpenAI; pineconeIndex: any } | null>(null);
+
+  useEffect(() => {
+    loadCredentials();
+  }, []);
+
+  const loadCredentials = async () => {
+    setLoadingConfig(true);
+    const session = supabaseClient.getSession();
+    if (session?.user?.id) {
+      const res = await supabaseClient.getUserIntegration(session.user.id);
+      if (res.data) {
+        const ok = res.data.openai_api_key || '';
+        const pk = res.data.pinecone_api_key || '';
+        const pi = res.data.pinecone_index || 'recruitscout';
+        
+        setOpenaiKey(ok);
+        setPineconeKey(pk);
+        setPineconeIndex(pi);
+
+        if (ok && pk) {
+          initializeClients(ok, pk, pi);
+        } else {
+          setShowSettings(true);
+        }
+      } else {
+        setShowSettings(true);
+      }
+    } else {
+      setShowSettings(true);
+    }
+    setLoadingConfig(false);
+  };
+
+  const initializeClients = (ok: string, pk: string, pi: string) => {
+    try {
+      const o = new OpenAI({ apiKey: ok, dangerouslyAllowBrowser: true });
+      const p = new Pinecone({ apiKey: pk });
+      const idx = p.index(pi);
+      setClients({ openai: o, pineconeIndex: idx });
+      setShowSettings(false);
+    } catch (err) {
+      console.error('Failed to init clients', err);
+      setShowSettings(true);
+    }
+  };
+
+  const handleSaveCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingConfig(true);
+    const session = supabaseClient.getSession();
+    if (session?.user?.id) {
+      const payload = {
+        user_id: session.user.id,
+        openai_api_key: openaiKey,
+        pinecone_api_key: pineconeKey,
+        pinecone_index: pineconeIndex,
+      };
+      const res = await supabaseClient.upsertUserIntegration(payload);
+      if (res.error) {
+        alert('Error saving credentials: ' + res.error);
+      } else {
+        initializeClients(openaiKey, pineconeKey, pineconeIndex);
+      }
+    }
+    setSavingConfig(false);
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!showSettings) scrollToBottom();
+  }, [messages, showSettings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !clients) return;
 
     const userMessage = input.trim();
     setInput('');
@@ -58,23 +125,22 @@ export default function AIAgentsTab() {
 
     try {
       // 1. Get embedding for the user query
-      const embeddingRes = await openai.embeddings.create({
+      const embeddingRes = await clients.openai.embeddings.create({
         model: 'text-embedding-3-small',
         input: userMessage,
       });
       const embedding = embeddingRes.data[0].embedding;
 
       // 2. Query Pinecone for relevant context
-      const queryRes = await index.query({
+      const queryRes = await clients.pineconeIndex.query({
         vector: embedding,
         topK: 5,
         includeMetadata: true,
       });
 
       // 3. Assemble the context string
-      // Assuming metadata contains 'text' or 'pageContent' depending on how it was uploaded
       const contextChunks = queryRes.matches
-        .map((match) => {
+        .map((match: any) => {
           const metadata = match.metadata as any;
           return metadata?.text || metadata?.pageContent || metadata?.content || '';
         })
@@ -91,11 +157,10 @@ Context:
 ${contextChunks}
 `;
 
-      const chatCompletion = await openai.chat.completions.create({
+      const chatCompletion = await clients.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          // Include recent chat history (last 5 messages) to maintain conversation context
           ...messages.slice(-5).map((m) => ({ role: m.role, content: m.content })),
           { role: 'user', content: userMessage },
         ],
@@ -126,17 +191,106 @@ ${contextChunks}
     }
   };
 
+  if (loadingConfig) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] max-w-5xl mx-auto w-full items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></div>
+        <p className="mt-4 text-gray-500">Loading AI configuration...</p>
+      </div>
+    );
+  }
+
+  if (showSettings) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] max-w-2xl mx-auto w-full items-center justify-center p-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Configure AI Agent</h2>
+              <p className="text-sm text-gray-500">Enter your API keys to enable the knowledge base assistant.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveCredentials} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key</label>
+              <input
+                type="password"
+                required
+                value={openaiKey}
+                onChange={(e) => setOpenaiKey(e.target.value)}
+                placeholder="sk-..."
+                className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pinecone API Key</label>
+              <input
+                type="password"
+                required
+                value={pineconeKey}
+                onChange={(e) => setPineconeKey(e.target.value)}
+                placeholder="pcsk_..."
+                className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Pinecone Index Name</label>
+              <input
+                type="text"
+                required
+                value={pineconeIndex}
+                onChange={(e) => setPineconeIndex(e.target.value)}
+                placeholder="recruitscout"
+                className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={savingConfig}
+                className="w-full bg-blue-600 text-white font-medium rounded-lg px-4 py-2.5 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 transition-colors"
+              >
+                {savingConfig ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Configuration'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-5xl mx-auto w-full bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 flex items-center gap-3 shrink-0">
-        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold backdrop-blur-sm">
-          AI
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold backdrop-blur-sm">
+            AI
+          </div>
+          <div>
+            <h2 className="text-white font-semibold">Command Center Assistant</h2>
+            <p className="text-blue-100 text-xs">Knowledge Base RAG Agent</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-white font-semibold">Command Center Assistant</h2>
-          <p className="text-blue-100 text-xs">Knowledge Base RAG Agent</p>
-        </div>
+        <button 
+          onClick={() => setShowSettings(true)}
+          className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+          title="Settings"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
 
       {/* Chat Messages */}
@@ -191,11 +345,11 @@ ${contextChunks}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question about the Command Center..."
             className="flex-1 bg-gray-50 border border-gray-300 rounded-full px-5 py-3.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow shadow-sm pr-14"
-            disabled={isLoading}
+            disabled={isLoading || !clients}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || !clients}
             className="absolute right-2 top-1.5 bottom-1.5 aspect-square bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors shadow-sm"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
