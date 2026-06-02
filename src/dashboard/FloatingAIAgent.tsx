@@ -26,6 +26,7 @@ export default function FloatingAIAgent() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Settings State
   const [showSettings, setShowSettings] = useState(false);
@@ -131,6 +132,8 @@ export default function FloatingAIAgent() {
     setMessages((prev) => [...prev, newMessage]);
     setIsLoading(true);
 
+    abortControllerRef.current = new AbortController();
+
     try {
       const embeddingRes = await clients.openai.embeddings.create({
         model: 'text-embedding-3-small',
@@ -168,7 +171,7 @@ ${contextChunks}
           ...messages.slice(-5).map((m) => ({ role: m.role, content: m.content })),
           { role: 'user', content: userMessage },
         ],
-      });
+      }, { signal: abortControllerRef.current.signal });
 
       const aiResponse = chatCompletion.choices[0].message.content || 'Sorry, I could not generate a response.';
       
@@ -180,19 +183,50 @@ ${contextChunks}
           content: aiResponse,
         },
       ]);
-    } catch (error) {
-      console.error('Error in RAG process:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: '⚠️ An error occurred while fetching the response. Please check your API keys and connection.',
-        },
-      ]);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Agent execution stopped by user.');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: '🛑 *Agent execution stopped.*',
+          },
+        ]);
+      } else {
+        console.error('Error in RAG process:', error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: '⚠️ An error occurred while fetching the response. Please check your API keys and connection.',
+          },
+        ]);
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e as unknown as React.FormEvent);
+    }
+  };
+
+  const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
   };
 
   // The floating button
@@ -357,22 +391,35 @@ ${contextChunks}
 
           {/* Input Form */}
           <div className="p-3 bg-white border-t border-gray-200 shrink-0">
-            <form onSubmit={handleSubmit} className="flex gap-2 relative w-full">
-              <input
-                type="text"
+            <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end">
+              <textarea
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleTextareaInput}
+                onKeyDown={handleInputKeyDown}
                 placeholder="Ask about command center..."
-                className="flex-1 bg-gray-50 border border-gray-300 rounded-full pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow shadow-sm"
+                className="flex-1 bg-gray-50 border border-gray-300 rounded-2xl pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow shadow-sm resize-none overflow-y-auto"
+                style={{ minHeight: '40px', maxHeight: '150px' }}
                 disabled={isLoading || !clients}
+                rows={1}
               />
-              <button
-                type="submit"
-                disabled={!input.trim() || isLoading || !clients}
-                className="absolute right-1.5 top-1.5 bottom-1.5 aspect-square bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors shadow-sm"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </button>
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={handleStop}
+                  className="absolute right-1.5 bottom-1.5 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
+                  title="Stop Execution"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="6" width="12" height="12" /></svg>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim() || !clients}
+                  className="absolute right-1.5 bottom-1.5 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors shadow-sm"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              )}
             </form>
           </div>
         </>
