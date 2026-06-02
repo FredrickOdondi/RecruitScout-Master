@@ -39,6 +39,9 @@ export default function FloatingLangGraphAgent() {
   const [openaiKey, setOpenaiKey] = useState('');
   const [pineconeKey, setPineconeKey] = useState('');
   const [pineconeIndex, setPineconeIndex] = useState('recruitscout');
+  const [blueccTokenId, setBlueccTokenId] = useState('');
+  const [blueccSecretId, setBlueccSecretId] = useState('');
+  const [blueccCompanyId, setBlueccCompanyId] = useState('');
   
   // Compiled Graph
   const [agentApp, setAgentApp] = useState<any>(null);
@@ -56,13 +59,19 @@ export default function FloatingLangGraphAgent() {
         const ok = res.data.openai_api_key || '';
         const pk = res.data.pinecone_api_key || '';
         const pi = res.data.pinecone_index || 'recruitscout';
+        const bti = res.data.bluecc_token_id || '';
+        const bsi = res.data.bluecc_secret_id || '';
+        const bci = res.data.bluecc_company_id || '';
         
         setOpenaiKey(ok);
         setPineconeKey(pk);
         setPineconeIndex(pi);
+        setBlueccTokenId(bti);
+        setBlueccSecretId(bsi);
+        setBlueccCompanyId(bci);
 
         if (ok && pk) {
-          initializeAgent(ok, pk, pi, session.user.id);
+          initializeAgent(ok, pk, pi, session.user.id, bti, bsi, bci);
         } else {
           setShowSettings(true);
         }
@@ -75,9 +84,9 @@ export default function FloatingLangGraphAgent() {
     setLoadingConfig(false);
   };
 
-  const initializeAgent = async (ok: string, pk: string, pi: string, uid: string) => {
+  const initializeAgent = async (ok: string, pk: string, pi: string, uid: string, bti: string, bsi: string, bci: string) => {
     try {
-      const app = createLangGraphAgent(ok, pk, pi, uid);
+      const app = createLangGraphAgent(ok, pk, pi, uid, bti, bsi, bci);
       setAgentApp(app);
       setThreadId(uid);
       
@@ -118,12 +127,15 @@ export default function FloatingLangGraphAgent() {
         openai_api_key: openaiKey,
         pinecone_api_key: pineconeKey,
         pinecone_index: pineconeIndex,
+        bluecc_token_id: blueccTokenId,
+        bluecc_secret_id: blueccSecretId,
+        bluecc_company_id: blueccCompanyId,
       };
       const res = await supabaseClient.upsertUserIntegration(payload);
       if (res.error) {
         alert('Error saving credentials: ' + res.error);
       } else {
-        initializeAgent(openaiKey, pineconeKey, pineconeIndex, session.user.id);
+        initializeAgent(openaiKey, pineconeKey, pineconeIndex, session.user.id, blueccTokenId, blueccSecretId, blueccCompanyId);
       }
     }
     setSavingConfig(false);
@@ -312,6 +324,40 @@ export default function FloatingLangGraphAgent() {
                 value={pineconeIndex}
                 onChange={(e) => setPineconeIndex(e.target.value)}
                 placeholder="recruitscout"
+                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+            
+            <div className="pt-2 border-t border-gray-200 mt-2">
+              <h3 className="text-xs font-bold text-gray-700 mb-2">Optional: Blue.cc Integration</h3>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Blue.cc Token ID</label>
+              <input
+                type="text"
+                value={blueccTokenId}
+                onChange={(e) => setBlueccTokenId(e.target.value)}
+                placeholder="e.g. 5x..."
+                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Blue.cc Secret ID</label>
+              <input
+                type="password"
+                value={blueccSecretId}
+                onChange={(e) => setBlueccSecretId(e.target.value)}
+                placeholder="secret..."
+                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Blue.cc Company ID</label>
+              <input
+                type="text"
+                value={blueccCompanyId}
+                onChange={(e) => setBlueccCompanyId(e.target.value)}
+                placeholder="(Optional)"
                 className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
               />
             </div>

@@ -8,6 +8,7 @@ import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
 import OpenAI from "openai";
 import { SupabaseCheckpointer } from "./SupabaseCheckpointer";
+import { BlueCcClient } from "../../shared/bluecc";
 
 /**
  * Builds and compiles the LangGraph agent for the Command Center.
@@ -15,12 +16,18 @@ import { SupabaseCheckpointer } from "./SupabaseCheckpointer";
  * @param pineconeKey - Pinecone API Key 
  * @param pineconeIndexName - Pinecone Index Name
  * @param userId - ID of the logged in user to scope memory
+ * @param blueccTokenId - Blue.cc Token ID (optional)
+ * @param blueccSecretId - Blue.cc Secret ID (optional)
+ * @param blueccCompanyId - Blue.cc Company ID (optional)
  */
 export const createLangGraphAgent = (
   openaiKey: string,
   pineconeKey: string,
   pineconeIndexName: string,
-  userId: string
+  userId: string,
+  blueccTokenId: string = '',
+  blueccSecretId: string = '',
+  blueccCompanyId: string = ''
 ) => {
 
   // --- Initialize Pinecone ---
@@ -29,6 +36,11 @@ export const createLangGraphAgent = (
   
   // We use standard OpenAI for embeddings here (tool runs in browser)
   const openaiClient = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
+
+  // Initialize Blue.cc Client
+  const blueClient = (blueccTokenId && blueccSecretId) 
+    ? new BlueCcClient(blueccTokenId, blueccSecretId, blueccCompanyId || undefined)
+    : null;
 
   // ==========================================
   // DEFINE TOOLS
@@ -189,6 +201,88 @@ export const createLangGraphAgent = (
     }
   );
 
+  // --- Blue.cc Tools ---
+
+  const getBlueWorkspacesTool = tool(
+    async () => {
+      if (!blueClient) return "Blue.cc credentials are not configured in settings.";
+      const res = await blueClient.getWorkspaces();
+      return JSON.stringify(res);
+    },
+    {
+      name: "get_blue_workspaces",
+      description: "Fetches all Blue.cc projects/workspaces for the company.",
+      schema: z.object({}),
+    }
+  );
+
+  const getBlueWorkspaceContentTool = tool(
+    async ({ projectId }) => {
+      if (!blueClient) return "Blue.cc credentials are not configured in settings.";
+      const res = await blueClient.getWorkspaceContent(projectId);
+      return JSON.stringify(res);
+    },
+    {
+      name: "get_blue_workspace_content",
+      description: "Fetches lists and to-dos for a specific Blue.cc project/workspace.",
+      schema: z.object({
+        projectId: z.string().describe("The ID of the project to fetch content for."),
+      }),
+    }
+  );
+
+  const createBlueWorkspaceTool = tool(
+    async ({ name, description }) => {
+      if (!blueClient) return "Blue.cc credentials are not configured in settings.";
+      const res = await blueClient.createWorkspace(name, description);
+      return JSON.stringify(res);
+    },
+    {
+      name: "create_blue_workspace",
+      description: "Creates a new workspace in Blue.cc. DESTRUCTIVE ACTION.",
+      schema: z.object({
+        name: z.string().describe("Name of the new workspace"),
+        description: z.string().optional().describe("Optional description"),
+      }),
+    }
+  );
+
+  const moveBlueTodoTool = tool(
+    async ({ todoId, todoListId, projectId }) => {
+      if (!blueClient) return "Blue.cc credentials are not configured in settings.";
+      const res = await blueClient.moveTodo(todoId, todoListId, projectId);
+      return JSON.stringify(res);
+    },
+    {
+      name: "move_blue_todo",
+      description: "Moves a to-do card to a different list/column. DESTRUCTIVE ACTION.",
+      schema: z.object({
+        todoId: z.string().describe("The ID of the to-do card"),
+        todoListId: z.string().describe("The ID of the destination list/column"),
+        projectId: z.string().describe("The ID of the project"),
+      }),
+    }
+  );
+
+  const createBlueCommentTool = tool(
+    async ({ categoryId, category, text, projectId, parentId }) => {
+      if (!blueClient) return "Blue.cc credentials are not configured in settings.";
+      const res = await blueClient.createComment(categoryId, category, text, projectId, parentId);
+      return JSON.stringify(res);
+    },
+    {
+      name: "create_blue_comment",
+      description: "Adds a comment to a Blue.cc to-do. DESTRUCTIVE ACTION.",
+      schema: z.object({
+        categoryId: z.string().describe("The ID of the to-do card"),
+        category: z.string().describe("Typically 'TODO'"),
+        text: z.string().describe("The comment text content"),
+        projectId: z.string().optional().describe("The ID of the project"),
+        parentId: z.string().optional().describe("The ID of the parent comment, if replying"),
+      }),
+    }
+  );
+
   const tools = [
     getJobCountTool,
     getJobsTool,
@@ -199,7 +293,12 @@ export const createLangGraphAgent = (
     getActiveAgentsTool,
     getClientsTool,
     deleteClientTool,
-    knowledgeBaseTool
+    knowledgeBaseTool,
+    getBlueWorkspacesTool,
+    getBlueWorkspaceContentTool,
+    createBlueWorkspaceTool,
+    moveBlueTodoTool,
+    createBlueCommentTool
   ];
 
   // ==========================================
@@ -214,8 +313,8 @@ export const createLangGraphAgent = (
   }).bindTools(tools);
 
   const SYSTEM_PROMPT = `You are the ultimate RecruitScout Dashboard LangGraph Agent. 
-You have full access to the Supabase database and Pinecone knowledge base via your tools.
-You can help the user enqueue scraping tasks, manage agents, read jobs, and fetch configurations.
+You have full access to the Supabase database, Pinecone knowledge base, and Blue.cc Workspaces via your tools.
+You can help the user enqueue scraping tasks, manage agents, read jobs, fetch configurations, and manage their Blue.cc projects.
 
 CRITICAL FORMATTING RULES:
 - NEVER use markdown tables.
@@ -223,8 +322,8 @@ CRITICAL FORMATTING RULES:
 - Keep data concise and easy to read in a small chat window.
 
 CRITICAL RULES FOR DESTRUCTIVE ACTIONS:
-Before you call 'delete_queue_task', 'reset_completed_tasks', or 'delete_client', you MUST ask the user for confirmation in the chat.
-For example: "Are you sure you want to delete client X?"
+Before you call 'delete_queue_task', 'reset_completed_tasks', 'delete_client', 'create_blue_workspace', 'move_blue_todo', or 'create_blue_comment', you MUST ask the user for confirmation in the chat.
+For example: "Are you sure you want to delete client X?" or "Are you sure you want to move this task to Done?"
 Do NOT execute the destructive tool until the user replies with a clear "yes" or "confirm".`;
 
   // ==========================================
