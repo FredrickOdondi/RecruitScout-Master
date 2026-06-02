@@ -6,6 +6,7 @@ import SupabaseTab from './SupabaseTab';
 import ClientEnrollmentTab from './ClientEnrollmentTab';
 import BlueApp from '../blue/App';
 import FloatingAIAgent from './FloatingAIAgent';
+import FloatingLangGraphAgent from './FloatingLangGraphAgent';
 import { supabaseClient } from '../shared/supabase';
 import { BlueCcClient } from '../shared/bluecc';
 
@@ -913,6 +914,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
       </main>
 
+      <FloatingLangGraphAgent />
       <FloatingAIAgent />
     </div>
   );
