@@ -24,7 +24,6 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   useEffect(() => {
-    // Only scroll if we are not loading to prevent jerky scrolls
     setTimeout(scrollToBottom, 100);
   }, [messages, isLoading]);
 
@@ -66,68 +65,68 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col gap-4 text-sm">
+    <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 text-sm">
         {messages.map((m) => (
           <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            <div className={`w-7 h-7 rounded-full flex shrink-0 items-center justify-center shadow-sm ${
-              m.role === 'user' ? 'bg-fuchsia-100 text-fuchsia-700' : 'bg-purple-600 text-white'
+            <div className={`w-8 h-8 rounded-full flex shrink-0 items-center justify-center shadow-sm ${
+              m.role === 'user' ? 'bg-blue-100 text-blue-700' : 'bg-gray-900 text-white'
             }`}>
               {m.role === 'user' ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg>
               )}
             </div>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
+            <div className={`max-w-[85%] px-4 py-3 shadow-sm ${
               m.role === 'user' 
-                ? 'bg-purple-600 text-white rounded-tr-sm' 
-                : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
+                ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm' 
+                : 'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.03)]'
             }`}>
               {m.role === 'assistant' ? (
-                <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800 text-[13px]">
+                <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-[14px]">
                   <ReactMarkdown>{m.content}</ReactMarkdown>
                 </div>
               ) : (
-                <p className="text-[13px] whitespace-pre-wrap">{m.content}</p>
+                <p className="text-[14px] whitespace-pre-wrap">{m.content}</p>
               )}
             </div>
           </div>
         ))}
         {isLoading && (
           <div className="flex gap-3">
-            <div className="w-7 h-7 rounded-full bg-purple-600 text-white flex shrink-0 items-center justify-center shadow-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg>
+            <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex shrink-0 items-center justify-center shadow-sm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg>
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-1">
-              <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></div>
-              <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="bg-white border border-gray-100/50 rounded-2xl rounded-tl-sm px-4 py-3 shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex items-center gap-1.5 h-10">
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-3 bg-white border-t border-gray-200 shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end">
+      <div className="p-4 bg-transparent shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end bg-white border border-gray-200 rounded-3xl p-1.5 shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-shadow focus-within:shadow-[0_4px_20px_rgb(37,99,235,0.1)] focus-within:border-blue-400/50">
           <textarea
             value={input}
             onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`; }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
-            placeholder="Ask the LangGraph Agent..."
-            className="flex-1 bg-gray-50 border border-gray-300 rounded-2xl pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-shadow shadow-sm resize-none overflow-y-auto"
-            style={{ minHeight: '40px', maxHeight: '150px' }}
+            placeholder="Ask the Agent..."
+            className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
+            style={{ minHeight: '44px', maxHeight: '150px' }}
             disabled={isLoading || !agentApp}
             rows={1}
           />
           {isLoading ? (
-            <button type="button" onClick={() => abortControllerRef.current?.abort()} className="absolute right-1.5 bottom-1.5 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm" title="Stop">
+            <button type="button" onClick={() => abortControllerRef.current?.abort()} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-black transition-colors shadow-sm" title="Stop">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" /></svg>
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim() || !agentApp} className="absolute right-1.5 bottom-1.5 w-7 h-7 bg-purple-600 text-white rounded-full flex items-center justify-center hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <button type="submit" disabled={!input.trim() || !agentApp} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-sm active:scale-95">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           )}
         </form>
@@ -214,66 +213,68 @@ ${contextChunks}
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col gap-4 text-sm">
+    <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 text-sm">
         {messages.map((m) => (
           <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            <div className={`w-7 h-7 rounded-full flex shrink-0 items-center justify-center shadow-sm ${
+            <div className={`w-8 h-8 rounded-full flex shrink-0 items-center justify-center shadow-sm ${
               m.role === 'user' ? 'bg-blue-100 text-blue-700' : 'bg-blue-600 text-white'
             }`}>
               {m.role === 'user' ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
               )}
             </div>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
-              m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
+            <div className={`max-w-[85%] px-4 py-3 shadow-sm ${
+              m.role === 'user' 
+                ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm' 
+                : 'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.03)]'
             }`}>
               {m.role === 'assistant' ? (
-                <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800 text-[13px]">
+                <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-[14px]">
                   <ReactMarkdown>{m.content}</ReactMarkdown>
                 </div>
               ) : (
-                <p className="text-[13px] whitespace-pre-wrap">{m.content}</p>
+                <p className="text-[14px] whitespace-pre-wrap">{m.content}</p>
               )}
             </div>
           </div>
         ))}
         {isLoading && (
           <div className="flex gap-3">
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex shrink-0 items-center justify-center shadow-sm">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex shrink-0 items-center justify-center shadow-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-1">
-              <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></div>
-              <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="bg-white border border-gray-100/50 rounded-2xl rounded-tl-sm px-4 py-3 shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex items-center gap-1.5 h-10">
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-3 bg-white border-t border-gray-200 shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end">
+      <div className="p-4 bg-transparent shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end bg-white border border-gray-200 rounded-3xl p-1.5 shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-shadow focus-within:shadow-[0_4px_20px_rgb(37,99,235,0.1)] focus-within:border-blue-400/50">
           <textarea
             value={input}
             onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`; }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
             placeholder="Ask Standard RAG..."
-            className="flex-1 bg-gray-50 border border-gray-300 rounded-2xl pl-4 pr-10 py-2.5 text-[13px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow shadow-sm resize-none overflow-y-auto"
-            style={{ minHeight: '40px', maxHeight: '150px' }}
+            className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-[14px] text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
+            style={{ minHeight: '44px', maxHeight: '150px' }}
             disabled={isLoading || !clients}
             rows={1}
           />
           {isLoading ? (
-            <button type="button" onClick={() => abortControllerRef.current?.abort()} className="absolute right-1.5 bottom-1.5 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm" title="Stop">
+            <button type="button" onClick={() => abortControllerRef.current?.abort()} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-black transition-colors shadow-sm" title="Stop">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" /></svg>
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim() || !clients} className="absolute right-1.5 bottom-1.5 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <button type="submit" disabled={!input.trim() || !clients} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-sm active:scale-95">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           )}
         </form>
@@ -292,6 +293,10 @@ export default function UnifiedFloatingAgent() {
   const [showSettings, setShowSettings] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
+
+  // Custom Resize State
+  const [size, setSize] = useState({ width: 420, height: 700 });
+  const isResizing = useRef(false);
 
   // API Keys
   const [openaiKey, setOpenaiKey] = useState('');
@@ -409,94 +414,143 @@ export default function UnifiedFloatingAgent() {
     setSavingConfig(false);
   };
 
+  // --- Resizing Logic ---
+  const handleMouseDown = (e: React.MouseEvent, type: 'topLeft' | 'top' | 'left') => {
+    e.preventDefault();
+    isResizing.current = true;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = size.width;
+    const startHeight = size.height;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizing.current) return;
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+
+      setSize(() => {
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+
+        if (type === 'topLeft' || type === 'left') {
+          newWidth = Math.max(340, Math.min(window.innerWidth * 0.9, startWidth - deltaX));
+        }
+        if (type === 'topLeft' || type === 'top') {
+          newHeight = Math.max(450, Math.min(window.innerHeight * 0.9, startHeight - deltaY));
+        }
+
+        return { width: newWidth, height: newHeight };
+      });
+    };
+
+    const handleMouseUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'default';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    if (type === 'topLeft') document.body.style.cursor = 'nwse-resize';
+    else if (type === 'top') document.body.style.cursor = 'ns-resize';
+    else if (type === 'left') document.body.style.cursor = 'ew-resize';
+  };
+
   if (!isOpen) {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-tr from-gray-800 to-gray-900 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:scale-105 transition-all duration-300 group"
+        className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-white border border-gray-200/60 text-gray-800 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:scale-105 transition-all duration-300 group"
       >
-        <svg className="w-6 h-6 group-hover:-rotate-12 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
+        <svg className="w-7 h-7 text-blue-600 group-hover:rotate-12 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
       </button>
     );
   }
 
-  // Determine header color based on mode
-  const headerGradient = activeMode === 'langgraph' 
-    ? 'from-purple-600 to-fuchsia-700' 
-    : 'from-blue-600 to-indigo-700';
-
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[420px] h-[650px] min-w-[320px] min-h-[400px] max-w-[90vw] max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden resize animate-in slide-in-from-bottom-5 fade-in duration-300">
-      
-      {/* Header */}
-      <div className={`bg-gradient-to-r ${headerGradient} p-3 flex items-center justify-between shrink-0 transition-colors duration-300`}>
+    <div 
+      className="fixed bottom-6 right-6 z-50 bg-white/80 backdrop-blur-3xl rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.1)] border border-white/50 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300"
+      style={{ width: size.width, height: size.height }}
+    >
+      {/* Invisible Drag Handles */}
+      <div className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'topLeft')} />
+      <div className="absolute top-0 left-4 right-0 h-2 cursor-ns-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'top')} />
+      <div className="absolute top-4 left-0 bottom-0 w-2 cursor-ew-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'left')} />
+
+      {/* Sleek Header */}
+      <div className="px-5 py-4 flex items-center justify-between shrink-0 border-b border-gray-200/50 relative">
         <div className="flex-1 flex justify-center">
-          {/* Custom segmented toggle */}
-          <div className="bg-black/20 p-1 rounded-lg flex items-center gap-1 backdrop-blur-sm shadow-inner">
+          {/* Glass Segmented Control */}
+          <div className="bg-gray-200/60 p-1 rounded-xl flex items-center gap-1 shadow-inner relative overflow-hidden">
+            <div 
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-out"
+              style={{ transform: activeMode === 'langgraph' ? 'translateX(0)' : 'translateX(100%)', left: '4px' }}
+            />
             <button
               onClick={() => setActiveMode('langgraph')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${activeMode === 'langgraph' ? 'bg-white text-purple-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+              className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-colors relative z-10 w-32 ${activeMode === 'langgraph' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              LangGraph Agent
+              LangGraph
             </button>
             <button
               onClick={() => setActiveMode('rag')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${activeMode === 'rag' ? 'bg-white text-blue-700 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+              className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-colors relative z-10 w-32 ${activeMode === 'rag' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Standard RAG
+              Knowledge
             </button>
           </div>
         </div>
         
-        <div className="flex items-center gap-1 absolute right-3">
-          <button onClick={() => setShowSettings(!showSettings)} className="text-white/80 hover:text-white p-1.5 hover:bg-white/10 rounded-md transition-colors" title="Settings">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <div className="flex items-center gap-1 absolute right-4">
+          <button onClick={() => setShowSettings(!showSettings)} className={`p-2 rounded-full transition-colors ${showSettings ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`} title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
-          <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1.5 hover:bg-white/10 rounded-md transition-colors" title="Close">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <button onClick={() => setIsOpen(false)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors" title="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
       </div>
 
       {loadingConfig ? (
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
-          <div className="w-6 h-6 rounded-full border-2 border-gray-400 border-t-transparent animate-spin"></div>
-          <p className="mt-3 text-sm text-gray-500">Initializing Agents...</p>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></div>
         </div>
       ) : showSettings ? (
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 shrink-0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div className="flex-1 overflow-y-auto p-6 bg-transparent">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">Configure Agents</h2>
-              <p className="text-xs text-gray-500">Settings apply to both AI modes.</p>
+              <h2 className="text-lg font-bold text-gray-900">Agent Configuration</h2>
+              <p className="text-sm text-gray-500">Settings apply to both AI modes.</p>
             </div>
           </div>
-          <form onSubmit={handleSaveCredentials} className="space-y-4">
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">OpenAI API Key</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500" /></div>
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">Pinecone API Key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500" /></div>
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">Pinecone Index Name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500" /></div>
+          <form onSubmit={handleSaveCredentials} className="space-y-5">
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">OpenAI API Key</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Pinecone API Key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Pinecone Index Name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
             
-            <div className="pt-2 border-t border-gray-200 mt-2"><h3 className="text-xs font-bold text-gray-700 mb-2">Optional: Blue.cc Integration</h3></div>
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">Blue.cc Token ID</label><input type="text" value={blueccTokenId} onChange={(e) => setBlueccTokenId(e.target.value)} placeholder="e.g. 5x..." className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500" /></div>
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">Blue.cc Secret ID</label><input type="password" value={blueccSecretId} onChange={(e) => setBlueccSecretId(e.target.value)} placeholder="secret..." className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500" /></div>
-            <div><label className="block text-xs font-medium text-gray-700 mb-1">Blue.cc Company ID</label><input type="text" value={blueccCompanyId} onChange={(e) => setBlueccCompanyId(e.target.value)} placeholder="(Optional)" className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500" /></div>
+            <div className="pt-4 border-t border-gray-200/60 mt-4"><h3 className="text-sm font-bold text-gray-800 mb-3">Blue.cc Integration (Optional)</h3></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Token ID</label><input type="text" value={blueccTokenId} onChange={(e) => setBlueccTokenId(e.target.value)} placeholder="e.g. 5x..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Secret ID</label><input type="password" value={blueccSecretId} onChange={(e) => setBlueccSecretId(e.target.value)} placeholder="secret..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Company ID</label><input type="text" value={blueccCompanyId} onChange={(e) => setBlueccCompanyId(e.target.value)} placeholder="(Optional)" className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
 
-            <div className="pt-2">
-              <button type="submit" disabled={savingConfig} className="w-full bg-gray-800 text-white font-medium rounded-md px-4 py-2 hover:bg-gray-900 disabled:opacity-70 flex justify-center items-center gap-2 transition-colors text-sm">
-                {savingConfig ? (<><div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>Saving...</>) : 'Save Configuration'}
+            <div className="pt-4">
+              <button type="submit" disabled={savingConfig} className="w-full bg-gray-900 text-white font-medium rounded-xl px-4 py-3 hover:bg-black disabled:opacity-70 flex justify-center items-center gap-2 transition-colors text-sm shadow-md">
+                {savingConfig ? (<><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>Saving...</>) : 'Save Configuration'}
               </button>
             </div>
           </form>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          <div className={`absolute inset-0 flex flex-col ${activeMode === 'langgraph' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+        <div className="flex-1 flex flex-col overflow-hidden relative bg-transparent">
+          <div className={`absolute inset-0 flex flex-col transition-opacity duration-300 ${activeMode === 'langgraph' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <LangGraphChat agentApp={agentApp} threadId={langGraphThreadId} initialMessages={initialLangGraphMessages} />
           </div>
-          <div className={`absolute inset-0 flex flex-col ${activeMode === 'rag' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+          <div className={`absolute inset-0 flex flex-col transition-opacity duration-300 ${activeMode === 'rag' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <StandardRAGChat clients={ragClients} />
           </div>
         </div>
