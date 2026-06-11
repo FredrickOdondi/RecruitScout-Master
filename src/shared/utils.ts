@@ -126,20 +126,12 @@ export function escapeCSVValue(value: string): string {
  */
 const _domainCache = new Map<string, string>();
 
-/**
- * Fallback: generate a guessed domain from company name
- */
-export function generateCompanyDomain(companyName: string): string {
-  if (!companyName || companyName === 'Unknown') return '';
-  const domainName = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (!domainName) return '';
-  return `www.${domainName}.it`;
-}
+
 
 /**
  * Fetch the real company domain by proxying through the background service worker
  * (which has network access to autocomplete.clearbit.com without CSP restrictions).
- * Falls back to generateCompanyDomain if the lookup fails.
+ * Returns empty string if the lookup fails.
  */
 export async function fetchCompanyDomain(companyName: string): Promise<string> {
   if (!companyName || companyName === 'Unknown') return '';
@@ -169,13 +161,11 @@ export async function fetchCompanyDomain(companyName: string): Promise<string> {
       return result.domain;
     }
   } catch {
-    // Background not reachable or timed out — fall through to fallback
+    // Background not reachable or timed out
   }
 
-  // Fallback to heuristic
-  const fallback = generateCompanyDomain(companyName);
-  _domainCache.set(companyName, fallback);
-  return fallback;
+  _domainCache.set(companyName, '');
+  return '';
 }
 
 /**

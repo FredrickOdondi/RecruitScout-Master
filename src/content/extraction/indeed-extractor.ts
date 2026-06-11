@@ -1,5 +1,5 @@
 import { JobData } from '../../shared/types';
-import { generateId, generateCompanyDomain } from '../../shared/utils';
+import { generateId } from '../../shared/utils';
 import { SalaryParser } from './salary-parser';
 
 export class IndeedExtractor {
@@ -74,7 +74,6 @@ export class IndeedExtractor {
           id: generateId(),
           title,
           company,
-          companyDomain: company ? generateCompanyDomain(company) || undefined : undefined,
           location,
           url: url || window.location.href,
           employmentType: employmentTypeStr ? this.normalizeEmploymentType(employmentTypeStr.toLowerCase()) : undefined,

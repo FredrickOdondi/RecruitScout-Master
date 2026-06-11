@@ -8,7 +8,6 @@ import {
   generateId,
   extractNumber,
   getRelativeTime,
-  generateCompanyDomain,
 } from '../../shared/utils';
 import { HEURISTIC_SELECTORS, EMPLOYMENT_TYPE_KEYWORDS, LOCATION_TYPE_KEYWORDS } from '../../shared/constants';
 import { SalaryParser } from './salary-parser';

@@ -11,7 +11,8 @@ export default defineManifest({
     'activeTab',
     'tabs',
     'scripting',
-    'offscreen'
+    'offscreen',
+    'alarms'
   ],
   host_permissions: [
     'https://www.linkedin.com/*',

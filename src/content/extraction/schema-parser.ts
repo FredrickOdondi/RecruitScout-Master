@@ -1,5 +1,5 @@
 import { JobData, SalaryInfo } from '../../shared/types';
-import { extractText, safeJsonParse, generateCompanyDomain } from '../../shared/utils';
+import { extractText, safeJsonParse } from '../../shared/utils';
 
 /**
  * Schema.org JobPosting parser
