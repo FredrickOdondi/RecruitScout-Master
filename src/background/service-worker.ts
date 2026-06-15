@@ -1367,7 +1367,7 @@ class ServiceWorker {
     });
   }
 
-  private async getOrCreateScraperTab(suggestedTabId?: number): Promise<number> {
+  private async getOrCreateScraperTab(suggestedTabId?: number, targetSite?: string): Promise<number> {
     const candidates = [suggestedTabId, this.currentTabId].filter(id => id !== undefined) as number[];
     for (const id of candidates) {
       try {
@@ -1382,7 +1382,11 @@ class ServiceWorker {
       }
     }
     // Create silent background tab instead of hijacking
-    const newTab = await chrome.tabs.create({ url: 'https://it.indeed.com', active: false });
+    let startUrl = 'https://it.indeed.com';
+    if (targetSite === 'trovolavoro') startUrl = 'https://offerte-di-lavoro.trovolavoro.com';
+    else if (targetSite === 'spanish-indeed') startUrl = 'https://es.indeed.com';
+    
+    const newTab = await chrome.tabs.create({ url: startUrl, active: false });
     if (!newTab.id) throw new Error('Failed to spawn background scraper tab');
     this.currentTabId = newTab.id;
     return newTab.id;
@@ -1390,7 +1394,7 @@ class ServiceWorker {
 
   private async startExtraction(payload: any, sender: chrome.runtime.MessageSender): Promise<any> {
     const { mode, url, options, tabId: payloadTabId } = payload;
-    const tabId = await this.getOrCreateScraperTab(payloadTabId);
+    const tabId = await this.getOrCreateScraperTab(payloadTabId, options?.target_site);
 
     try {
       return await this.performExtraction(tabId, url, mode, options);
@@ -1405,7 +1409,7 @@ class ServiceWorker {
 
   private async startBulkExtraction(payload: any, sender?: chrome.runtime.MessageSender): Promise<any> {
     const { titles, options, tabId: payloadTabId } = payload;
-    const tabId = await this.getOrCreateScraperTab(payloadTabId);
+    const tabId = await this.getOrCreateScraperTab(payloadTabId, options?.target_site);
 
     const settings = await storage.getSettings();
     const delay = settings.crawlDelay || 2000;
@@ -1413,7 +1417,9 @@ class ServiceWorker {
     // Detect Indeed domain from current tab
     const tab = await chrome.tabs.get(tabId);
     let baseUrl = 'https://it.indeed.com';
-    if (tab.url) {
+    if (options?.target_site === 'spanish-indeed') {
+      baseUrl = 'https://es.indeed.com';
+    } else if (tab.url) {
       const urlObj = new URL(tab.url);
       if (urlObj.hostname.includes('indeed')) {
         baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
