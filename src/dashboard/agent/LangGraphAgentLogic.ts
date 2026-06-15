@@ -7,12 +7,14 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
 import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { SupabaseCheckpointer } from "./SupabaseCheckpointer";
 import { BlueCcClient } from "../../shared/bluecc";
 
 /**
  * Builds and compiles the LangGraph agent for the Command Center.
  * @param geminiKey - Gemini API Key
+ * @param openaiKey - OpenAI API Key (For Pinecone)
  * @param pineconeKey - Pinecone API Key 
  * @param pineconeIndexName - Pinecone Index Name
  * @param userId - ID of the logged in user to scope memory
@@ -22,6 +24,7 @@ import { BlueCcClient } from "../../shared/bluecc";
  */
 export const createLangGraphAgent = (
   geminiKey: string,
+  openaiKey: string,
   pineconeKey: string,
   pineconeIndexName: string,
   userId: string,
@@ -34,8 +37,8 @@ export const createLangGraphAgent = (
   const pc = new Pinecone({ apiKey: pineconeKey });
   const index = pc.index(pineconeIndexName);
   
-  // We use Google Gen AI for embeddings here (tool runs in browser)
-  const geminiClient = new GoogleGenAI({ apiKey: geminiKey });
+  // We use standard OpenAI for embeddings here to match Pinecone
+  const openaiClient = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
 
   // Initialize Blue.cc Client
   const blueClient = (blueccTokenId && blueccSecretId) 
@@ -170,12 +173,11 @@ export const createLangGraphAgent = (
   const knowledgeBaseTool = tool(
     async ({ query }) => {
       try {
-        const embeddingRes = await geminiClient.models.embedContent({
-          model: 'text-embedding-004',
-          contents: query,
+        const embeddingRes = await openaiClient.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: query,
         });
-        const embedding = embeddingRes.embeddings?.[0]?.values;
-        if (!embedding) throw new Error("Failed to generate embedding");
+        const embedding = embeddingRes.data[0].embedding;
         const queryRes = await index.query({
           vector: embedding,
           topK: 5,
