@@ -123,6 +123,8 @@ export class SpanishIndeedExtractor {
   private static cleanHtmlSnippet(html: string): string {
     const temp = document.createElement('div');
     temp.innerHTML = html;
+    const unwanted = temp.querySelectorAll('style, script');
+    Array.from(unwanted).forEach(el => el.remove());
     return temp.textContent || temp.innerText || '';
   }
 }

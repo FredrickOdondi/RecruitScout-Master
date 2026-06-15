@@ -197,7 +197,24 @@ export function isValidUrl(url: string): boolean {
  */
 export function extractText(element: Element | null): string {
   if (!element) return '';
-  return element.textContent?.trim() || '';
+  
+  try {
+    const htmlEl = element as HTMLElement;
+    // innerText naturally ignores <style>, <script>, and hidden elements
+    if (typeof htmlEl.innerText === 'string' && htmlEl.innerText.trim().length > 0) {
+      return htmlEl.innerText.trim();
+    }
+  } catch(e) {}
+
+  // Fallback: use textContent but remove CSS/JS tags first
+  try {
+    const clone = element.cloneNode(true) as Element;
+    const unwanted = clone.querySelectorAll('style, script, noscript');
+    Array.from(unwanted).forEach(el => el.remove());
+    return clone.textContent?.trim() || '';
+  } catch(e) {
+    return element.textContent?.trim() || '';
+  }
 }
 
 /**
