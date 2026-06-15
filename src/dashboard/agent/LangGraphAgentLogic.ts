@@ -1,18 +1,18 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 import { supabaseClient } from "../../shared/supabase";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { SupabaseCheckpointer } from "./SupabaseCheckpointer";
 import { BlueCcClient } from "../../shared/bluecc";
 
 /**
  * Builds and compiles the LangGraph agent for the Command Center.
- * @param openaiKey - OpenAI API Key
+ * @param geminiKey - Gemini API Key
  * @param pineconeKey - Pinecone API Key 
  * @param pineconeIndexName - Pinecone Index Name
  * @param userId - ID of the logged in user to scope memory
@@ -21,7 +21,7 @@ import { BlueCcClient } from "../../shared/bluecc";
  * @param blueccCompanyId - Blue.cc Company ID (optional)
  */
 export const createLangGraphAgent = (
-  openaiKey: string,
+  geminiKey: string,
   pineconeKey: string,
   pineconeIndexName: string,
   userId: string,
@@ -34,8 +34,8 @@ export const createLangGraphAgent = (
   const pc = new Pinecone({ apiKey: pineconeKey });
   const index = pc.index(pineconeIndexName);
   
-  // We use standard OpenAI for embeddings here (tool runs in browser)
-  const openaiClient = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
+  // We use Google Gen AI for embeddings here (tool runs in browser)
+  const geminiClient = new GoogleGenAI({ apiKey: geminiKey });
 
   // Initialize Blue.cc Client
   const blueClient = (blueccTokenId && blueccSecretId) 
@@ -170,11 +170,12 @@ export const createLangGraphAgent = (
   const knowledgeBaseTool = tool(
     async ({ query }) => {
       try {
-        const embeddingRes = await openaiClient.embeddings.create({
-          model: 'text-embedding-3-small',
-          input: query,
+        const embeddingRes = await geminiClient.models.embedContent({
+          model: 'text-embedding-004',
+          contents: query,
         });
-        const embedding = embeddingRes.data[0].embedding;
+        const embedding = embeddingRes.embeddings?.[0]?.values;
+        if (!embedding) throw new Error("Failed to generate embedding");
         const queryRes = await index.query({
           vector: embedding,
           topK: 5,
@@ -305,11 +306,10 @@ export const createLangGraphAgent = (
   // DEFINE LLM AND SYSTEM PROMPT
   // ==========================================
 
-  const model = new ChatOpenAI({
-    model: "gpt-4o-mini",
+  const model = new ChatGoogleGenerativeAI({
+    model: "gemini-2.5-flash",
     temperature: 0,
-    apiKey: openaiKey,
-    configuration: { dangerouslyAllowBrowser: true }
+    apiKey: geminiKey,
   }).bindTools(tools);
 
   const SYSTEM_PROMPT = `You are the ultimate RecruitScout Dashboard LangGraph Agent. 

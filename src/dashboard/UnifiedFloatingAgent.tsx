@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import { Pinecone } from '@pinecone-database/pinecone';
 import { supabaseClient } from '../shared/supabase';
 import { createLangGraphAgent } from './agent/LangGraphAgentLogic';
@@ -138,7 +138,7 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
 // ==========================================
 // STANDARD RAG CHAT COMPONENT
 // ==========================================
-function StandardRAGChat({ clients }: { clients: { openai: OpenAI, pineconeIndex: any } | null }) {
+function StandardRAGChat({ clients }: { clients: { gemini: GoogleGenAI, pineconeIndex: any } | null }) {
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', role: 'assistant', content: 'Hello! I am the Standard RAG Assistant. I can search the knowledge base for you.' },
   ]);
@@ -166,11 +166,12 @@ function StandardRAGChat({ clients }: { clients: { openai: OpenAI, pineconeIndex
     abortControllerRef.current = new AbortController();
 
     try {
-      const embeddingRes = await clients.openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: userMessage,
+      const embeddingRes = await clients.gemini.models.embedContent({
+        model: 'text-embedding-004',
+        contents: userMessage,
       });
-      const embedding = embeddingRes.data[0].embedding;
+      const embedding = embeddingRes.embeddings?.[0]?.values;
+      if (!embedding) throw new Error("Failed to generate embedding");
 
       const queryRes = await clients.pineconeIndex.query({
         vector: embedding,
@@ -189,16 +190,19 @@ Context:
 ${contextChunks}
 `;
 
-      const chatCompletion = await clients.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages.slice(-5).map((m) => ({ role: m.role as "user" | "assistant" | "system", content: m.content })),
-          { role: 'user', content: userMessage },
-        ],
-      }, { signal: abortControllerRef.current.signal });
+      const formattedMessages = [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'model', parts: [{ text: "Understood." }] },
+        ...messages.slice(-5).map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+        { role: 'user', parts: [{ text: userMessage }] },
+      ];
 
-      const aiResponse = chatCompletion.choices[0].message.content || 'Sorry, I could not generate a response.';
+      const chatCompletion = await clients.gemini.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: formattedMessages,
+      }); // GoogleGenAI does not natively support abort signal yet in the same way, so we leave it standard
+
+      const aiResponse = chatCompletion.text || 'Sorry, I could not generate a response.';
       
       setMessages((prev) => [...prev, { id: Date.now().toString(), role: 'assistant', content: aiResponse }]);
     } catch (error: any) {
@@ -299,7 +303,7 @@ export default function UnifiedFloatingAgent() {
   const isResizing = useRef(false);
 
   // API Keys
-  const [openaiKey, setOpenaiKey] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
   const [pineconeKey, setPineconeKey] = useState('');
   const [pineconeIndex, setPineconeIndex] = useState('recruitscout');
   const [blueccTokenId, setBlueccTokenId] = useState('');
@@ -310,7 +314,7 @@ export default function UnifiedFloatingAgent() {
   const [agentApp, setAgentApp] = useState<any>(null);
   const [langGraphThreadId, setLangGraphThreadId] = useState('');
   const [initialLangGraphMessages, setInitialLangGraphMessages] = useState<Message[]>([]);
-  const [ragClients, setRagClients] = useState<{ openai: OpenAI, pineconeIndex: any } | null>(null);
+  const [ragClients, setRagClients] = useState<{ gemini: GoogleGenAI, pineconeIndex: any } | null>(null);
 
   useEffect(() => {
     loadCredentials();
@@ -322,14 +326,14 @@ export default function UnifiedFloatingAgent() {
     if (session?.user?.id) {
       const res = await supabaseClient.getUserIntegration(session.user.id);
       if (res.data) {
-        const ok = res.data.openai_api_key || '';
+        const ok = res.data.gemini_api_key || '';
         const pk = res.data.pinecone_api_key || '';
         const pi = res.data.pinecone_index || 'recruitscout';
         const bti = res.data.bluecc_token_id || '';
         const bsi = res.data.bluecc_secret_id || '';
         const bci = res.data.bluecc_company_id || '';
         
-        setOpenaiKey(ok);
+        setGeminiKey(ok);
         setPineconeKey(pk);
         setPineconeIndex(pi);
         setBlueccTokenId(bti);
@@ -353,10 +357,10 @@ export default function UnifiedFloatingAgent() {
   const initializeAgents = async (ok: string, pk: string, pi: string, uid: string, bti: string, bsi: string, bci: string) => {
     try {
       // 1. Initialize RAG
-      const o = new OpenAI({ apiKey: ok, dangerouslyAllowBrowser: true });
-      const p = new Pinecone({ apiKey: pk });
-      const idx = p.index(pi);
-      setRagClients({ openai: o, pineconeIndex: idx });
+      const o = new GoogleGenAI({ apiKey: ok });
+      const pc = new Pinecone({ apiKey: pk });
+      const idx = pc.index(pi);
+      setRagClients({ gemini: o, pineconeIndex: idx });
 
       // 2. Initialize LangGraph
       const app = createLangGraphAgent(ok, pk, pi, uid, bti, bsi, bci);
@@ -397,7 +401,7 @@ export default function UnifiedFloatingAgent() {
     if (session?.user?.id) {
       const payload = {
         user_id: session.user.id,
-        openai_api_key: openaiKey,
+        gemini_api_key: geminiKey,
         pinecone_api_key: pineconeKey,
         pinecone_index: pineconeIndex,
         bluecc_token_id: blueccTokenId,
@@ -408,7 +412,7 @@ export default function UnifiedFloatingAgent() {
       if (res.error) {
         alert('Error saving credentials: ' + res.error);
       } else {
-        initializeAgents(openaiKey, pineconeKey, pineconeIndex, session.user.id, blueccTokenId, blueccSecretId, blueccCompanyId);
+        initializeAgents(geminiKey, pineconeKey, pineconeIndex, session.user.id, blueccTokenId, blueccSecretId, blueccCompanyId);
       }
     }
     setSavingConfig(false);
@@ -529,7 +533,7 @@ export default function UnifiedFloatingAgent() {
             </div>
           </div>
           <form onSubmit={handleSaveCredentials} className="space-y-5">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">OpenAI API Key</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Gemini API Key</label><input type="password" required value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Pinecone API Key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1.5">Pinecone Index Name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white/50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
             
