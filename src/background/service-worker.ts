@@ -1265,7 +1265,9 @@ class ServiceWorker {
 
           let tabId = this.currentTabId;
           if (!tabId) {
-            const startUrl = queueTask.target_site === 'trovolavoro' ? 'https://offerte-di-lavoro.trovolavoro.com' : 'https://it.indeed.com';
+            let startUrl = 'https://it.indeed.com';
+            if (queueTask.target_site === 'trovolavoro') startUrl = 'https://offerte-di-lavoro.trovolavoro.com';
+            else if (queueTask.target_site === 'spanish-indeed') startUrl = 'https://es.indeed.com';
             const newTab = await chrome.tabs.create({ url: startUrl, active: false });
             tabId = newTab.id;
             this.currentTabId = tabId;

@@ -244,10 +244,10 @@ export default function SupabaseTab() {
     ).then(r => r.json())
       .then((rows: { source: string }[]) => {
         const fetchedSources = rows.map(r => (r.source ?? '').toLowerCase()).filter(Boolean);
-        const knownSources = ['indeed', 'trovolavoro.it'];
+        const knownSources = ['indeed', 'trovolavoro.it', 'es.indeed.com'];
         setAllSources(Array.from(new Set([...knownSources, ...fetchedSources])).sort());
       }).catch(() => {
-        setAllSources(['indeed', 'trovolavoro.it']);
+        setAllSources(['indeed', 'trovolavoro.it', 'es.indeed.com']);
       });
     // Load unique worker_ids
     supabaseClient.getUniqueWorkers().then(setAllWorkers);
@@ -653,6 +653,7 @@ export default function SupabaseTab() {
               let displaySource = s;
               if (s === 'trovolavoro.it') displaySource = 'TrovoLavoro';
               else if (s === 'indeed') displaySource = 'Indeed';
+              else if (s === 'es.indeed.com') displaySource = 'Spanish Indeed';
               else displaySource = s.charAt(0).toUpperCase() + s.slice(1);
               return <option key={s} value={s}>{displaySource}</option>;
             })}

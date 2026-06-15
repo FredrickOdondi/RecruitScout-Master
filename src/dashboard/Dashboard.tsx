@@ -526,6 +526,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm" 
                       >
                         <option value="indeed">Indeed</option>
+                        <option value="spanish-indeed">Spanish Indeed</option>
                         <option value="trovolavoro">TrovoLavoro</option>
                       </select>
                     </div>
@@ -687,6 +688,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[13px] text-gray-900 shadow-sm"
                                     >
                                       <option value="indeed">Indeed</option>
+                                      <option value="spanish-indeed">Spanish Indeed</option>
                                       <option value="trovolavoro">TrovoLavoro</option>
                                     </select>
                                   </td>

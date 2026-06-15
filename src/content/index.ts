@@ -3,6 +3,7 @@ import { SchemaParser } from './extraction/schema-parser';
 import { HeuristicEngine } from './extraction/heuristic-engine';
 import { FieldExtractors } from './extraction/field-extractors';
 import { IndeedExtractor } from './extraction/indeed-extractor';
+import { SpanishIndeedExtractor } from './extraction/spanish-indeed-extractor';
 import { TrovolavoroExtractor } from './extraction/trovolavoro-extractor';
 import { ClickThroughExtractor } from './extraction/click-extractor';
 import { SalaryParser } from './extraction/salary-parser';
@@ -172,7 +173,11 @@ class ContentScript {
     jobs.push(...schemaJobs);
 
     // Strategy 2: Platform-specific extraction
-    if (window.location.hostname.includes('indeed.')) {
+    if (window.location.hostname.includes('es.indeed.')) {
+      const spanishIndeedJobs = SpanishIndeedExtractor.extractAllJobs();
+      console.log(`[RecruitScout] SpanishIndeedExtractor found ${spanishIndeedJobs.length} jobs`);
+      jobs.push(...spanishIndeedJobs);
+    } else if (window.location.hostname.includes('indeed.')) {
       const indeedJobs = IndeedExtractor.extractAllJobs();
       console.log(`[RecruitScout] IndeedExtractor found ${indeedJobs.length} jobs`);
       jobs.push(...indeedJobs);
