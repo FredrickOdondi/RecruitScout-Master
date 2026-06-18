@@ -1052,6 +1052,44 @@ export class SupabaseClient {
       return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
+
+  /**
+   * Fetch all company names from the Spanish_Companies whitelist table.
+   * Returns a Set of lowercased names for fast case-insensitive lookups.
+   * On any network/DB error, returns an empty Set (which causes the caller
+   * to block all Spanish Indeed jobs — the safe "block everything" fallback).
+   */
+  async getSpanishCompanies(): Promise<Set<string>> {
+    try {
+      const url = `${this.baseUrl}/rest/v1/Spanish_Companies?select=Compan_Names&limit=5000`;
+      const res = await fetch(url, {
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!res.ok) {
+        console.error(`[Supabase] getSpanishCompanies failed: HTTP ${res.status}`);
+        return new Set();
+      }
+
+      const rows: { Compan_Names: string }[] = await res.json();
+      // Lowercase all names so the filter can do case-insensitive comparison
+      const names = new Set(
+        rows
+          .map(r => r.Compan_Names?.toLowerCase().trim())
+          .filter(Boolean) as string[]
+      );
+      console.log(`[Supabase] Loaded ${names.size} companies from Spanish_Companies whitelist.`);
+      return names;
+    } catch (error) {
+      console.error('[Supabase] getSpanishCompanies error:', error);
+      return new Set(); // Block everything on failure
+    }
+  }
 }
 
 // Export singleton instance

@@ -721,9 +721,38 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
       continue;
     }
 
-    const clientJobs = clientJobsMap[clientName].filter(job => job.description && job.description.trim() !== '');
+    let clientJobs = clientJobsMap[clientName].filter((job: any) => job.description && job.description.trim() !== '');
     if (clientJobs.length === 0) {
       console.log(`[RecruitScout] No jobs with non-empty descriptions for client "${clientName}". Skipping auto sync.`);
+      continue;
+    }
+
+    // ── Spanish Companies Whitelist Filter ───────────────────────────────────
+    // For jobs sourced from es.indeed.com, only allow companies listed in the
+    // Supabase Spanish_Companies table. All other sources pass through untouched.
+    const hasSpanishJobs = clientJobs.some((job: any) => job.source === 'es.indeed.com');
+    if (hasSpanishJobs) {
+      const spanishWhitelist = await supabaseClient.getSpanishCompanies();
+      const beforeCount = clientJobs.length;
+      clientJobs = clientJobs.filter((job: any) => {
+        // Non-Spanish Indeed jobs always pass through
+        if (job.source !== 'es.indeed.com') return true;
+        // Empty whitelist = block everything (behavior (A))
+        if (spanishWhitelist.size === 0) return false;
+        // Case-insensitive company name match
+        return spanishWhitelist.has((job.company || '').toLowerCase().trim());
+      });
+      const dropped = beforeCount - clientJobs.length;
+      if (dropped > 0) {
+        console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: filtered out ${dropped} job(s) not in Spanish_Companies — only ${clientJobs.length} job(s) will sync to sheet.`);
+      } else {
+        console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: all ${clientJobs.length} Spanish Indeed job(s) matched — no filtering needed.`);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    if (clientJobs.length === 0) {
+      console.log(`[RecruitScout] No jobs remaining after Spanish whitelist filter for client "${clientName}". Skipping sync.`);
       continue;
     }
     const headers = [
