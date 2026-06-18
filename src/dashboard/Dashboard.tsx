@@ -814,6 +814,30 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-3 pt-4 border-t border-gray-200 mt-2">
+                    <h4 className="text-[12px] font-semibold text-gray-700 flex items-center gap-2">
+                      <span>🇪🇸</span> Spanish Indeed Settings
+                    </h4>
+
+                    <label className="flex items-center justify-between cursor-pointer group">
+                      <div>
+                        <div className="text-[13px] font-medium text-gray-900 group-hover:text-gray-700 transition-colors">Spanish Companies Whitelist</div>
+                        <div className="text-[12px] text-gray-600 mt-0.5">
+                          {settings.spanishWhitelistEnabled !== false
+                            ? 'ON — only companies in Spanish_Companies table sync to sheet'
+                            : 'OFF — all extracted Spanish Indeed jobs sync to sheet'}
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        id="spanish-whitelist-toggle"
+                        checked={settings.spanishWhitelistEnabled !== false}
+                        onChange={e => updateSetting('spanishWhitelistEnabled', e.target.checked)}
+                        className="form-checkbox h-4 w-4 rounded border-gray-300 bg-white cursor-pointer"
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 {/* Extraction Settings */}

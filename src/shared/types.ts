@@ -125,6 +125,8 @@ export interface ExtensionSettings {
     spreadsheetId: string;
     sheetName: string;
   };
+  /** When false, Spanish Indeed jobs bypass the Spanish_Companies whitelist and all are synced to Google Sheets */
+  spanishWhitelistEnabled?: boolean;
 }
 
 // Message types

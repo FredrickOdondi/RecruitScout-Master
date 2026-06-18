@@ -729,24 +729,33 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
 
     // ── Spanish Companies Whitelist Filter ───────────────────────────────────
     // For jobs sourced from es.indeed.com, only allow companies listed in the
-    // Supabase Spanish_Companies table. All other sources pass through untouched.
+    // Supabase Spanish_Companies table — UNLESS the whitelist is disabled in
+    // Engine Settings, in which case all Spanish Indeed jobs pass through.
     const hasSpanishJobs = clientJobs.some((job: any) => job.source === 'es.indeed.com');
     if (hasSpanishJobs) {
-      const spanishWhitelist = await supabaseClient.getSpanishCompanies();
-      const beforeCount = clientJobs.length;
-      clientJobs = clientJobs.filter((job: any) => {
-        // Non-Spanish Indeed jobs always pass through
-        if (job.source !== 'es.indeed.com') return true;
-        // Empty whitelist = block everything (behavior (A))
-        if (spanishWhitelist.size === 0) return false;
-        // Case-insensitive company name match
-        return spanishWhitelist.has((job.company || '').toLowerCase().trim());
-      });
-      const dropped = beforeCount - clientJobs.length;
-      if (dropped > 0) {
-        console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: filtered out ${dropped} job(s) not in Spanish_Companies — only ${clientJobs.length} job(s) will sync to sheet.`);
+      const engineSettings = await storage.getSettings();
+      // spanishWhitelistEnabled defaults to true (filter ON) if never explicitly set
+      const whitelistActive = engineSettings.spanishWhitelistEnabled !== false;
+
+      if (whitelistActive) {
+        const spanishWhitelist = await supabaseClient.getSpanishCompanies();
+        const beforeCount = clientJobs.length;
+        clientJobs = clientJobs.filter((job: any) => {
+          // Non-Spanish Indeed jobs always pass through
+          if (job.source !== 'es.indeed.com') return true;
+          // Empty whitelist = block everything
+          if (spanishWhitelist.size === 0) return false;
+          // Case-insensitive company name match
+          return spanishWhitelist.has((job.company || '').toLowerCase().trim());
+        });
+        const dropped = beforeCount - clientJobs.length;
+        if (dropped > 0) {
+          console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: filtered out ${dropped} job(s) not in Spanish_Companies — only ${clientJobs.length} job(s) will sync to sheet.`);
+        } else {
+          console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: all ${clientJobs.length} Spanish Indeed job(s) matched — no filtering needed.`);
+        }
       } else {
-        console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: all ${clientJobs.length} Spanish Indeed job(s) matched — no filtering needed.`);
+        console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: DISABLED — sending all ${clientJobs.filter((j: any) => j.source === 'es.indeed.com').length} Spanish Indeed job(s) to sheet without filtering.`);
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
