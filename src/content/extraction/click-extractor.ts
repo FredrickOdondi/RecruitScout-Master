@@ -8,6 +8,7 @@ export class ClickThroughExtractor {
     static async enrichWithDescriptions(jobs: JobData[]): Promise<JobData[]> {
         console.log(`[RecruitScout] Starting Click-Through visual extraction on ${jobs.length} jobs to find hidden descriptions...`);
         const jobsCopy = [...jobs];
+        const processedJobIds = new Set<string>();
 
         // Checkpoint: Save all basic data instantly before we begin clicking, in case of an abrupt navigation exit
         try {
@@ -33,6 +34,7 @@ export class ClickThroughExtractor {
 
                 // Find a matching job that doesn't already have a massive full description
                 const matchedJob = jobsCopy.find(j => {
+                    if (processedJobIds.has(j.id)) return false;
                     const isTitleMatch = j.title.toLowerCase().includes(cardTitle) || cardTitle.includes(j.title.toLowerCase());
                     const isCompanyMatch = !cardCompany || j.company.toLowerCase().includes(cardCompany) || cardCompany.includes(j.company.toLowerCase());
                     const needsDescription = !j.description || j.description.length < 500; // Snippets are ~200 chars
@@ -40,6 +42,7 @@ export class ClickThroughExtractor {
                 });
 
                 if (matchedJob) {
+                    processedJobIds.add(matchedJob.id);
                     console.log(`[RecruitScout] Clicking job: "${matchedJob.title}" to extract full description...`);
 
                     // Click the card
@@ -52,17 +55,17 @@ export class ClickThroughExtractor {
                     const preClickDelay = Math.floor(Math.random() * (1500 - 800 + 1)) + 800;
                     await new Promise(r => setTimeout(r, preClickDelay));
 
-                    // Prevent accidental external browser native navigation that permanently kills our content script
+                    // Prevent accidental new tabs that would hide the pane
                     const isAnchor = clickableTarget.tagName.toLowerCase() === 'a';
-                    const prevHref = clickableTarget.getAttribute('href');
-                    if (isAnchor) {
-                        clickableTarget.removeAttribute('href');
+                    const prevTarget = clickableTarget.getAttribute('target');
+                    if (isAnchor && prevTarget) {
+                        clickableTarget.removeAttribute('target');
                     }
 
                     (clickableTarget as HTMLElement).click();
 
-                    if (isAnchor && prevHref) {
-                        clickableTarget.setAttribute('href', prevHref);
+                    if (isAnchor && prevTarget) {
+                        clickableTarget.setAttribute('target', prevTarget);
                     }
 
                     // Wait dynamically for the right pane to load.
