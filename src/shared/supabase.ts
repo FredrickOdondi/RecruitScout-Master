@@ -1,8 +1,8 @@
 import { JobData, BulkQueueRecord, ClientRecord } from './types';
 
 // Supabase configuration
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+export const SUPABASE_URL = 'http://72.60.215.34:8000';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
 /**
  * Supabase job record - matches CSV export columns exactly
@@ -247,9 +247,9 @@ export class SupabaseClient {
 
       // Sort
       const sortMap: Record<string, string> = {
-        newest:  'extractedat.desc',
-        oldest:  'extractedat.asc',
-        title:   'title.asc',
+        newest: 'extractedat.desc',
+        oldest: 'extractedat.asc',
+        title: 'title.asc',
         company: 'company.asc',
       };
       params.push(`order=${sortMap[sortBy] ?? 'extractedat.desc'}`);
@@ -470,7 +470,7 @@ export class SupabaseClient {
    */
   async enqueueTasks(titles: string[], assigned_to?: string, location?: string, client_id?: string, target_site?: string): Promise<SupabaseResponse<{ inserted: number }>> {
     if (!titles || titles.length === 0) return { data: { inserted: 0 }, error: null };
-    
+
     const records = titles.map(title => ({
       job_title: title.trim(),
       status: 'pending',
@@ -509,7 +509,7 @@ export class SupabaseClient {
     try {
       // Find one pending or failed task (anyone can pick up failed tasks to retry)
       const url = `${this.baseUrl}/rest/v1/BulkQueue?select=*&status=in.(pending,failed)&order=created_at.asc&limit=1`;
-      
+
       const res = await fetch(url, {
         method: 'GET',
         headers: {
@@ -518,7 +518,7 @@ export class SupabaseClient {
           'Accept': 'application/json'
         }
       });
-      
+
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       const data = await res.json();
       if (!data || data.length === 0) return { data: null, error: null }; // No tasks
@@ -784,7 +784,7 @@ export class SupabaseClient {
       if (redirectTo) {
         url.searchParams.append('redirect_to', redirectTo);
       }
-      
+
       const response = await fetch(url.toString(), {
         method: 'POST',
         headers: {
@@ -895,7 +895,7 @@ export class SupabaseClient {
       // Must use authenticated token, not just apikey, to bypass RLS properly
       const session = this.getSession();
       const token = session?.access_token || this.apiKey;
-      
+
       const response = await fetch(`${this.baseUrl}/rest/v1/user_integrations?user_id=eq.${userId}&select=*`, {
         method: 'GET',
         headers: {
