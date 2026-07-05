@@ -203,15 +203,13 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
   const cached = _domainCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
-  try {
-    // Query the curated Dbase - 24/6/26 table using ilike for case-insensitive match
-    const encodedName = encodeURIComponent(companyName);
+  // Helper: fire a single query against the Dbase table and return domain or ''
+  const queryDbase = async (filterValue: string): Promise<string> => {
     // Table name URL-encoded: "Dbase - 24/6/26" -> "Dbase%20-%2024%2F6%2F26"
     const url = `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26` +
       `?select=Company%20Website` +
-      `&Company%20Name=ilike.${encodedName}` +
+      `&Company%20Name=ilike.${filterValue}` +
       `&limit=1`;
-
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -221,22 +219,51 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
       },
       signal: AbortSignal.timeout(5000),
     });
+    if (!response.ok) return '';
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) return '';
+    const website = data[0]['Company Website'] as string | undefined;
+    if (!website) return '';
+    return extractDomainFromUrl(website.startsWith('http') ? website : `https://${website}`);
+  };
 
-    console.log(`[RecruitScout Dbase] ${companyName}: status=${response.status}`);
+  try {
+    const normalized = normalizeCompanyName(companyName);
 
-    if (response.ok) {
-      const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const website = data[0]['Company Website'] as string | undefined;
-        if (website) {
-          const domain = extractDomainFromUrl(website.startsWith('http') ? website : `https://${website}`);
-          console.log(`[RecruitScout Dbase] ${companyName}: found -> ${domain}`);
-          _domainCache.set(cacheKey, domain);
-          return domain;
-        }
+    // Pass 1: Exact case-insensitive match on the original company name
+    // e.g. "Esseci Studi e Consulenze Srl" -> ilike."Esseci Studi e Consulenze Srl"
+    let domain = await queryDbase(encodeURIComponent(companyName));
+    if (domain) {
+      console.log(`[RecruitScout Dbase] ${companyName}: exact match -> ${domain}`);
+      _domainCache.set(cacheKey, domain);
+      return domain;
+    }
+
+    // Pass 2: Exact match on normalized name (strips Srl, SpA, Inc, GmbH etc.)
+    // e.g. "Esseci Studi e Consulenze Srl" -> "Esseci Studi e Consulenze"
+    if (normalized && normalized !== companyName) {
+      domain = await queryDbase(encodeURIComponent(normalized));
+      if (domain) {
+        console.log(`[RecruitScout Dbase] ${companyName}: normalized match -> ${domain}`);
+        _domainCache.set(cacheKey, domain);
+        return domain;
       }
     }
-    console.log(`[RecruitScout Dbase] ${companyName}: no match`);
+
+    // Pass 3: Partial/fuzzy match using wildcards on normalized name
+    // e.g. "Esseci Studi" -> ilike.*Esseci%20Studi*
+    // Only run if the search term is long enough to avoid accidental false positives
+    const searchTerm = normalized || companyName;
+    if (searchTerm.length >= 5) {
+      domain = await queryDbase(`*${encodeURIComponent(searchTerm)}*`);
+      if (domain) {
+        console.log(`[RecruitScout Dbase] ${companyName}: fuzzy match -> ${domain}`);
+        _domainCache.set(cacheKey, domain);
+        return domain;
+      }
+    }
+
+    console.log(`[RecruitScout Dbase] ${companyName}: no match in any pass`);
   } catch (e) {
     console.error(`[RecruitScout Dbase] ${companyName}: error`, e);
   }
@@ -244,6 +271,7 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
   _domainCache.set(cacheKey, '');
   return '';
 }
+
 
 async function fetchDomainFromWikidata(companyName: string): Promise<string> {
   if (!companyName) return '';
