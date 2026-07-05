@@ -1,3 +1,4 @@
+// @ts-nocheck — Deno edge function: types are resolved by Deno LSP, not tsc
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.13";
@@ -76,7 +77,7 @@ serve(async (req) => {
         },
       });
 
-      const resetLink = `https://qyceqgttvvairnaxwicm.supabase.co/functions/v1/queue-webhook?action=reset&token=${secret}`;
+      const resetLink = `http://72.60.215.34:8000/functions/v1/queue-webhook?action=reset&token=${secret}`;
 
       await transporter.sendMail({
         from: myEmail,

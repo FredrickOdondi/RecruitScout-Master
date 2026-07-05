@@ -194,8 +194,8 @@ async function fetchDomainFromLinkedIn(companyName: string): Promise<string> {
 }
 
 // Supabase config
-const SUPABASE_URL = 'https://qyceqgttvvairnaxwicm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5Y2VxZ3R0dnZhaXJuYXh3aWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDM4MTQsImV4cCI6MjA4ODMxOTgxNH0.cm8dVGQtAZoLwuhbpsD6uZeFXWPp25LOMCZlyR3aRf0';
+const SUPABASE_URL = 'http://72.60.215.34:8000';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
 async function fetchDomainFromSupabase(companyName: string): Promise<string> {
   if (!companyName) return '';
@@ -835,6 +835,7 @@ class ServiceWorker {
   private extractionInterval: number | null = null;
   // Instant abort flag — set synchronously so every await checkpoint sees it immediately
   private abortRequested = false;
+  private isPollingQueue = false;
 
   constructor() {
     this.initialize();
@@ -887,6 +888,10 @@ class ServiceWorker {
     // Stop extraction
     messageRouter.on(MessageType.STOP_EXTRACTION, async () => {
       console.log('[RecruitScout] Handling STOP_EXTRACTION');
+      const settings = await storage.getSettings();
+      if (settings.pollingEnabled) {
+        await storage.setSettings({ ...settings, pollingEnabled: false });
+      }
       return this.stopExtraction();
     });
 
@@ -1170,7 +1175,15 @@ class ServiceWorker {
 
     // Tab activation event
     chrome.tabs.onActivated.addListener(async (activeInfo) => {
-      this.currentTabId = activeInfo.tabId;
+      // Only adopt the tab as the scraper tab if it is actually a job board page.
+      // This prevents the engine from hijacking unrelated tabs (e.g. Gmail, Docs).
+      try {
+        const tab = await chrome.tabs.get(activeInfo.tabId);
+        const url = tab.url || tab.pendingUrl || '';
+        if (url.includes('indeed') || url.includes('trovolavoro')) {
+          this.currentTabId = activeInfo.tabId;
+        }
+      } catch { /* tab may have been closed */ }
       await this.detectPageType(activeInfo.tabId);
     });
 
@@ -1249,100 +1262,103 @@ class ServiceWorker {
   }
 
   private async pollQueue(): Promise<void> {
-    // Reset the abort flag when a fresh poll cycle starts
-    this.abortRequested = false;
+    if (this.isPollingQueue) return;
+    this.isPollingQueue = true;
+    try {
+      const state = stateManager.getState();
+      if (state.status === 'running') return; // Busy
 
-    const state = stateManager.getState();
-    if (state.status === 'running') return; // Busy
+      const settings = await storage.getSettings();
+      if (!settings.pollingEnabled) return; // Not enabled
 
-    const settings = await storage.getSettings();
-    if (!settings.pollingEnabled) return; // Not enabled
+      const workerId = await this.getActiveWorkerId();
+      if (!workerId) return; // Cannot fetch if unidentified
 
-    const workerId = await this.getActiveWorkerId();
-    if (!workerId) return; // Cannot fetch if unidentified
+      let hasMoreTasks = true;
+      while (hasMoreTasks) {
+        // Check both the class-level abort flag AND the storage setting
+        if (this.abortRequested) {
+          console.log('[RecruitScout] 🛑 Abort requested — stopping poll loop immediately.');
+          break;
+        }
 
-    let hasMoreTasks = true;
-    while (hasMoreTasks) {
-      // Check both the class-level abort flag AND the storage setting
-      if (this.abortRequested) {
-        console.log('[RecruitScout] 🛑 Abort requested — stopping poll loop immediately.');
-        break;
-      }
+        const currentSettings = await storage.getSettings();
+        if (!currentSettings.pollingEnabled) {
+          console.log('[RecruitScout] Polling disabled by user. Stopping queue watcher.');
+          break;
+        }
 
-      const currentSettings = await storage.getSettings();
-      if (!currentSettings.pollingEnabled) {
-        console.log('[RecruitScout] Polling disabled by user. Stopping queue watcher.');
-        break;
-      }
+        try {
+          const response = await supabaseClient.fetchNextTaskAndLock(workerId);
 
-      try {
-        const response = await supabaseClient.fetchNextTaskAndLock(workerId);
+          if (this.abortRequested) break; // Check again after the network call
 
-        if (this.abortRequested) break; // Check again after the network call
+          if (response?.data) {
+            const queueTask = response.data;
+            const taskLabel = queueTask.job_title?.trim() || `[All Jobs${queueTask.location ? ' in ' + queueTask.location : ''}]`;
+            console.log(`[RecruitScout] Pulled remote queue task: ${taskLabel}`);
 
-        if (response?.data) {
-          const queueTask = response.data;
-          const taskLabel = queueTask.job_title?.trim() || `[All Jobs${queueTask.location ? ' in ' + queueTask.location : ''}]`;
-          console.log(`[RecruitScout] Pulled remote queue task: ${taskLabel}`);
-
-          // Fetch client name if client_id is set
-          let clientName: string | null = null;
-          if (queueTask.client_id) {
-            try {
-              const clientsRes = await supabaseClient.getClients();
-              if (clientsRes.data) {
-                const match = clientsRes.data.find(c => c.id === queueTask.client_id);
-                if (match) {
-                  clientName = match.name;
+            // Fetch client name if client_id is set
+            let clientName: string | null = null;
+            if (queueTask.client_id) {
+              try {
+                const clientsRes = await supabaseClient.getClients();
+                if (clientsRes.data) {
+                  const match = clientsRes.data.find(c => c.id === queueTask.client_id);
+                  if (match) {
+                    clientName = match.name;
+                  }
                 }
+              } catch (err) {
+                console.error('[RecruitScout] Failed to fetch client name:', err);
               }
-            } catch (err) {
-              console.error('[RecruitScout] Failed to fetch client name:', err);
+            }
+
+            let tabId = this.currentTabId;
+            if (!tabId) {
+              let startUrl = 'https://it.indeed.com';
+              if (queueTask.target_site === 'trovolavoro') startUrl = 'https://offerte-di-lavoro.trovolavoro.com';
+              else if (queueTask.target_site === 'spanish-indeed') startUrl = 'https://es.indeed.com';
+              const newTab = await chrome.tabs.create({ url: startUrl, active: false });
+              tabId = newTab.id;
+              this.currentTabId = tabId;
+            }
+
+            try {
+              activeClientNameForScraping = clientName;
+              await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location, target_site: queueTask.target_site }, tabId }, undefined);
+
+              const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
+              await supabaseClient.markTaskComplete(queueTask.id, wasAborted);
+            } catch (jobError) {
+              console.error('[RecruitScout] Remote Job Failed:', jobError);
+              await supabaseClient.markTaskComplete(queueTask.id, true);
+            } finally {
+              activeClientNameForScraping = null;
+            }
+
+            if (this.abortRequested) break;
+
+            // Small cooldown boundary to prevent bot blocking between queue iterations
+            await new Promise(r => setTimeout(r, 2000));
+          } else {
+            // Queue is empty — check if it's a new day and reset completed tasks
+            const wasReset = await this.checkAndResetDailyQueue();
+            if (wasReset) {
+              // Tasks were just flipped to pending — loop continues to pick them up
+              console.log('[RecruitScout] 🔄 Continuing poll after daily reset...');
+            } else {
+              // Truly nothing to do today
+              hasMoreTasks = false;
             }
           }
-
-          let tabId = this.currentTabId;
-          if (!tabId) {
-            let startUrl = 'https://it.indeed.com';
-            if (queueTask.target_site === 'trovolavoro') startUrl = 'https://offerte-di-lavoro.trovolavoro.com';
-            else if (queueTask.target_site === 'spanish-indeed') startUrl = 'https://es.indeed.com';
-            const newTab = await chrome.tabs.create({ url: startUrl, active: false });
-            tabId = newTab.id;
-            this.currentTabId = tabId;
-          }
-
-          try {
-            activeClientNameForScraping = clientName;
-            await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location, target_site: queueTask.target_site }, tabId }, undefined);
-
-            const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
-            await supabaseClient.markTaskComplete(queueTask.id, wasAborted);
-          } catch (jobError) {
-            console.error('[RecruitScout] Remote Job Failed:', jobError);
-            await supabaseClient.markTaskComplete(queueTask.id, true);
-          } finally {
-            activeClientNameForScraping = null;
-          }
-
-          if (this.abortRequested) break;
-
-          // Small cooldown boundary to prevent bot blocking between queue iterations
-          await new Promise(r => setTimeout(r, 2000));
-        } else {
-          // Queue is empty — check if it's a new day and reset completed tasks
-          const wasReset = await this.checkAndResetDailyQueue();
-          if (wasReset) {
-            // Tasks were just flipped to pending — loop continues to pick them up
-            console.log('[RecruitScout] 🔄 Continuing poll after daily reset...');
-          } else {
-            // Truly nothing to do today
-            hasMoreTasks = false;
-          }
+        } catch (e) {
+          console.error('[RecruitScout] Polling error:', e);
+          hasMoreTasks = false;
         }
-      } catch (e) {
-        console.error('[RecruitScout] Polling error:', e);
-        hasMoreTasks = false;
       }
+    } finally {
+      this.isPollingQueue = false;
     }
   }
 
@@ -1410,8 +1426,11 @@ class ServiceWorker {
     for (const id of candidates) {
       try {
         const tab = await chrome.tabs.get(id);
-        // Reuse tab if it is a supported job board tab
-        if (tab.url && (tab.url.includes('indeed') || tab.url.includes('trovolavoro'))) {
+        const url = tab.url || tab.pendingUrl || '';
+        // Only reuse the tab if it is actually on a supported job board.
+        // The previous `id === this.currentTabId` condition was a tautology that
+        // caused any user-focused tab (e.g. Gmail) to be accepted as a scraper tab.
+        if (url.includes('indeed') || url.includes('trovolavoro')) {
           this.currentTabId = id;
           return id;
         }
@@ -1431,6 +1450,8 @@ class ServiceWorker {
   }
 
   private async startExtraction(payload: any, sender: chrome.runtime.MessageSender): Promise<any> {
+    this.abortRequested = false;
+    await stateManager.setState({ status: 'running' });
     const { mode, url, options, tabId: payloadTabId } = payload;
     const tabId = await this.getOrCreateScraperTab(payloadTabId, options?.target_site);
 
@@ -1446,6 +1467,8 @@ class ServiceWorker {
   }
 
   private async startBulkExtraction(payload: any, sender?: chrome.runtime.MessageSender): Promise<any> {
+    this.abortRequested = false;
+    await stateManager.setState({ status: 'running' });
     const { titles, options, tabId: payloadTabId } = payload;
     const tabId = await this.getOrCreateScraperTab(payloadTabId, options?.target_site);
 
