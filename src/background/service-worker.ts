@@ -204,9 +204,10 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
   if (cached !== undefined) return cached;
 
   try {
-    // Use PostgREST ilike for case-insensitive match on "Company Name" column
+    // Query the curated Dbase - 24/6/26 table using ilike for case-insensitive match
     const encodedName = encodeURIComponent(companyName);
-    const url = `${SUPABASE_URL}/rest/v1/InternalCompanyDomainDatabase` +
+    // Table name URL-encoded: "Dbase - 24/6/26" -> "Dbase%20-%2024%2F6%2F26"
+    const url = `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26` +
       `?select=Company%20Website` +
       `&Company%20Name=ilike.${encodedName}` +
       `&limit=1`;
@@ -221,7 +222,7 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
       signal: AbortSignal.timeout(5000),
     });
 
-    console.log(`[RecruitScout Supabase] ${companyName}: status=${response.status}`);
+    console.log(`[RecruitScout Dbase] ${companyName}: status=${response.status}`);
 
     if (response.ok) {
       const data = await response.json();
@@ -229,15 +230,15 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
         const website = data[0]['Company Website'] as string | undefined;
         if (website) {
           const domain = extractDomainFromUrl(website.startsWith('http') ? website : `https://${website}`);
-          console.log(`[RecruitScout Supabase] ${companyName}: found -> ${domain}`);
+          console.log(`[RecruitScout Dbase] ${companyName}: found -> ${domain}`);
           _domainCache.set(cacheKey, domain);
           return domain;
         }
       }
     }
-    console.log(`[RecruitScout Supabase] ${companyName}: no match`);
+    console.log(`[RecruitScout Dbase] ${companyName}: no match`);
   } catch (e) {
-    console.error(`[RecruitScout Supabase] ${companyName}: error`, e);
+    console.error(`[RecruitScout Dbase] ${companyName}: error`, e);
   }
 
   _domainCache.set(cacheKey, '');
@@ -461,14 +462,15 @@ async function resolveCompanyDomain(companyName: string): Promise<string> {
   return winner;
 }
 
-/** Fire-and-forget: upsert a newly resolved domain into Supabase so the DB grows over time */
+/** Fire-and-forget: upsert a newly resolved domain into the Dbase - 24/6/26 table so the DB grows over time */
 async function saveToSupabase(companyName: string, domain: string): Promise<void> {
   // Instantly cache it in memory to prevent race conditions (duplicate saves for the same company in a single batch)
   _domainCache.set(`supa:${companyName}`, domain);
 
   try {
+    // Table name URL-encoded: "Dbase - 24/6/26" -> "Dbase%20-%2024%2F6%2F26"
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/InternalCompanyDomainDatabase`,
+      `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26`,
       {
         method: 'POST',
         headers: {
@@ -482,12 +484,12 @@ async function saveToSupabase(companyName: string, domain: string): Promise<void
       }
     );
     if (response.ok || response.status === 201) {
-      console.log(`[RecruitScout Supabase] saved: ${companyName} -> ${domain}`);
+      console.log(`[RecruitScout Dbase] saved: ${companyName} -> ${domain}`);
     } else {
-      console.warn(`[RecruitScout Supabase] save failed for ${companyName}: ${response.status}`);
+      console.warn(`[RecruitScout Dbase] save failed for ${companyName}: ${response.status}`);
     }
   } catch (e) {
-    console.error(`[RecruitScout Supabase] save error for ${companyName}:`, e);
+    console.error(`[RecruitScout Dbase] save error for ${companyName}:`, e);
   }
 }
 
@@ -598,21 +600,28 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
       }
 
       try {
-        // Priority 1: Clearbit + Wikidata in parallel with cross-validation
+        // Priority 1: Dbase - 24/6/26 (large curated DB — fastest, no external API needed)
+        const supaDomain = await fetchDomainFromSupabase(jobWithMeta.company);
+        if (supaDomain) {
+          console.log(`[RecruitScout] ${jobWithMeta.company}: domain from Dbase -> ${supaDomain}`);
+          return { ...jobWithMeta, companyDomain: supaDomain };
+        }
+
+        // Priority 2: Clearbit + Wikidata in parallel with cross-validation
         const resolvedDomain = await resolveCompanyDomain(jobWithMeta.company);
         if (resolvedDomain) {
           saveToSupabase(jobWithMeta.company, resolvedDomain);
           return { ...jobWithMeta, companyDomain: resolvedDomain };
         }
 
-        // Priority 2: Search Engine Fallback
+        // Priority 3: Search Engine Fallback
         const searchDomain = await fetchDomainFromSearchEngine(jobWithMeta.company, jobWithMeta.location);
         if (searchDomain) {
           saveToSupabase(jobWithMeta.company, searchDomain);
           return { ...jobWithMeta, companyDomain: searchDomain };
         }
 
-        // Priority 3: Indeed company profile page
+        // Priority 4: Indeed company profile page
         const profileUrl = jobWithMeta.metadata?.companyProfileLink as string | undefined;
         if (profileUrl) {
           const domain = await fetchDomainFromIndeedProfile(profileUrl);
@@ -623,19 +632,12 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
           }
         }
 
-        // Priority 4: Guess LinkedIn profile and fetch (Last resort)
+        // Priority 5: Guess LinkedIn profile and fetch (last resort)
         const linkedInDomain = await fetchDomainFromLinkedIn(jobWithMeta.company);
         if (linkedInDomain) {
           console.log(`[RecruitScout] ${jobWithMeta.company}: domain from LinkedIn -> ${linkedInDomain}`);
           saveToSupabase(jobWithMeta.company, linkedInDomain);
           return { ...jobWithMeta, companyDomain: linkedInDomain };
-        }
-
-        // Priority 5: Supabase internal company DB
-        const supaDomain = await fetchDomainFromSupabase(jobWithMeta.company);
-        if (supaDomain) {
-          console.log(`[RecruitScout] ${jobWithMeta.company}: domain from Supabase -> ${supaDomain}`);
-          return { ...jobWithMeta, companyDomain: supaDomain };
         }
       } catch (e) {
         console.error(`[RecruitScout] enrichment error for ${jobWithMeta.company}:`, e);
