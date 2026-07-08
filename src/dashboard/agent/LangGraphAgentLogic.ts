@@ -89,8 +89,8 @@ export const createLangGraphAgent = (
   );
 
   const enqueueTasksTool = tool(
-    async ({ titles, assigned_to, location, client_id, target_site }) => {
-      const res = await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id, target_site);
+    async ({ titles, assigned_to, location, client_id, target_site, date_filter }) => {
+      const res = await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id, target_site, date_filter);
       return JSON.stringify(res);
     },
     {
@@ -102,6 +102,7 @@ export const createLangGraphAgent = (
         location: z.string().optional().describe("Location to search in."),
         client_id: z.string().optional().describe("Associated client ID."),
         target_site: z.string().optional().describe("Site to target, usually 'indeed' or 'trovolavoro'."),
+        date_filter: z.string().optional().describe("Date filter in days (e.g., '1' for 24 hours, '3' for 3 days, '7' for 7 days, '14' for 14 days)."),
       }),
     }
   );

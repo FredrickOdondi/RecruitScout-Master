@@ -1125,8 +1125,8 @@ class ServiceWorker {
     });
 
     messageRouter.on('SUPABASE_ENQUEUE_TASKS' as MessageType, async (message) => {
-      const { titles, assigned_to, location, client_id, target_site } = message.payload;
-      return await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id, target_site);
+      const { titles, assigned_to, location, client_id, target_site, date_filter } = message.payload;
+      return await supabaseClient.enqueueTasks(titles, assigned_to, location, client_id, target_site, date_filter);
     });
 
     messageRouter.on('SUPABASE_GET_QUEUE' as MessageType, async () => {
@@ -1356,7 +1356,7 @@ class ServiceWorker {
 
             try {
               activeClientNameForScraping = clientName;
-              await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location, target_site: queueTask.target_site }, tabId }, undefined);
+              await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location, target_site: queueTask.target_site, date_filter: queueTask.date_filter }, tabId }, undefined);
 
               const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
               await supabaseClient.markTaskComplete(queueTask.id, wasAborted);
@@ -1521,6 +1521,7 @@ class ServiceWorker {
       for (let i = 0; i < titles.length; i++) {
         const title = (titles[i] || '').trim();
         const locationParam = options?.location ? `&l=${encodeURIComponent(options.location)}` : '';
+        const dateParam = options?.date_filter ? `&fromage=${encodeURIComponent(options.date_filter)}` : '';
 
         let searchUrl = '';
         const isTrovolavoro = options?.target_site === 'trovolavoro' || baseUrl.includes('trovolavoro');
@@ -1529,8 +1530,8 @@ class ServiceWorker {
           searchUrl = `https://www.trovolavoro.com/`;
         } else {
           searchUrl = title
-            ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}`
-            : `${baseUrl}/jobs?l=${encodeURIComponent(options?.location || '')}`;
+            ? `${baseUrl}/jobs?q=${encodeURIComponent(title)}${locationParam}${dateParam}`
+            : `${baseUrl}/jobs?l=${encodeURIComponent(options?.location || '')}${dateParam}`;
         }
 
         const label = title || `[All Jobs${options?.location ? ' in ' + options.location : ''}]`;

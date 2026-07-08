@@ -33,6 +33,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [assignedTo, setAssignedTo] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [targetSite, setTargetSite] = useState('indeed');
+  const [dateFilter, setDateFilter] = useState('');
   
   // State
   const [settings, setSettings] = useState<any>({});
@@ -202,7 +203,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         assigned_to: assignedTo.trim() || undefined, 
         location: location || undefined,
         client_id: selectedClient || undefined,
-        target_site: targetSite || 'indeed'
+        target_site: targetSite || 'indeed',
+        date_filter: dateFilter || undefined
       };
       const res = await bridgeSendMessage<any>({ type: 'SUPABASE_ENQUEUE_TASKS' as any, payload });
       if (res && !res.error) {
@@ -280,6 +282,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           client_id: editTaskDraft.client_id || null,
           location: editTaskDraft.location || null,
           target_site: editTaskDraft.target_site || 'indeed',
+          date_filter: editTaskDraft.date_filter || null,
         }
       };
       const res = await bridgeSendMessage<any>({ type: 'SUPABASE_UPDATE_QUEUE_TASK' as any, payload });
@@ -499,7 +502,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   />
                   
                   <div className="mt-4 md:grid md:grid-cols-12 md:gap-4 md:items-end">
-                    <div className="col-span-12 md:col-span-2">
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
                         Associated Client
                       </label>
@@ -516,7 +519,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         ))}
                       </select>
                     </div>
-                    <div className="col-span-12 md:col-span-2">
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
                         Target Site
                       </label>
@@ -530,7 +533,24 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         <option value="trovolavoro">TrovoLavoro</option>
                       </select>
                     </div>
-                    <div className="col-span-12 md:col-span-2">
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2">
+                      <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
+                        Date Posted
+                      </label>
+                      <select 
+                        value={dateFilter} 
+                        onChange={(e) => setDateFilter(e.target.value)} 
+                        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm"
+                        disabled={targetSite === 'trovolavoro'}
+                      >
+                        <option value="">All Dates</option>
+                        <option value="1">Last 24 hours</option>
+                        <option value="3">Last 3 days</option>
+                        <option value="7">Last 7 days</option>
+                        <option value="14">Last 14 days</option>
+                      </select>
+                    </div>
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
                         Location Filter
                       </label>
@@ -542,7 +562,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 transition-all shadow-sm"
                       />
                     </div>
-                    <div className="col-span-12 md:col-span-3">
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 flex justify-between items-center">
                         <span>Assigned Worker</span> 
                         <span className="text-green-600 font-medium">{activeAgents.length} Online</span>
@@ -560,7 +580,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         ))}
                       </select>
                     </div>
-                    <div className="col-span-12 md:col-span-3 flex gap-2 justify-end">
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2 flex gap-2 justify-end">
                       <button 
                         onClick={handleUpdateLocations}
                         disabled={!locationFilter.trim()}
@@ -656,6 +676,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         <tr>
                           <th className="px-3 py-2 bg-gray-50">Task</th>
                           <th className="px-3 py-2 bg-gray-50">Site</th>
+                          <th className="px-3 py-2 bg-gray-50">Date</th>
                           <th className="px-3 py-2 bg-gray-50">Client</th>
                           <th className="px-3 py-2 bg-gray-50">Location</th>
                           <th className="px-3 py-2 bg-gray-50">Status</th>
@@ -694,6 +715,19 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                   </td>
                                   <td className="px-3 py-1.5">
                                     <select 
+                                      value={editTaskDraft.date_filter || ''} 
+                                      onChange={e => setEditTaskDraft({...editTaskDraft, date_filter: e.target.value || undefined})}
+                                      className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[13px] text-gray-900 shadow-sm"
+                                    >
+                                      <option value="">All</option>
+                                      <option value="1">24h</option>
+                                      <option value="3">3d</option>
+                                      <option value="7">7d</option>
+                                      <option value="14">14d</option>
+                                    </select>
+                                  </td>
+                                  <td className="px-3 py-1.5">
+                                    <select 
                                       value={editTaskDraft.client_id} 
                                       onChange={e => setEditTaskDraft({...editTaskDraft, client_id: e.target.value})}
                                       className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[13px] text-gray-900 shadow-sm"
@@ -723,6 +757,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                 <>
                                   <td className="px-3 py-1.5 font-medium text-gray-900 truncate max-w-[200px]">{q.job_title}</td>
                                   <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-[10px] uppercase font-bold bg-purple-50 text-purple-700 border-purple-200">{q.target_site || 'indeed'}</span></td>
+                                  <td className="px-3 py-1.5">
+                                    {q.date_filter ? (
+                                      <span className="px-2 py-0.5 rounded border text-[11px] font-medium bg-blue-50 text-blue-700 border-blue-200">
+                                        {q.date_filter === '1' ? '24h' : `${q.date_filter}d`}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-400 italic text-[11px]">Any</span>
+                                    )}
+                                  </td>
                                   <td className="px-3 py-1.5 text-gray-700 font-semibold">{clientRecord ? clientRecord.name : <span className="text-gray-400 italic font-normal">—</span>}</td>
                                   <td className="px-3 py-1.5 text-gray-700">{q.location || '-'}</td>
                                   <td className="px-3 py-1.5">
@@ -756,7 +799,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                           );
                         })}
                         {queue.length === 0 && (
-                          <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-600 italic">Queue is currently empty</td></tr>
+                          <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-600 italic">Queue is currently empty</td></tr>
                         )}
                       </tbody>
                     </table>
