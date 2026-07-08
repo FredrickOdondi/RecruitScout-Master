@@ -23,6 +23,128 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
+interface MultiSelectProps {
+  label: string;
+  options: { id: string; name: string }[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  placeholder?: string;
+  allowEmpty?: boolean;
+}
+
+const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
+  label,
+  options,
+  selectedIds,
+  onChange,
+  placeholder = "Select...",
+  allowEmpty = true,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleOption = (id: string) => {
+    if (selectedIds.includes(id)) {
+      const next = selectedIds.filter(item => item !== id);
+      if (next.length === 0 && !allowEmpty) {
+        return;
+      }
+      onChange(next);
+    } else {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    onChange(options.map(o => o.id));
+  };
+
+  const handleClear = () => {
+    if (!allowEmpty && options.length > 0) {
+      onChange([options[0].id]);
+    } else {
+      onChange([]);
+    }
+  };
+
+  let displayText = placeholder;
+  if (selectedIds.length === 1) {
+    if (selectedIds[0] === "") {
+      displayText = "(No Client / General)";
+    } else {
+      const found = options.find(o => o.id === selectedIds[0]);
+      displayText = found ? found.name : selectedIds[0];
+    }
+  } else if (selectedIds.length > 1) {
+    displayText = `${selectedIds.length} selected`;
+  } else if (selectedIds.length === 0) {
+    displayText = allowEmpty ? "(No Client / General)" : placeholder;
+  }
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
+        {label}
+      </label>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm flex justify-between items-center text-left min-h-[38px]"
+      >
+        <span className="truncate pr-2 font-medium text-gray-800">{displayText}</span>
+        <span className="text-gray-400 text-[10px]">▼</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-64 bg-white border border-gray-300 rounded-md shadow-lg py-1 max-h-64 overflow-y-auto left-0">
+          <div className="px-2 py-1.5 border-b border-gray-100 flex justify-between text-[11px] font-semibold text-blue-600">
+            <button type="button" onClick={handleSelectAll} className="hover:underline">Select All</button>
+            <button type="button" onClick={handleClear} className="hover:underline text-gray-500">{allowEmpty ? "Clear" : "Reset"}</button>
+          </div>
+          {allowEmpty && (
+            <label className="flex items-center px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-[12px] text-gray-700 border-b border-gray-100">
+              <input
+                type="checkbox"
+                checked={selectedIds.length === 0 || (selectedIds.length === 1 && selectedIds[0] === '')}
+                onChange={() => onChange([])}
+                className="mr-2.5 h-3.5 w-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <span className="italic text-gray-500">(No Client / General)</span>
+            </label>
+          )}
+          {options.map((opt) => {
+            const isChecked = selectedIds.includes(opt.id);
+            return (
+              <label
+                key={opt.id}
+                className="flex items-center px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-[12px] text-gray-800"
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleOption(opt.id)}
+                  className="mr-2.5 h-3.5 w-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <span className="truncate">{opt.name}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('search');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
@@ -32,7 +154,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [bulkTitles, setBulkTitles] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [targetSite, setTargetSite] = useState('indeed');
+  const [selectedTargetSites, setSelectedTargetSites] = useState<string[]>(['indeed']);
   const [dateFilter, setDateFilter] = useState('');
   
   // State
@@ -41,7 +163,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [queue, setQueue] = useState<any[]>([]);
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  const [selectedClient, setSelectedClient] = useState<string>('');
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTaskDraft, setEditTaskDraft] = useState<any>({});
   const [userEmail, setUserEmail] = useState<string>('');
@@ -202,16 +324,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         titles: tasksToEnqueue, 
         assigned_to: assignedTo.trim() || undefined, 
         location: location || undefined,
-        client_id: selectedClient || undefined,
-        target_site: targetSite || 'indeed',
+        client_id: selectedClients.length > 0 ? selectedClients : undefined,
+        target_site: selectedTargetSites.length > 0 ? selectedTargetSites : ['indeed'],
         date_filter: dateFilter || undefined
       };
       const res = await bridgeSendMessage<any>({ type: 'SUPABASE_ENQUEUE_TASKS' as any, payload });
       if (res && !res.error) {
         const modeLabel = titles.length > 0 ? `${titles.length} title(s)` : `location-only (${location})`;
-        alert(`✅ Enqueued ${modeLabel} to the remote queue!`);
+        alert(`✅ Enqueued ${modeLabel} across ${selectedClients.length || 1} client(s) and ${selectedTargetSites.length} site(s) to the remote queue!`);
         setBulkTitles('');
-        setSelectedClient('');
+        setSelectedClients([]);
         // Refresh queue
         bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any }).then(r => r?.data && setQueue(r.data));
       } else {
@@ -503,35 +625,28 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   
                   <div className="mt-4 md:grid md:grid-cols-12 md:gap-4 md:items-end">
                     <div className="col-span-12 sm:col-span-6 md:col-span-2">
-                      <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
-                        Associated Client
-                      </label>
-                      <select 
-                        value={selectedClient} 
-                        onChange={(e) => setSelectedClient(e.target.value)} 
-                        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm" 
-                      >
-                        <option value="">Leave blank (No Client)...</option>
-                        {clients.map(c => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
+                      <MultiSelectChecklist
+                        label="Associated Client"
+                        options={clients.map(c => ({ id: c.id, name: c.name }))}
+                        selectedIds={selectedClients}
+                        onChange={setSelectedClients}
+                        placeholder="(No Client)"
+                        allowEmpty={true}
+                      />
                     </div>
                     <div className="col-span-12 sm:col-span-6 md:col-span-2">
-                      <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
-                        Target Site
-                      </label>
-                      <select 
-                        value={targetSite} 
-                        onChange={(e) => setTargetSite(e.target.value)} 
-                        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm" 
-                      >
-                        <option value="indeed">Indeed</option>
-                        <option value="spanish-indeed">Spanish Indeed</option>
-                        <option value="trovolavoro">TrovoLavoro</option>
-                      </select>
+                      <MultiSelectChecklist
+                        label="Target Site"
+                        options={[
+                          { id: 'indeed', name: 'Indeed' },
+                          { id: 'spanish-indeed', name: 'Spanish Indeed' },
+                          { id: 'trovolavoro', name: 'TrovoLavoro' }
+                        ]}
+                        selectedIds={selectedTargetSites}
+                        onChange={setSelectedTargetSites}
+                        placeholder="Select Sites"
+                        allowEmpty={false}
+                      />
                     </div>
                     <div className="col-span-12 sm:col-span-6 md:col-span-2">
                       <label className="text-[11px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
@@ -540,8 +655,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       <select 
                         value={dateFilter} 
                         onChange={(e) => setDateFilter(e.target.value)} 
-                        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm"
-                        disabled={targetSite === 'trovolavoro'}
+                        className="w-full bg-white border border-gray-300 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 appearance-none shadow-sm min-h-[38px]"
+                        disabled={selectedTargetSites.length === 1 && selectedTargetSites[0] === 'trovolavoro'}
                       >
                         <option value="">All Dates</option>
                         <option value="last">Ads not displayed</option>

@@ -468,18 +468,29 @@ export class SupabaseClient {
   /**
    * Enqueue bulk search tasks
    */
-  async enqueueTasks(titles: string[], assigned_to?: string, location?: string, client_id?: string, target_site?: string, date_filter?: string): Promise<SupabaseResponse<{ inserted: number }>> {
+  async enqueueTasks(titles: string[], assigned_to?: string, location?: string, client_id?: string | string[], target_site?: string | string[], date_filter?: string): Promise<SupabaseResponse<{ inserted: number }>> {
     if (!titles || titles.length === 0) return { data: { inserted: 0 }, error: null };
 
-    const records = titles.map(title => ({
-      job_title: title.trim(),
-      status: 'pending',
-      assigned_to: assigned_to || null,
-      location: location || null,
-      client_id: client_id || null,
-      target_site: target_site || null,
-      date_filter: date_filter || null
-    }));
+    const clients = Array.isArray(client_id) ? (client_id.length > 0 ? client_id : [null]) : [client_id || null];
+    const sites = Array.isArray(target_site) ? (target_site.length > 0 ? target_site : ['indeed']) : [target_site || 'indeed'];
+
+    const records: any[] = [];
+    for (const title of titles) {
+      const cleanTitle = title.trim();
+      for (const site of sites) {
+        for (const client of clients) {
+          records.push({
+            job_title: cleanTitle,
+            status: 'pending',
+            assigned_to: assigned_to || null,
+            location: location || null,
+            client_id: client || null,
+            target_site: site || 'indeed',
+            date_filter: date_filter || null
+          });
+        }
+      }
+    }
 
     try {
       const response = await fetch(`${this.baseUrl}/rest/v1/BulkQueue`, {

@@ -100,8 +100,8 @@ export const createLangGraphAgent = (
         titles: z.array(z.string()).describe("List of job titles to search for"),
         assigned_to: z.string().optional().describe("Worker ID to assign to. Leave blank for any node."),
         location: z.string().optional().describe("Location to search in."),
-        client_id: z.string().optional().describe("Associated client ID."),
-        target_site: z.string().optional().describe("Site to target, usually 'indeed' or 'trovolavoro'."),
+        client_id: z.union([z.string(), z.array(z.string())]).optional().describe("Associated client ID or array of client IDs."),
+        target_site: z.union([z.string(), z.array(z.string())]).optional().describe("Site or array of sites to target (e.g., ['indeed', 'trovolavoro'])."),
         date_filter: z.string().optional().describe("Date filter in days (e.g., '1' for 24 hours, '3' for 3 days, '7' for 7 days, '14' for 14 days, or 'last' for Ads not displayed / non-sponsored only)."),
       }),
     }
