@@ -1521,7 +1521,13 @@ class ServiceWorker {
       for (let i = 0; i < titles.length; i++) {
         const title = (titles[i] || '').trim();
         const locationParam = options?.location ? `&l=${encodeURIComponent(options.location)}` : '';
-        const dateParam = options?.date_filter ? `&fromage=${encodeURIComponent(options.date_filter)}` : '';
+        // Handle date filtering: 'last' for Ads not displayed / unsponsored, or '1', '3', '7', '14'
+        let dateParam = '';
+        if (options?.date_filter === 'last') {
+          dateParam = '&fromage=last';
+        } else if (options?.date_filter) {
+          dateParam = `&fromage=${encodeURIComponent(options.date_filter)}`;
+        }
 
         let searchUrl = '';
         const isTrovolavoro = options?.target_site === 'trovolavoro' || baseUrl.includes('trovolavoro');

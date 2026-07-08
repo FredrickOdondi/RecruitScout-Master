@@ -102,7 +102,7 @@ export const createLangGraphAgent = (
         location: z.string().optional().describe("Location to search in."),
         client_id: z.string().optional().describe("Associated client ID."),
         target_site: z.string().optional().describe("Site to target, usually 'indeed' or 'trovolavoro'."),
-        date_filter: z.string().optional().describe("Date filter in days (e.g., '1' for 24 hours, '3' for 3 days, '7' for 7 days, '14' for 14 days)."),
+        date_filter: z.string().optional().describe("Date filter in days (e.g., '1' for 24 hours, '3' for 3 days, '7' for 7 days, '14' for 14 days, or 'last' for Ads not displayed / non-sponsored only)."),
       }),
     }
   );

@@ -544,6 +544,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         disabled={targetSite === 'trovolavoro'}
                       >
                         <option value="">All Dates</option>
+                        <option value="last">Ads not displayed</option>
                         <option value="1">Last 24 hours</option>
                         <option value="3">Last 3 days</option>
                         <option value="7">Last 7 days</option>
@@ -720,6 +721,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[13px] text-gray-900 shadow-sm"
                                     >
                                       <option value="">All</option>
+                                      <option value="last">No Ads</option>
                                       <option value="1">24h</option>
                                       <option value="3">3d</option>
                                       <option value="7">7d</option>
@@ -759,8 +761,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                   <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-[10px] uppercase font-bold bg-purple-50 text-purple-700 border-purple-200">{q.target_site || 'indeed'}</span></td>
                                   <td className="px-3 py-1.5">
                                     {q.date_filter ? (
-                                      <span className="px-2 py-0.5 rounded border text-[11px] font-medium bg-blue-50 text-blue-700 border-blue-200">
-                                        {q.date_filter === '1' ? '24h' : `${q.date_filter}d`}
+                                      <span className={`px-2 py-0.5 rounded border text-[11px] font-medium ${q.date_filter === 'last' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                        {q.date_filter === 'last' ? 'No Ads' : q.date_filter === '1' ? '24h' : `${q.date_filter}d`}
                                       </span>
                                     ) : (
                                       <span className="text-gray-400 italic text-[11px]">Any</span>

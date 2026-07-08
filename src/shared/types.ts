@@ -91,7 +91,7 @@ export interface BulkQueueRecord {
   location?: string;
   client_id?: string;
   target_site?: string;
-  date_filter?: string;
+  date_filter?: string | 'last' | '1' | '3' | '7' | '14';
   created_at: string;
   started_at?: string;
   completed_at?: string;
