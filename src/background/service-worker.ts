@@ -239,10 +239,10 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
       return domain;
     }
 
-    // Pass 2: Exact match on normalized name (strips Srl, SpA, Inc, GmbH etc.)
-    // e.g. "Esseci Studi e Consulenze Srl" -> "Esseci Studi e Consulenze"
+    // Pass 2: Trailing wildcard match on normalized name (strips Srl, SpA, Inc, GmbH etc.)
+    // Matches e.g. "Esseci Studi e Consulenze" against DB row "Esseci Studi e Consulenze S.r.l."
     if (normalized && normalized !== companyName) {
-      domain = await queryDbase(encodeURIComponent(normalized));
+      domain = await queryDbase(`${encodeURIComponent(normalized)}*`);
       if (domain) {
         console.log(`[RecruitScout Dbase] ${companyName}: normalized match -> ${domain}`);
         _domainCache.set(cacheKey, domain);
