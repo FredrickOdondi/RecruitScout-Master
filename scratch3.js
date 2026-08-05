@@ -15,7 +15,7 @@ async function queryDbase(filterValue) {
 }
 
 async function test() {
-  await queryDbase('Hosco');
-  await queryDbase('*Hosco*');
+  await queryDbase('Hosco%20'); // "Hosco "
+  await queryDbase('%20Hosco'); // " Hosco"
 }
 test();

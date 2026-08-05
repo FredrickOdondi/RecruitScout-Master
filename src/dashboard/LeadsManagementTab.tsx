@@ -1,0 +1,156 @@
+import React, { useState, useEffect } from 'react';
+
+// Icons
+const RefreshIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <polyline points="1 20 1 14 7 14"></polyline>
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+  </svg>
+);
+
+const AlertTriangleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+    <line x1="12" y1="9" x2="12" y2="13"></line>
+    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+  </svg>
+);
+
+const UsersIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+    <circle cx="9" cy="7" r="4"></circle>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+  </svg>
+);
+
+interface LeadsManagementTabProps {
+  sendMessage: (msg: any) => Promise<any>;
+}
+
+export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabProps) {
+  const [recruiters, setRecruiters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRecruiters = async (silent = false) => {
+    if (!silent) setLoading(true);
+    setError(null);
+    try {
+      const res = await sendMessage({ type: 'SUPABASE_GET_RECRUITERS' });
+      if (res && res.error) {
+        setError(res.error);
+      } else if (res && Array.isArray(res.data)) {
+        setRecruiters(res.data);
+      } else if (Array.isArray(res)) {
+        setRecruiters(res);
+      } else {
+        setRecruiters([]);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error fetching recruiters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecruiters();
+  }, []);
+
+  return (
+    <div className="flex flex-col h-full bg-[#f8fafc]">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+            <UsersIcon />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">Leads Management</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Manage recruitment leads and contacts stored in Supabase.</p>
+          </div>
+        </div>
+        <button
+          onClick={() => fetchRecruiters()}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors"
+        >
+          <div className={loading ? 'animate-spin' : ''}>
+            <RefreshIcon />
+          </div>
+          Refresh
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-auto p-6">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex gap-3 text-red-800">
+            <AlertTriangleIcon />
+            <div>
+              <h3 className="font-semibold text-sm">Failed to load recruiters</h3>
+              <p className="text-sm mt-1 opacity-90">{error}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Company</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Created At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {loading && recruiters.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                        <p className="text-sm">Loading recruiters...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : recruiters.length === 0 && !error ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      <p className="text-sm">No recruiters found in the database.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  recruiters.map((r, i) => (
+                    <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                        {r.name || r.full_name || r.first_name || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {r.company || r.company_name || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {r.email ? (
+                          <a href={`mailto:${r.email}`} className="text-indigo-600 hover:underline">{r.email}</a>
+                        ) : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {r.phone || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500 text-right whitespace-nowrap">
+                        {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'N/A'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

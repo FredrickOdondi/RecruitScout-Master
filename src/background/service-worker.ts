@@ -250,12 +250,12 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
       }
     }
 
-    // Pass 3: Partial/fuzzy match using wildcards on normalized name
-    // e.g. "Esseci Studi" -> ilike.*Esseci%20Studi*
+    // Pass 3: Prefix/fuzzy match using wildcards on normalized name
+    // e.g. "Esseci Studi" -> ilike.Esseci%20Studi*
     // Only run if the search term is long enough to avoid accidental false positives
     const searchTerm = normalized || companyName;
     if (searchTerm.length >= 5) {
-      domain = await queryDbase(`*${encodeURIComponent(searchTerm)}*`);
+      domain = await queryDbase(`${encodeURIComponent(searchTerm)}*`);
       if (domain) {
         console.log(`[RecruitScout Dbase] ${companyName}: fuzzy match -> ${domain}`);
         _domainCache.set(cacheKey, domain);
@@ -1163,6 +1163,10 @@ class ServiceWorker {
 
     messageRouter.on('SUPABASE_GET_CLIENTS' as MessageType, async () => {
       return await supabaseClient.getClients();
+    });
+
+    messageRouter.on('SUPABASE_GET_RECRUITERS' as MessageType, async () => {
+      return await supabaseClient.getRecruiters();
     });
 
     messageRouter.on('SUPABASE_ENROLL_CLIENT' as MessageType, async (message) => {

@@ -1011,6 +1011,33 @@ export class SupabaseClient {
   }
 
   /**
+   * Get all recruiters from Supabase
+   */
+  async getRecruiters(): Promise<SupabaseResponse<any[]>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?order=created_at.desc`, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error) {
+      console.error('[Supabase] Get recruiters error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
    * Enroll a new client in Supabase
    */
   async enrollClient(client: SupabaseClientRecord): Promise<SupabaseResponse<SupabaseClientRecord>> {

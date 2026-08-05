@@ -14,8 +14,4 @@ async function queryDbase(filterValue) {
   console.log('Query for', filterValue, data);
 }
 
-async function test() {
-  await queryDbase('Hosco');
-  await queryDbase('*Hosco*');
-}
-test();
+queryDbase('HOSCO');

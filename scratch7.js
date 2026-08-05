@@ -2,7 +2,7 @@ const SUPABASE_URL = 'http://72.60.215.34:8000';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
 async function queryDbase(filterValue) {
-  const url = `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26?select=Company%20Website&Company%20Name=ilike.${filterValue}&limit=1`;
+  const url = `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26?select=Company%20Name,Company%20Website,primarykey&Company%20Name=ilike.${filterValue}`;
   const res = await fetch(url, {
     headers: {
       'apikey': SUPABASE_ANON_KEY,
@@ -11,11 +11,8 @@ async function queryDbase(filterValue) {
     }
   });
   const data = await res.json();
-  console.log('Query for', filterValue, data);
+  console.log(`Results for ${filterValue}:`);
+  data.forEach(d => console.log(d['Company Name'], d['Company Website'], d.primarykey));
 }
 
-async function test() {
-  await queryDbase('Hosco');
-  await queryDbase('*Hosco*');
-}
-test();
+queryDbase('Hosco*');
