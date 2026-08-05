@@ -26,6 +26,13 @@ const UsersIcon = () => (
   </svg>
 );
 
+const SearchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+);
+
 interface LeadsManagementTabProps {
   sendMessage: (msg: any) => Promise<any>;
 }
@@ -34,6 +41,9 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [recruiters, setRecruiters] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const fetchRecruiters = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -60,6 +70,15 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
     fetchRecruiters();
   }, []);
 
+  const filteredRecruiters = recruiters.filter(r => {
+    if (!searchQuery) return true;
+    const name = r['Agency Name'] || '';
+    return name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const totalPages = Math.ceil(filteredRecruiters.length / itemsPerPage) || 1;
+  const paginatedRecruiters = filteredRecruiters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
     <div className="flex flex-col h-full bg-[#f8fafc]">
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -82,6 +101,24 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           </div>
           Refresh
         </button>
+      </div>
+
+      <div className="px-6 py-4 bg-white border-b border-gray-200">
+        <div className="relative w-full max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <SearchIcon />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
+            placeholder="Search agencies..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-6">
@@ -113,14 +150,14 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                       </div>
                     </td>
                   </tr>
-                ) : recruiters.length === 0 && !error ? (
+                ) : filteredRecruiters.length === 0 && !error ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-gray-500">
-                      <p className="text-sm">No recruiters found in the database.</p>
+                      <p className="text-sm">No agencies found matching your search.</p>
                     </td>
                   </tr>
                 ) : (
-                  recruiters.map((r, i) => (
+                  paginatedRecruiters.map((r, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                         {r['Agency Name'] || 'N/A'}
@@ -132,6 +169,37 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             </table>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg sm:px-6">
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredRecruiters.length)}</span> of{' '}
+                  <span className="font-medium">{filteredRecruiters.length}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
