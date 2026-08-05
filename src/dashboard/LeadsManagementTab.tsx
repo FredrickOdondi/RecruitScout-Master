@@ -101,16 +101,12 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Agency Name</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Specialization</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Headquarters</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Website</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Contact Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading && recruiters.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    <td className="px-4 py-8 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                         <p className="text-sm">Loading recruiters...</p>
@@ -119,7 +115,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                   </tr>
                 ) : recruiters.length === 0 && !error ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                    <td className="px-4 py-8 text-center text-gray-500">
                       <p className="text-sm">No recruiters found in the database.</p>
                     </td>
                   </tr>
@@ -128,22 +124,6 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                         {r['Agency Name'] || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {r['Specialization / Industry'] || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {r['Headquarters (HQ)'] || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {r.website ? (
-                          <a href={r.website} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
-                            Link
-                          </a>
-                        ) : 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 text-right whitespace-normal">
-                        {r['Contact Details'] || 'N/A'}
                       </td>
                     </tr>
                   ))
