@@ -138,12 +138,13 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Agency Name</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading && recruiters.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={2} className="px-4 py-8 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                         <p className="text-sm">Loading recruiters...</p>
@@ -152,7 +153,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                   </tr>
                 ) : filteredRecruiters.length === 0 && !error ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={2} className="px-4 py-8 text-center text-gray-500">
                       <p className="text-sm">No agencies found matching your search.</p>
                     </td>
                   </tr>
@@ -161,6 +162,17 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                         {r['Agency Name'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {r.status ? (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            r.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' :
+                            r.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {r.status}
+                          </span>
+                        ) : 'N/A'}
                       </td>
                     </tr>
                   ))
