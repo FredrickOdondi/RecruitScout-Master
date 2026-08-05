@@ -1169,6 +1169,10 @@ class ServiceWorker {
       return await supabaseClient.getRecruiters();
     });
 
+    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_STATUS' as MessageType, async (message) => {
+      return await supabaseClient.updateAllRecruitersStatus(message.payload?.status || 'Active');
+    });
+
     messageRouter.on('SUPABASE_ENROLL_CLIENT' as MessageType, async (message) => {
       return await supabaseClient.enrollClient(message.payload);
     });

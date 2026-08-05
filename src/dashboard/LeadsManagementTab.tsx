@@ -43,6 +43,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isUpdating, setIsUpdating] = useState(false);
   const itemsPerPage = 15;
 
   const fetchRecruiters = async (silent = false) => {
@@ -63,6 +64,26 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
       setError(e.message || 'Error fetching recruiters');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateAllStatus = async () => {
+    setIsUpdating(true);
+    setError(null);
+    try {
+      const res = await sendMessage({ 
+        type: 'SUPABASE_UPDATE_ALL_RECRUITERS_STATUS',
+        payload: { status: 'Active' }
+      });
+      if (res && res.error) {
+        setError(res.error);
+      } else {
+        await fetchRecruiters();
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error updating status');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -91,16 +112,30 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             <p className="text-sm text-gray-500 mt-0.5">Manage recruitment leads and contacts stored in Supabase.</p>
           </div>
         </div>
-        <button
-          onClick={() => fetchRecruiters()}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors"
-        >
-          <div className={loading ? 'animate-spin' : ''}>
-            <RefreshIcon />
-          </div>
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={updateAllStatus}
+            disabled={isUpdating || loading || recruiters.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors shadow-sm"
+          >
+            {isUpdating ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            )}
+            Set All Active
+          </button>
+          <button
+            onClick={() => fetchRecruiters()}
+            disabled={loading || isUpdating}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors"
+          >
+            <div className={loading ? 'animate-spin' : ''}>
+              <RefreshIcon />
+            </div>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="px-6 py-4 bg-white border-b border-gray-200">
