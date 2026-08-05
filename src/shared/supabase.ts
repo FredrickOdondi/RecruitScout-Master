@@ -1067,6 +1067,35 @@ export class SupabaseClient {
   }
 
   /**
+   * Update a single recruiter's status
+   */
+  async updateRecruiterStatus(agencyName: string, status: string): Promise<SupabaseResponse<any>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?Agency%20Name=eq.${encodeURIComponent(agencyName)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ status }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message || 'Unknown error updating recruiter status' };
+    }
+  }
+
+  /**
    * Enroll a new client in Supabase
    */
   async enrollClient(client: SupabaseClientRecord): Promise<SupabaseResponse<SupabaseClientRecord>> {

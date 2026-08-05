@@ -44,6 +44,8 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
+  const [isUpdatingSingle, setIsUpdatingSingle] = useState(false);
   const itemsPerPage = 15;
 
   const fetchRecruiters = async (silent = false) => {
@@ -84,6 +86,28 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
       setError(e.message || 'Error updating status');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const updateSingleStatus = async (status: string) => {
+    if (!selectedAgency) return;
+    setIsUpdatingSingle(true);
+    setError(null);
+    try {
+      const res = await sendMessage({ 
+        type: 'SUPABASE_UPDATE_RECRUITER_STATUS',
+        payload: { agencyName: selectedAgency, status }
+      });
+      if (res && res.error) {
+        setError(res.error);
+      } else {
+        await fetchRecruiters(true);
+        setSelectedAgency(null);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error updating status');
+    } finally {
+      setIsUpdatingSingle(false);
     }
   };
 
@@ -167,7 +191,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="max-w-5xl mx-auto bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -194,7 +218,11 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                   </tr>
                 ) : (
                   paginatedRecruiters.map((r, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                    <tr 
+                      key={i} 
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedAgency(r['Agency Name'])}
+                    >
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
                         {r['Agency Name'] || 'N/A'}
                       </td>
@@ -218,7 +246,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         </div>
 
         {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg sm:px-6">
+          <div className="max-w-5xl mx-auto mt-4 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg sm:px-6">
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
@@ -248,6 +276,50 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           </div>
         )}
       </div>
+
+      {/* Status Update Modal */}
+      {selectedAgency && (
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Update Status</h3>
+            <p className="text-sm text-gray-500 mb-6">Select a new status for <span className="font-semibold text-gray-700">{selectedAgency}</span>.</p>
+            
+            <div className="flex flex-col gap-3 mb-6">
+              <button
+                onClick={() => updateSingleStatus('Active')}
+                disabled={isUpdatingSingle}
+                className="w-full px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-md hover:bg-green-100 font-medium transition-colors"
+              >
+                Active
+              </button>
+              <button
+                onClick={() => updateSingleStatus('Suspended')}
+                disabled={isUpdatingSingle}
+                className="w-full px-4 py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-md hover:bg-yellow-100 font-medium transition-colors"
+              >
+                Suspended
+              </button>
+              <button
+                onClick={() => updateSingleStatus('Blacklisted')}
+                disabled={isUpdatingSingle}
+                className="w-full px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md hover:bg-red-100 font-medium transition-colors"
+              >
+                Blacklisted
+              </button>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSelectedAgency(null)}
+                disabled={isUpdatingSingle}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
