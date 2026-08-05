@@ -1015,7 +1015,7 @@ export class SupabaseClient {
    */
   async getRecruiters(): Promise<SupabaseResponse<any[]>> {
     try {
-      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?order=created_at.desc`, {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters`, {
         method: 'GET',
         headers: {
           'apikey': this.apiKey,

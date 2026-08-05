@@ -100,11 +100,11 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Company</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Created At</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Agency Name</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Specialization</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Headquarters</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Website</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Contact Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -125,23 +125,25 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                   </tr>
                 ) : (
                   recruiters.map((r, i) => (
-                    <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                        {r.name || r.full_name || r.first_name || 'N/A'}
+                        {r['Agency Name'] || 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {r.company || r.company_name || 'N/A'}
+                        {r['Specialization / Industry'] || 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {r.email ? (
-                          <a href={`mailto:${r.email}`} className="text-indigo-600 hover:underline">{r.email}</a>
+                        {r['Headquarters (HQ)'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {r.website ? (
+                          <a href={r.website} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                            Link
+                          </a>
                         ) : 'N/A'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {r.phone || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 text-right whitespace-nowrap">
-                        {r.created_at ? new Date(r.created_at).toLocaleDateString() : 'N/A'}
+                      <td className="px-4 py-3 text-sm text-gray-500 text-right whitespace-normal">
+                        {r['Contact Details'] || 'N/A'}
                       </td>
                     </tr>
                   ))
