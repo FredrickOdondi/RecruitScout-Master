@@ -143,7 +143,7 @@ export class SupabaseClient {
             'Prefer': 'resolution=merge-duplicates',
           },
           body: JSON.stringify(supabaseJobs),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(60000),
         });
 
         if (response.ok || response.status === 201) {
@@ -182,7 +182,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -269,7 +269,7 @@ export class SupabaseClient {
           // Ask Supabase to return the total row count in Content-Range header
           'Prefer': 'count=exact',
         },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -306,7 +306,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -335,7 +335,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -369,7 +369,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Prefer': 'return=representation',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -400,7 +400,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!res.ok) return new Set();
       const rows: { id: string }[] = await res.json();
@@ -424,7 +424,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!res.ok) return [];
       const rows: { worker_id: string }[] = await res.json();
@@ -448,7 +448,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Prefer': 'count=exact',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -630,7 +630,7 @@ export class SupabaseClient {
           started_at: null,
           completed_at: null,
         }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       return { data: { reset: true }, error: null };
@@ -650,7 +650,7 @@ export class SupabaseClient {
           'apikey': this.apiKey,
           'Authorization': `Bearer ${this.apiKey}`,
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       return { data: { deleted: true }, error: null };
@@ -673,7 +673,7 @@ export class SupabaseClient {
           'Prefer': 'return=minimal',
         },
         body: JSON.stringify(updates),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       return { data: { updated: true }, error: null };
@@ -698,7 +698,7 @@ export class SupabaseClient {
         body: JSON.stringify({
           location: location || null
         }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       return { data: { updated: true }, error: null };
@@ -767,7 +767,7 @@ export class SupabaseClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -804,7 +804,7 @@ export class SupabaseClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -831,7 +831,7 @@ export class SupabaseClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -856,7 +856,7 @@ export class SupabaseClient {
           'apikey': this.apiKey,
           'Authorization': `Bearer ${accessToken}`,
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -915,7 +915,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -947,7 +947,7 @@ export class SupabaseClient {
           'Prefer': 'resolution=merge-duplicates,return=representation',
         },
         body: JSON.stringify(integration),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -974,7 +974,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Prefer': 'count=exact',
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(60000),
       });
 
       return response.ok;
@@ -995,7 +995,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1027,7 +1027,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1056,7 +1056,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({ status }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1085,7 +1085,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({ 'Leads Sent before Teaser Mode': leadsSent }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1114,7 +1114,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({ 'Teaser Threshold': threshold }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1143,7 +1143,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({ 'Daily Sending Limit': limit }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1172,7 +1172,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({ status }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1202,7 +1202,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify(updates),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       // If it fails because column doesn't exist, try Agency Name
@@ -1218,7 +1218,7 @@ export class SupabaseClient {
               'Prefer': 'return=representation'
             },
             body: JSON.stringify(updates),
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(60000),
           });
         }
       }
@@ -1249,7 +1249,7 @@ export class SupabaseClient {
           'Prefer': 'return=representation',
         },
         body: JSON.stringify([client]),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1276,7 +1276,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Prefer': 'return=minimal',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!response.ok) {
@@ -1305,7 +1305,7 @@ export class SupabaseClient {
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!res.ok) {

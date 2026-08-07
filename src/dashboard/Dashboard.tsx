@@ -186,11 +186,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       // We are in Localhost web-mode, use the Content Script Relayer!
       const messageId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
-      // Auto timeout after 5 seconds if no extension picks it up
+      // Auto timeout after 60 seconds if no extension picks it up
       const timeout = setTimeout(() => {
         window.removeEventListener('message', listener);
         reject(new Error(`Bridge timeout: ${message.type}. Is the extension fully reloaded?`));
-      }, 5000);
+      }, 60000);
 
       const listener = (event: MessageEvent) => {
         if (event.data?.source === 'recruitscout-extension' && event.data?._id === messageId) {
