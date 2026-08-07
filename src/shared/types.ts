@@ -17,6 +17,8 @@ export interface JobData {
   extractedAt: string;
   metadata?: Record<string, any>;
   status?: string;
+  category?: string;
+  industry_vertical?: string;
 }
 
 // Location type

@@ -25,6 +25,7 @@ export interface SupabaseJob {
   worker_id?: string | null;
   category?: string | null;
   client?: string | null;
+  'industry vertical'?: string | null;
 }
 
 /**
@@ -94,8 +95,9 @@ export class SupabaseClient {
       description: job.description ?? null,
       // Write worker_id so we know exactly which extension scraped this job
       worker_id: job.workerId ?? (job as any).worker_id ?? null,
-      category: (job as any).category ?? null,
+      category: job.category ?? (job as any).category ?? null,
       client: (job as any).client ?? null,
+      'industry vertical': job.industry_vertical ?? (job as any)['industry vertical'] ?? null,
     };
   }
 
@@ -289,6 +291,35 @@ export class SupabaseClient {
     } catch (error) {
       console.error('[Supabase] queryJobs error:', error);
       return { data: null, error: error instanceof Error ? error.message : 'Unknown error', total: 0 };
+    }
+  }
+
+  /**
+   * Get categorized jobs (jobs that have category and industry vertical)
+   */
+  async getCategorizedJobs(): Promise<SupabaseResponse<SupabaseJob[]>> {
+    try {
+      const url = `${this.baseUrl}/rest/v1/jobs?select=id,title,company,location,employmenttype,url,description,dateposted,salary,source,extractedat,category,"industry vertical"&category=not.is.null&"industry vertical"=not.is.null&order=extractedat.desc`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(60000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error) {
+      console.error('[Supabase] Get categorized jobs error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
