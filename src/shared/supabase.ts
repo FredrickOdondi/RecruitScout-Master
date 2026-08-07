@@ -1096,6 +1096,54 @@ export class SupabaseClient {
   }
 
   /**
+   * Update all fields of a single recruiter
+   */
+  async updateRecruiter(originalName: string, updates: Record<string, any>): Promise<SupabaseResponse<any>> {
+    try {
+      // First try to update by Name
+      let response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?Name=eq.${encodeURIComponent(originalName)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(updates),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      // If it fails because column doesn't exist, try Agency Name
+      if (!response.ok && response.status === 400) {
+        const errorText = await response.text();
+        if (errorText.includes('column') || errorText.includes('does not exist')) {
+          response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?Agency%20Name=eq.${encodeURIComponent(originalName)}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': this.apiKey,
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(updates),
+            signal: AbortSignal.timeout(10000),
+          });
+        }
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message || 'Unknown error updating recruiter' };
+    }
+  }
+
+  /**
    * Enroll a new client in Supabase
    */
   async enrollClient(client: SupabaseClientRecord): Promise<SupabaseResponse<SupabaseClientRecord>> {

@@ -1177,6 +1177,10 @@ class ServiceWorker {
       return await supabaseClient.updateRecruiterStatus(message.payload.agencyName, message.payload.status);
     });
 
+    messageRouter.on('SUPABASE_UPDATE_RECRUITER' as MessageType, async (message) => {
+      return await supabaseClient.updateRecruiter(message.payload.originalName, message.payload.updates);
+    });
+
     messageRouter.on('SUPABASE_ENROLL_CLIENT' as MessageType, async (message) => {
       return await supabaseClient.enrollClient(message.payload);
     });
