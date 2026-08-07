@@ -1173,8 +1173,8 @@ class ServiceWorker {
       return await supabaseClient.updateAllRecruitersStatus(message.payload?.status || 'Active');
     });
 
-    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_TEASER_THRESHOLD' as MessageType, async (message) => {
-      return await supabaseClient.updateAllRecruitersTeaserThreshold(message.payload?.threshold ?? 5);
+    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_LEADS_SENT' as MessageType, async (message) => {
+      return await supabaseClient.updateAllRecruitersLeadsSent(message.payload?.leadsSent ?? 5);
     });
 
     messageRouter.on('SUPABASE_UPDATE_RECRUITER_STATUS' as MessageType, async (message) => {

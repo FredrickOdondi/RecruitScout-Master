@@ -62,8 +62,8 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [selectedRecruiter, setSelectedRecruiter] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [teaserThreshold, setTeaserThreshold] = useState<number>(5);
-  const [isUpdatingTeaser, setIsUpdatingTeaser] = useState(false);
+  const [leadsSentBeforeTeaser, setLeadsSentBeforeTeaser] = useState<number>(5);
+  const [isUpdatingLeadsSent, setIsUpdatingLeadsSent] = useState(false);
   const itemsPerPage = 15;
 
   const fetchRecruiters = async (silent = false, customQuery?: string) => {
@@ -111,13 +111,13 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
     }
   };
 
-  const updateAllTeaserValues = async () => {
-    setIsUpdatingTeaser(true);
+  const updateAllLeadsSentValues = async () => {
+    setIsUpdatingLeadsSent(true);
     setError(null);
     try {
       const res = await sendMessage({ 
-        type: 'SUPABASE_UPDATE_ALL_RECRUITERS_TEASER_THRESHOLD',
-        payload: { threshold: teaserThreshold }
+        type: 'SUPABASE_UPDATE_ALL_RECRUITERS_LEADS_SENT',
+        payload: { leadsSent: leadsSentBeforeTeaser }
       });
       if (res && res.error) {
         setError(res.error);
@@ -125,9 +125,9 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         await fetchRecruiters();
       }
     } catch (e: any) {
-      setError(e.message || 'Error updating teaser values');
+      setError(e.message || 'Error updating leads sent values');
     } finally {
-      setIsUpdatingTeaser(false);
+      setIsUpdatingLeadsSent(false);
     }
   };
 
@@ -190,20 +190,20 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
-            <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Global Teaser Threshold:</label>
+            <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Global Leads Sent (Pre-teaser):</label>
             <input
               type="number"
               min="0"
-              value={teaserThreshold}
-              onChange={(e) => setTeaserThreshold(Number(e.target.value))}
+              value={leadsSentBeforeTeaser}
+              onChange={(e) => setLeadsSentBeforeTeaser(Number(e.target.value))}
               className="w-16 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
             />
             <button
-              onClick={updateAllTeaserValues}
-              disabled={isUpdatingTeaser || loading || recruiters.length === 0}
+              onClick={updateAllLeadsSentValues}
+              disabled={isUpdatingLeadsSent || loading || recruiters.length === 0}
               className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-sky-100 text-sky-700 rounded-md hover:bg-sky-200 disabled:opacity-50 text-sm font-semibold transition-colors"
             >
-              {isUpdatingTeaser ? (
+              {isUpdatingLeadsSent ? (
                 <div className="w-3 h-3 border-2 border-sky-700 border-t-transparent rounded-full animate-spin"></div>
               ) : 'Apply to All'}
             </button>

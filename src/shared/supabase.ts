@@ -1072,9 +1072,9 @@ export class SupabaseClient {
   }
 
   /**
-   * Update all recruiters' teaser threshold
+   * Update all recruiters' leads sent before teaser
    */
-  async updateAllRecruitersTeaserThreshold(threshold: number): Promise<SupabaseResponse<any>> {
+  async updateAllRecruitersLeadsSent(leadsSent: number): Promise<SupabaseResponse<any>> {
     try {
       const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?or=(status.is.null,status.not.is.null)`, {
         method: 'PATCH',
@@ -1084,7 +1084,7 @@ export class SupabaseClient {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ 'Leads Sent before Teaser Mode': threshold }),
+        body: JSON.stringify({ 'Leads Sent before Teaser Mode': leadsSent }),
         signal: AbortSignal.timeout(10000),
       });
 
