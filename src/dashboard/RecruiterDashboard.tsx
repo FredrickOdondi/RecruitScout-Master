@@ -9,6 +9,7 @@ const ArrowLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" heigh
 const Building = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>;
 const Globe = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>;
 const MapPin = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
+const Users = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
 
 interface RecruiterDashboardProps {
   recruiter: any;
@@ -22,6 +23,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
   const domain = recruiter['Domain'] || 'N/A';
   const location = recruiter['Location'] || recruiter['Country'] || 'N/A';
   const industry = recruiter['Industry vertical'] || 'N/A';
+  const associatedContacts = recruiter['Associated contacts'] != null ? recruiter['Associated contacts'] : 'N/A';
   
   // Metrics
   const leads7d = parseInt(recruiter['Number of leads sent in the last 7 days'] || '0', 10);
@@ -82,7 +84,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
       <div className="p-8 max-w-7xl mx-auto w-full space-y-6">
         
         {/* Top Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4">
             <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg"><Building /></div>
             <div>
@@ -105,6 +107,13 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Location</p>
               <p className="text-sm font-semibold text-gray-900 mt-1 truncate">{location}</p>
             </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center gap-1">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="bg-purple-50 text-purple-600 p-1.5 rounded-md"><Users /></div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Contacts</p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{associatedContacts}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center gap-1">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Leads Sent</p>
