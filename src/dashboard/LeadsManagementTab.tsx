@@ -228,15 +228,15 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             <UsersIcon />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Leads Management</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage recruitment leads and contacts stored in Supabase.</p>
+            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Leads Management</h1>
+            <p className="text-xs text-gray-500 mt-1">Manage recruitment leads and contacts stored in Supabase.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={updateAllStatus}
             disabled={isUpdating || loading || recruiters.length === 0}
-            className="flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:shadow-md disabled:opacity-50 text-sm font-semibold transition-all duration-200 shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:shadow-md disabled:opacity-50 text-xs font-medium transition-all duration-200 shadow-sm"
           >
             {isUpdating ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -248,7 +248,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           <button
             onClick={() => fetchRecruiters()}
             disabled={loading || isUpdating}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:shadow-sm disabled:opacity-50 text-sm font-semibold transition-all duration-200"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:shadow-sm disabled:opacity-50 text-xs font-medium transition-all duration-200"
           >
             <div className={loading ? 'animate-spin' : ''}>
               <RefreshIcon />
@@ -260,10 +260,10 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
       {/* Bulk Config Bar */}
       <div className="bg-slate-50 border-b border-gray-100 px-8 py-3 flex items-center gap-6 z-10 overflow-x-auto">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Bulk Update Configurations</span>
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Bulk Update Configurations</span>
         
         <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
-          <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Leads Sent (Pre-teaser):</label>
+          <label className="text-xs font-medium text-gray-700 px-3 whitespace-nowrap">Leads Sent (Pre-teaser):</label>
           <input
             type="number"
             min="0"
@@ -283,7 +283,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         </div>
 
         <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
-          <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Teaser Threshold:</label>
+          <label className="text-xs font-medium text-gray-700 px-3 whitespace-nowrap">Teaser Threshold:</label>
           <input
             type="number"
             min="0"
@@ -303,7 +303,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         </div>
 
         <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
-          <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Daily Limit:</label>
+          <label className="text-xs font-medium text-gray-700 px-3 whitespace-nowrap">Daily Limit:</label>
           <input
             type="number"
             min="0"
@@ -330,7 +330,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           </div>
           <input
             type="text"
-            className="block w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-sm font-medium transition-all duration-200 ease-in-out shadow-inner"
+            className="block w-full pl-11 pr-4 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-xs font-normal transition-all duration-200 ease-in-out shadow-inner"
             placeholder="Search agencies, domains, or locations..."
             value={searchQuery}
             onChange={(e) => {
@@ -359,24 +359,24 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-gray-100">
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Name</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Domain</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Country</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Location</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Size</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Industry</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Specialty</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">LinkedIn</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Teaser Threshold</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Leads Sent (pre-teaser)</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Daily Limit</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Suspension End Date</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Leads (7d)</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Leads (30d)</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Total Leads</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Most Recent Lead</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Associated Contacts</th>
-                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Status</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Name</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Location</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Size</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Industry</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Specialty</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">LinkedIn</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Teaser Threshold</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Leads Sent (pre-teaser)</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Daily Limit</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Suspension End Date</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Leads (7d)</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Leads (30d)</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Total Leads</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Most Recent Lead</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Associated Contacts</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -406,68 +406,68 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                         }`}
                         onClick={() => handleRowClick(r)}
                       >
-                        <td className="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-900 font-normal whitespace-nowrap">
                           {r['Name'] || r['Agency Name'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Domain'] ? (
                             <a href={r['Domain'].startsWith('http') ? r['Domain'] : `https://${r['Domain']}`} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline" onClick={(e) => e.stopPropagation()}>
                               {r['Domain']}
                             </a>
                           ) : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Country'] || ''}>
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Country'] || ''}>
                           {r['Country'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Location'] || ''}>
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Location'] || ''}>
                           {r['Location'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Size'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Industry vertical'] || ''}>
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Industry vertical'] || ''}>
                           {r['Industry vertical'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Primary Specialty'] || ''}>
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Primary Specialty'] || ''}>
                           {r['Primary Specialty'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['LinkedIn URL'] ? (
                             <a href={r['LinkedIn URL']} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
                               LinkedIn
                             </a>
                           ) : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Teaser Threshold'] != null ? r['Teaser Threshold'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Leads Sent before Teaser Mode'] != null ? r['Leads Sent before Teaser Mode'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Daily Sending Limit'] != null ? r['Daily Sending Limit'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['suspension end date'] || 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Number of leads sent in the last 7 days'] != null ? r['Number of leads sent in the last 7 days'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Number of leads sent in the last 30 days'] != null ? r['Number of leads sent in the last 30 days'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Total leads sent'] != null ? r['Total leads sent'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Date of the most recent lead'] ? new Date(r['Date of the most recent lead']).toLocaleDateString() : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r['Associated contacts'] != null ? r['Associated contacts'] : 'N/A'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                           {r.status ? (
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm border ${
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium shadow-sm border ${
                               r.status.toLowerCase() === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
                               r.status.toLowerCase() === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                               'bg-slate-50 text-slate-700 border-slate-200'
@@ -488,7 +488,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             <div className="w-full mt-4 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg sm:px-6">
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-xs text-gray-700">
                     Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredRecruiters.length)}</span> of{' '}
                     <span className="font-medium">{filteredRecruiters.length}</span> results
                   </p>
@@ -570,7 +570,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <div className="p-6 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex gap-3 justify-end z-10">
                 <button
                   onClick={() => setSelectedRecruiter(null)}
-                  className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition-all shadow-sm"
+                  className="px-5 py-2.5 text-xs font-medium text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition-all shadow-sm"
                   disabled={isSaving}
                 >
                   Cancel
@@ -578,7 +578,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:shadow-md transition-all text-sm font-semibold disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:shadow-md transition-all text-xs font-medium disabled:opacity-50 shadow-sm"
                 >
                   {isSaving ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
