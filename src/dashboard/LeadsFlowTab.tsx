@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabaseClient, SupabaseJob } from '../shared/supabase';
-import OpenAI from 'openai';
 
 interface LeadsFlowTabProps {
   sendMessage: <T>(message: any) => Promise<T>;
@@ -16,7 +15,6 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   
-  const [drafting, setDrafting] = useState(false);
   const [draftedEmail, setDraftedEmail] = useState<string>('');
 
   useEffect(() => {
@@ -62,53 +60,26 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     }
   };
 
-  const handleDraftEmail = async () => {
+  const handleDraftEmail = () => {
     if (!selectedMatch) return;
-    setDrafting(true);
-    setDraftedEmail('');
+    
+    const recName = selectedMatch.recruiter['Name'] ? selectedMatch.recruiter['Name'].split(' ')[0] : 'there';
+    
+    const template = `Hi ${recName},
 
-    try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('VITE_OPENAI_API_KEY is not defined in environment variables.');
-      }
+I noticed you specialize in ${selectedMatch.recruiter['Primary Specialty']} roles within the ${selectedMatch.recruiter['Industry vertical']} sector.
 
-      const openai = new OpenAI({
-        apiKey,
-        dangerouslyAllowBrowser: true
-      });
+We recently came across a new opening for a ${selectedMatch.job.title} position at ${selectedMatch.job.company} based in ${selectedMatch.job.location || 'a remote/flexible location'}.
 
-      const prompt = `You are an expert partnership manager at RecruitScout. 
-Your goal is to reach out to a specialized recruiter and pitch them an open job that perfectly matches their specialty.
+Here is the link to the original posting:
+${selectedMatch.job.url}
 
-Recruiter Details:
-- Name: ${selectedMatch.recruiter['Name'] || 'Recruiter'}
-- Agency: ${selectedMatch.recruiter['Agency Name'] || 'their agency'}
-- Primary Specialty: ${selectedMatch.recruiter['Primary Specialty']}
-- Industry Vertical: ${selectedMatch.recruiter['Industry vertical']}
+Let me know if you have any candidates that might be a fit for this, or if you'd like to partner up!
 
-Job Details:
-- Title: ${selectedMatch.job.title}
-- Company: ${selectedMatch.job.company}
-- Location: ${selectedMatch.job.location || 'Remote/Unspecified'}
-- Job Link: ${selectedMatch.job.url}
+Best,
+The RecruitScout Team`;
 
-Draft a highly personalized, concise cold email to the recruiter. The goal is to ask if they have candidates for this role or if they'd like to partner with us to fill it. 
-Keep it professional, friendly, and under 150 words. Do not include placeholders like "[Your Name]", just end with "The RecruitScout Team".`;
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-      });
-
-      const text = completion.choices[0]?.message?.content || 'No content generated.';
-      setDraftedEmail(text.trim());
-    } catch (err) {
-      console.error('Error drafting email:', err);
-      alert('Failed to draft email: ' + (err as Error).message);
-    } finally {
-      setDrafting(false);
-    }
+    setDraftedEmail(template);
   };
 
   return (
@@ -223,23 +194,17 @@ Keep it professional, friendly, and under 150 words. Do not include placeholders
 
             </div>
 
-            {/* AI Drafting Section */}
+            {/* Drafting Section */}
             <div className="border-t border-gray-200 p-5 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                  <span>✨</span> AI Outreach Pitch
+                  <span>📝</span> Outreach Pitch Template
                 </h4>
                 <button
                   onClick={handleDraftEmail}
-                  disabled={drafting}
-                  className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center gap-2"
+                  className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm flex items-center gap-2"
                 >
-                  {drafting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Drafting...
-                    </>
-                  ) : 'Draft Email'}
+                  Generate Template
                 </button>
               </div>
               
@@ -248,7 +213,7 @@ Keep it professional, friendly, and under 150 words. Do not include placeholders
                   <textarea 
                     value={draftedEmail}
                     onChange={(e) => setDraftedEmail(e.target.value)}
-                    className="w-full h-48 bg-white border border-gray-300 rounded-md p-4 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-inner resize-none leading-relaxed"
+                    className="w-full h-56 bg-white border border-gray-300 rounded-md p-4 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-inner resize-none leading-relaxed"
                   />
                   <button 
                     onClick={() => navigator.clipboard.writeText(draftedEmail)}
@@ -260,9 +225,9 @@ Keep it professional, friendly, and under 150 words. Do not include placeholders
                 </div>
               )}
               
-              {!draftedEmail && !drafting && (
+              {!draftedEmail && (
                 <div className="h-32 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md bg-white">
-                  <p className="text-sm text-gray-500 italic">Click "Draft Email" to generate a personalized pitch.</p>
+                  <p className="text-sm text-gray-500 italic">Click "Generate Template" to populate the pitch with job details.</p>
                 </div>
               )}
             </div>
