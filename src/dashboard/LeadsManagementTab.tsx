@@ -143,8 +143,14 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
   const filteredRecruiters = recruiters.filter(r => {
     if (!searchQuery) return true;
-    const name = r['Name'] || r['Agency Name'] || '';
-    return name.toLowerCase().includes(searchQuery.toLowerCase());
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    
+    // Safely cast to string to prevent crashes on numeric/null values
+    const name = String(r['Name'] || r['Agency Name'] || '').toLowerCase();
+    const domain = String(r['Domain'] || '').toLowerCase();
+    
+    return name.includes(query) || domain.includes(query);
   });
 
   const totalPages = Math.ceil(filteredRecruiters.length / itemsPerPage) || 1;
