@@ -1177,6 +1177,14 @@ class ServiceWorker {
       return await supabaseClient.updateAllRecruitersLeadsSent(message.payload?.leadsSent ?? 5);
     });
 
+    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_TEASER_THRESHOLD' as MessageType, async (message) => {
+      return await supabaseClient.updateAllRecruitersTeaserThreshold(message.payload?.threshold ?? 5);
+    });
+
+    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_DAILY_LIMIT' as MessageType, async (message) => {
+      return await supabaseClient.updateAllRecruitersDailyLimit(message.payload?.limit ?? 50);
+    });
+
     messageRouter.on('SUPABASE_UPDATE_RECRUITER_STATUS' as MessageType, async (message) => {
       return await supabaseClient.updateRecruiterStatus(message.payload.agencyName, message.payload.status);
     });

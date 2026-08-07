@@ -64,6 +64,10 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [isSaving, setIsSaving] = useState(false);
   const [leadsSentBeforeTeaser, setLeadsSentBeforeTeaser] = useState<number>(5);
   const [isUpdatingLeadsSent, setIsUpdatingLeadsSent] = useState(false);
+  const [teaserThreshold, setTeaserThreshold] = useState<number>(5);
+  const [isUpdatingTeaser, setIsUpdatingTeaser] = useState(false);
+  const [dailyLimit, setDailyLimit] = useState<number>(50);
+  const [isUpdatingDailyLimit, setIsUpdatingDailyLimit] = useState(false);
   const itemsPerPage = 15;
 
   const fetchRecruiters = async (silent = false, customQuery?: string) => {
@@ -131,6 +135,46 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
     }
   };
 
+  const updateAllTeaserThresholdValues = async () => {
+    setIsUpdatingTeaser(true);
+    setError(null);
+    try {
+      const res = await sendMessage({ 
+        type: 'SUPABASE_UPDATE_ALL_RECRUITERS_TEASER_THRESHOLD',
+        payload: { threshold: teaserThreshold }
+      });
+      if (res && res.error) {
+        setError(res.error);
+      } else {
+        await fetchRecruiters();
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error updating teaser threshold values');
+    } finally {
+      setIsUpdatingTeaser(false);
+    }
+  };
+
+  const updateAllDailyLimitValues = async () => {
+    setIsUpdatingDailyLimit(true);
+    setError(null);
+    try {
+      const res = await sendMessage({ 
+        type: 'SUPABASE_UPDATE_ALL_RECRUITERS_DAILY_LIMIT',
+        payload: { limit: dailyLimit }
+      });
+      if (res && res.error) {
+        setError(res.error);
+      } else {
+        await fetchRecruiters();
+      }
+    } catch (e: any) {
+      setError(e.message || 'Error updating daily limit values');
+    } finally {
+      setIsUpdatingDailyLimit(false);
+    }
+  };
+
   const handleRowClick = (recruiter: any) => {
     setSelectedRecruiter(recruiter);
     setEditFormData({ ...recruiter });
@@ -188,27 +232,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             <p className="text-sm text-gray-500 mt-1">Manage recruitment leads and contacts stored in Supabase.</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
-            <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Global Leads Sent (Pre-teaser):</label>
-            <input
-              type="number"
-              min="0"
-              value={leadsSentBeforeTeaser}
-              onChange={(e) => setLeadsSentBeforeTeaser(Number(e.target.value))}
-              className="w-16 px-2 py-1.5 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
-            />
-            <button
-              onClick={updateAllLeadsSentValues}
-              disabled={isUpdatingLeadsSent || loading || recruiters.length === 0}
-              className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-sky-100 text-sky-700 rounded-md hover:bg-sky-200 disabled:opacity-50 text-sm font-semibold transition-colors"
-            >
-              {isUpdatingLeadsSent ? (
-                <div className="w-3 h-3 border-2 border-sky-700 border-t-transparent rounded-full animate-spin"></div>
-              ) : 'Apply to All'}
-            </button>
-          </div>
-          
+        <div className="flex items-center gap-3">
           <button
             onClick={updateAllStatus}
             disabled={isUpdating || loading || recruiters.length === 0}
@@ -230,6 +254,71 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <RefreshIcon />
             </div>
             Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Bulk Config Bar */}
+      <div className="bg-slate-50 border-b border-gray-100 px-8 py-3 flex items-center gap-6 z-10 overflow-x-auto">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Bulk Update Configurations</span>
+        
+        <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+          <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Leads Sent (Pre-teaser):</label>
+          <input
+            type="number"
+            min="0"
+            value={leadsSentBeforeTeaser}
+            onChange={(e) => setLeadsSentBeforeTeaser(Number(e.target.value))}
+            className="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+          />
+          <button
+            onClick={updateAllLeadsSentValues}
+            disabled={isUpdatingLeadsSent || loading || recruiters.length === 0}
+            className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 rounded-md hover:bg-sky-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+          >
+            {isUpdatingLeadsSent ? (
+              <div className="w-3 h-3 border-2 border-sky-700 border-t-transparent rounded-full animate-spin"></div>
+            ) : 'Apply'}
+          </button>
+        </div>
+
+        <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+          <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Teaser Threshold:</label>
+          <input
+            type="number"
+            min="0"
+            value={teaserThreshold}
+            onChange={(e) => setTeaserThreshold(Number(e.target.value))}
+            className="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+          />
+          <button
+            onClick={updateAllTeaserThresholdValues}
+            disabled={isUpdatingTeaser || loading || recruiters.length === 0}
+            className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 rounded-md hover:bg-sky-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+          >
+            {isUpdatingTeaser ? (
+              <div className="w-3 h-3 border-2 border-sky-700 border-t-transparent rounded-full animate-spin"></div>
+            ) : 'Apply'}
+          </button>
+        </div>
+
+        <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+          <label className="text-sm font-semibold text-gray-700 px-3 whitespace-nowrap">Daily Limit:</label>
+          <input
+            type="number"
+            min="0"
+            value={dailyLimit}
+            onChange={(e) => setDailyLimit(Number(e.target.value))}
+            className="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+          />
+          <button
+            onClick={updateAllDailyLimitValues}
+            disabled={isUpdatingDailyLimit || loading || recruiters.length === 0}
+            className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 rounded-md hover:bg-sky-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+          >
+            {isUpdatingDailyLimit ? (
+              <div className="w-3 h-3 border-2 border-sky-700 border-t-transparent rounded-full animate-spin"></div>
+            ) : 'Apply'}
           </button>
         </div>
       </div>

@@ -1096,7 +1096,65 @@ export class SupabaseClient {
       const data = await response.json();
       return { data, error: null };
     } catch (error: any) {
+      return { data: null, error: error.message || 'Unknown error updating leads sent' };
+    }
+  }
+
+  /**
+   * Update all recruiters' teaser threshold
+   */
+  async updateAllRecruitersTeaserThreshold(threshold: number): Promise<SupabaseResponse<any>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?or=(status.is.null,status.not.is.null)`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ 'Teaser Threshold': threshold }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error: any) {
       return { data: null, error: error.message || 'Unknown error updating teaser threshold' };
+    }
+  }
+
+  /**
+   * Update all recruiters' daily limit
+   */
+  async updateAllRecruitersDailyLimit(limit: number): Promise<SupabaseResponse<any>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?or=(status.is.null,status.not.is.null)`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ 'Daily Sending Limit': limit }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message || 'Unknown error updating daily limit' };
     }
   }
 
