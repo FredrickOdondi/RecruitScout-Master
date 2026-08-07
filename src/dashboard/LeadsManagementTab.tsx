@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import RecruiterDashboard from './RecruiterDashboard';
 
 // Icons
 const RefreshIcon = () => (
@@ -8,7 +9,6 @@ const RefreshIcon = () => (
     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
   </svg>
 );
-
 const AlertTriangleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -60,6 +60,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [currentPage, setCurrentPage] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedRecruiter, setSelectedRecruiter] = useState<any | null>(null);
+  const [viewingDashboardFor, setViewingDashboardFor] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [leadsSentBeforeTeaser, setLeadsSentBeforeTeaser] = useState<number>(5);
@@ -175,9 +176,15 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
     }
   };
 
-  const handleRowClick = (recruiter: any) => {
+  const handleEditClick = (recruiter: any, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedRecruiter(recruiter);
     setEditFormData({ ...recruiter });
+  };
+
+  const handleDashboardClick = (recruiter: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setViewingDashboardFor(recruiter);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -219,6 +226,10 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
   const totalPages = Math.ceil(filteredRecruiters.length / itemsPerPage) || 1;
   const paginatedRecruiters = filteredRecruiters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  if (viewingDashboardFor) {
+    return <RecruiterDashboard recruiter={viewingDashboardFor} onBack={() => setViewingDashboardFor(null)} />;
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc]">
@@ -359,6 +370,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-gray-100">
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                     <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Name</th>
                     <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
                     <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
@@ -399,13 +411,28 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                     paginatedRecruiters.map((r, i) => (
                       <tr 
                         key={i} 
-                        className={`hover:bg-slate-50 transition-colors duration-150 cursor-pointer border-l-2 ${
+                        className={`hover:bg-slate-50 transition-colors duration-150 border-l-2 ${
                           selectedRecruiter && (selectedRecruiter['Name'] || selectedRecruiter['Agency Name']) === (r['Name'] || r['Agency Name']) 
                             ? 'bg-sky-50 border-sky-400' 
                             : 'border-transparent'
                         }`}
-                        onClick={() => handleRowClick(r)}
                       >
+                        <td className="px-3 py-2 whitespace-nowrap text-xs">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => handleDashboardClick(r, e)}
+                              className="px-2 py-1 text-sky-700 bg-sky-100 hover:bg-sky-200 rounded text-[10px] font-semibold transition-colors"
+                            >
+                              Dashboard
+                            </button>
+                            <button
+                              onClick={(e) => handleEditClick(r, e)}
+                              className="px-2 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded text-[10px] font-medium transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </td>
                         <td className="px-3 py-2 text-xs text-gray-900 font-normal whitespace-nowrap">
                           {r['Name'] || r['Agency Name'] || 'N/A'}
                         </td>
