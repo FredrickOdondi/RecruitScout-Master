@@ -1165,8 +1165,8 @@ class ServiceWorker {
       return await supabaseClient.getClients();
     });
 
-    messageRouter.on('SUPABASE_GET_RECRUITERS' as MessageType, async () => {
-      return await supabaseClient.getRecruiters();
+    messageRouter.on('SUPABASE_GET_RECRUITERS' as MessageType, async (message) => {
+      return await supabaseClient.getRecruiters(message.payload?.query);
     });
 
     messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_STATUS' as MessageType, async (message) => {

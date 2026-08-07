@@ -64,11 +64,15 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   const [isSaving, setIsSaving] = useState(false);
   const itemsPerPage = 15;
 
-  const fetchRecruiters = async (silent = false) => {
+  const fetchRecruiters = async (silent = false, customQuery?: string) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const res = await sendMessage({ type: 'SUPABASE_GET_RECRUITERS' });
+      const q = customQuery !== undefined ? customQuery : searchQuery;
+      const res = await sendMessage({ 
+        type: 'SUPABASE_GET_RECRUITERS',
+        payload: { query: q.trim() }
+      });
       if (res && res.error) {
         setError(res.error);
       } else if (res && Array.isArray(res.data)) {
@@ -138,20 +142,14 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   };
 
   useEffect(() => {
-    fetchRecruiters();
-  }, []);
+    const handler = setTimeout(() => {
+      fetchRecruiters(false, searchQuery);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-  const filteredRecruiters = recruiters.filter(r => {
-    if (!searchQuery) return true;
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return true;
-    
-    // Safely cast to string to prevent crashes on numeric/null values
-    const name = String(r['Name'] || r['Agency Name'] || '').toLowerCase();
-    const domain = String(r['Domain'] || '').toLowerCase();
-    
-    return name.includes(query) || domain.includes(query);
-  });
+  // Using server-side search now
+  const filteredRecruiters = recruiters;
 
   const totalPages = Math.ceil(filteredRecruiters.length / itemsPerPage) || 1;
   const paginatedRecruiters = filteredRecruiters.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);

@@ -1013,9 +1013,14 @@ export class SupabaseClient {
   /**
    * Get all recruiters from Supabase
    */
-  async getRecruiters(): Promise<SupabaseResponse<any[]>> {
+  async getRecruiters(searchQuery?: string): Promise<SupabaseResponse<any[]>> {
     try {
-      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters`, {
+      let url = `${this.baseUrl}/rest/v1/Recruiters`;
+      if (searchQuery) {
+        url += `?or=(Name.ilike.*${encodeURIComponent(searchQuery)}*,Domain.ilike.*${encodeURIComponent(searchQuery)}*)`;
+      }
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'apikey': this.apiKey,
