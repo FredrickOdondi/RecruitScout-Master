@@ -117,7 +117,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
   const filteredRecruiters = recruiters.filter(r => {
     if (!searchQuery) return true;
-    const name = r['Agency Name'] || '';
+    const name = r['Name'] || r['Agency Name'] || '';
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
@@ -196,14 +196,20 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Agency Name</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Location</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Size</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Industry</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Specialty</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">LinkedIn</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading && recruiters.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                         <p className="text-sm">Loading recruiters...</p>
@@ -212,7 +218,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                   </tr>
                 ) : filteredRecruiters.length === 0 && !error ? (
                   <tr>
-                    <td colSpan={2} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       <p className="text-sm">No agencies found matching your search.</p>
                     </td>
                   </tr>
@@ -221,12 +227,38 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                     <tr 
                       key={i} 
                       className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedAgency(r['Agency Name'])}
+                      onClick={() => setSelectedAgency(r['Name'] || r['Agency Name'])}
                     >
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                        {r['Agency Name'] || 'N/A'}
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
+                        {r['Name'] || r['Agency Name'] || 'N/A'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Domain'] ? (
+                          <a href={r['Domain'].startsWith('http') ? r['Domain'] : `https://${r['Domain']}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                            {r['Domain']}
+                          </a>
+                        ) : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Location'] || ''}>
+                        {r['Location'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Size'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Industry vertical'] || ''}>
+                        {r['Industry vertical'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Primary Specialty'] || ''}>
+                        {r['Primary Specialty'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['LinkedIn URL'] ? (
+                          <a href={r['LinkedIn URL']} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                            LinkedIn
+                          </a>
+                        ) : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {r.status ? (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             r.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' :
