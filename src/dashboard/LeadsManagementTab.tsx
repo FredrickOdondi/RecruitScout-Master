@@ -156,21 +156,21 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc]">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+      <div className="bg-white border-b border-gray-100 px-8 py-6 flex items-center justify-between z-20 shadow-sm relative">
+        <div className="flex items-center gap-4">
+          <div className="bg-sky-50 p-2.5 rounded-xl text-sky-600 shadow-sm border border-sky-100/50">
             <UsersIcon />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 leading-tight">Leads Management</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage recruitment leads and contacts stored in Supabase.</p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Leads Management</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage recruitment leads and contacts stored in Supabase.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={updateAllStatus}
             disabled={isUpdating || loading || recruiters.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:shadow-md disabled:opacity-50 text-sm font-semibold transition-all duration-200 shadow-sm"
           >
             {isUpdating ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -182,7 +182,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           <button
             onClick={() => fetchRecruiters()}
             disabled={loading || isUpdating}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:shadow-sm disabled:opacity-50 text-sm font-semibold transition-all duration-200"
           >
             <div className={loading ? 'animate-spin' : ''}>
               <RefreshIcon />
@@ -192,15 +192,15 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         </div>
       </div>
 
-      <div className="px-6 py-4 bg-white border-b border-gray-200 z-10">
-        <div className="relative w-full max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div className="px-8 py-5 bg-white/80 backdrop-blur-md border-b border-gray-100 z-10 sticky top-0 shadow-sm">
+        <div className="relative w-full max-w-lg">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
             <SearchIcon />
           </div>
           <input
             type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150 ease-in-out"
-            placeholder="Search agencies..."
+            className="block w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 text-sm font-medium transition-all duration-200 ease-in-out shadow-inner"
+            placeholder="Search agencies, domains, or locations..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -212,7 +212,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
       <div className="flex flex-1 overflow-hidden">
         {/* Main Table Area */}
-        <div className={`flex-1 overflow-auto p-6 transition-all duration-300 ${selectedRecruiter ? 'pr-2' : ''}`}>
+        <div className="flex-1 overflow-auto p-8 transition-all duration-300">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex gap-3 text-red-800">
               <AlertTriangleIcon />
@@ -223,29 +223,29 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
             </div>
           )}
 
-          <div className="w-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="w-full bg-white border border-gray-100 rounded-xl shadow-md overflow-hidden ring-1 ring-black ring-opacity-5">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Location</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Size</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Industry</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Specialty</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">LinkedIn</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Teaser Threshold</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Leads Sent (pre-teaser)</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Daily Limit</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Suspension End Date</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Leads (7d)</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Leads (30d)</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Total Leads</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Most Recent Lead</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Associated Contacts</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                  <tr className="bg-slate-50 border-b border-gray-100">
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Name</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Domain</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Country</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Location</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Size</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Industry</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Specialty</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">LinkedIn</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Teaser Threshold</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Leads Sent (pre-teaser)</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Daily Limit</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Suspension End Date</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Leads (7d)</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Leads (30d)</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Total Leads</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Most Recent Lead</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Associated Contacts</th>
+                    <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -253,7 +253,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                     <tr>
                       <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
                         <div className="flex flex-col items-center justify-center">
-                          <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                          <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                           <p className="text-sm">Loading recruiters...</p>
                         </div>
                       </td>
@@ -268,10 +268,10 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                     paginatedRecruiters.map((r, i) => (
                       <tr 
                         key={i} 
-                        className={`hover:bg-gray-50 transition-colors cursor-pointer ${
+                        className={`hover:bg-slate-50 transition-colors duration-150 cursor-pointer border-l-2 ${
                           selectedRecruiter && (selectedRecruiter['Name'] || selectedRecruiter['Agency Name']) === (r['Name'] || r['Agency Name']) 
-                            ? 'bg-indigo-50/50' 
-                            : ''
+                            ? 'bg-sky-50 border-sky-400' 
+                            : 'border-transparent'
                         }`}
                         onClick={() => handleRowClick(r)}
                       >
@@ -280,7 +280,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                           {r['Domain'] ? (
-                            <a href={r['Domain'].startsWith('http') ? r['Domain'] : `https://${r['Domain']}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                            <a href={r['Domain'].startsWith('http') ? r['Domain'] : `https://${r['Domain']}`} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline" onClick={(e) => e.stopPropagation()}>
                               {r['Domain']}
                             </a>
                           ) : 'N/A'}
@@ -336,10 +336,10 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                           {r.status ? (
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              r.status.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' :
-                              r.status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm border ${
+                              r.status.toLowerCase() === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
+                              r.status.toLowerCase() === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-slate-50 text-slate-700 border-slate-200'
                             }`}>
                               {r.status}
                             </span>
@@ -385,70 +385,76 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           )}
         </div>
 
-        {/* Side Panel for Editing */}
+        {/* Side Panel for Editing (Fixed Modal Overlay) */}
         {selectedRecruiter && (
-          <div className="w-96 bg-white border-l border-gray-200 flex flex-col h-full shadow-lg overflow-hidden animate-in slide-in-from-right duration-300 shrink-0">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 truncate pr-4">
-                Edit {selectedRecruiter['Name'] || selectedRecruiter['Agency Name'] || 'Recruiter'}
-              </h2>
-              <button 
-                onClick={() => setSelectedRecruiter(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-              >
-                <CloseIcon />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              {ALL_FIELDS.map(field => (
-                <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                    {field}
-                  </label>
-                  {field === 'status' ? (
-                    <select
-                      value={editFormData[field] || ''}
-                      onChange={(e) => handleInputChange(field, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="">Select status...</option>
-                      <option value="Active">Active</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Suspended">Suspended</option>
-                      <option value="Blacklisted">Blacklisted</option>
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={editFormData[field] === null || editFormData[field] === undefined ? '' : editFormData[field]}
-                      onChange={(e) => handleInputChange(field, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder={`Enter ${field}...`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="fixed inset-0 z-50 flex justify-end">
+            <div 
+              className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" 
+              onClick={() => setSelectedRecruiter(null)}
+            ></div>
+            <div className="relative w-[400px] max-w-full bg-white shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300 border-l border-gray-200">
+              <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-slate-50">
+                <h2 className="text-lg font-bold text-slate-800 truncate pr-4">
+                  Edit {selectedRecruiter['Name'] || selectedRecruiter['Agency Name'] || 'Recruiter'}
+                </h2>
+                <button 
+                  onClick={() => setSelectedRecruiter(null)}
+                  className="text-gray-400 hover:text-gray-700 transition-colors p-1.5 rounded-full hover:bg-white hover:shadow-sm"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                {ALL_FIELDS.map(field => (
+                  <div key={field}>
+                    <label className="block text-[13px] font-semibold text-slate-700 mb-1.5 capitalize tracking-wide">
+                      {field}
+                    </label>
+                    {field === 'status' ? (
+                      <select
+                        value={editFormData[field] || ''}
+                        onChange={(e) => handleInputChange(field, e.target.value)}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 transition-all shadow-sm"
+                      >
+                        <option value="">Select status...</option>
+                        <option value="Active">Active</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Suspended">Suspended</option>
+                        <option value="Blacklisted">Blacklisted</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={editFormData[field] === null || editFormData[field] === undefined ? '' : editFormData[field]}
+                        onChange={(e) => handleInputChange(field, e.target.value)}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 transition-all shadow-sm"
+                        placeholder={`Enter ${field}...`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
 
-            <div className="p-4 border-t border-gray-200 bg-gray-50 flex gap-3 justify-end">
-              <button
-                onClick={() => setSelectedRecruiter(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : null}
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
+              <div className="p-6 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex gap-3 justify-end z-10">
+                <button
+                  onClick={() => setSelectedRecruiter(null)}
+                  className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-gray-200 rounded-lg hover:bg-slate-50 transition-all shadow-sm"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:shadow-md transition-all text-sm font-semibold disabled:opacity-50 shadow-sm"
+                >
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : null}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             </div>
           </div>
         )}
