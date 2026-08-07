@@ -198,18 +198,28 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Country</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Location</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Size</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Industry</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Specialty</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">LinkedIn</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Teaser Threshold</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Leads Sent (pre-teaser)</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Daily Limit</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Suspension End Date</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Leads (7d)</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Leads (30d)</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Total Leads</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Most Recent Lead</th>
+                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Associated Contacts</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading && recruiters.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                         <p className="text-sm">Loading recruiters...</p>
@@ -218,7 +228,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                   </tr>
                 ) : filteredRecruiters.length === 0 && !error ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={18} className="px-4 py-8 text-center text-gray-500">
                       <p className="text-sm">No agencies found matching your search.</p>
                     </td>
                   </tr>
@@ -239,6 +249,9 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                           </a>
                         ) : 'N/A'}
                       </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Country'] || ''}>
+                        {r['Country'] || 'N/A'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap truncate max-w-xs" title={r['Location'] || ''}>
                         {r['Location'] || 'N/A'}
                       </td>
@@ -257,6 +270,33 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
                             LinkedIn
                           </a>
                         ) : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Teaser Threshold'] != null ? r['Teaser Threshold'] : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Leads Sent before Teaser Mode'] != null ? r['Leads Sent before Teaser Mode'] : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Daily Sending Limit'] != null ? r['Daily Sending Limit'] : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['suspension end date'] || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Number of leads sent in the last 7 days'] != null ? r['Number of leads sent in the last 7 days'] : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Number of leads sent in the last 30 days'] != null ? r['Number of leads sent in the last 30 days'] : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Total leads sent'] != null ? r['Total leads sent'] : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Date of the most recent lead'] ? new Date(r['Date of the most recent lead']).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {r['Associated contacts'] != null ? r['Associated contacts'] : 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {r.status ? (
