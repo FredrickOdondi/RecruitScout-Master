@@ -85,39 +85,39 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
         
         {/* Top Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4">
-            <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg"><Building /></div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Industry</p>
-              <p className="text-sm font-semibold text-gray-900 mt-1">{industry}</p>
+          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4 overflow-hidden">
+            <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg flex-shrink-0"><Building /></div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Industry</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1 truncate" title={industry}>{industry}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4">
-            <div className="bg-sky-50 text-sky-600 p-2.5 rounded-lg"><Globe /></div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</p>
-              <a href={domain.startsWith('http') ? domain : `https://${domain}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-sky-600 hover:underline mt-1 block truncate">
+          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4 overflow-hidden">
+            <div className="bg-sky-50 text-sky-600 p-2.5 rounded-lg flex-shrink-0"><Globe /></div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Domain</p>
+              <a href={domain.startsWith('http') ? domain : `https://${domain}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-sky-600 hover:underline mt-1 block truncate" title={domain}>
                 {domain}
               </a>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4">
-            <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg"><MapPin /></div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Location</p>
-              <p className="text-sm font-semibold text-gray-900 mt-1 truncate">{location}</p>
+          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex items-start gap-4 overflow-hidden">
+            <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg flex-shrink-0"><MapPin /></div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Location</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1 truncate" title={location}>{location}</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center gap-1">
+          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center gap-1 overflow-hidden">
             <div className="flex items-center gap-2 mb-1">
-              <div className="bg-purple-50 text-purple-600 p-1.5 rounded-md"><Users /></div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Contacts</p>
+              <div className="bg-purple-50 text-purple-600 p-1.5 rounded-md flex-shrink-0"><Users /></div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Contacts</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{associatedContacts}</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate" title={String(associatedContacts)}>{associatedContacts}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center gap-1">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Leads Sent</p>
-            <p className="text-3xl font-bold text-gray-900">{leadsTotal}</p>
+          <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-center gap-1 overflow-hidden">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Total Leads Sent</p>
+            <p className="text-3xl font-bold text-gray-900 truncate">{leadsTotal}</p>
           </div>
         </div>
 
