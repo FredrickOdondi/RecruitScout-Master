@@ -1072,6 +1072,35 @@ export class SupabaseClient {
   }
 
   /**
+   * Update all recruiters' teaser threshold
+   */
+  async updateAllRecruitersTeaserThreshold(threshold: number): Promise<SupabaseResponse<any>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?or=(status.is.null,status.not.is.null)`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ 'Leads Sent before Teaser Mode': threshold }),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message || 'Unknown error updating teaser threshold' };
+    }
+  }
+
+  /**
    * Update a single recruiter's status
    */
   async updateRecruiterStatus(agencyName: string, status: string): Promise<SupabaseResponse<any>> {
