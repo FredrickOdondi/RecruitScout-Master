@@ -191,7 +191,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
           </div>
         )}
 
-        <div className="max-w-5xl bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="w-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -278,7 +278,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         </div>
 
         {totalPages > 1 && (
-          <div className="max-w-5xl mt-4 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg sm:px-6">
+          <div className="w-full mt-4 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg sm:px-6">
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
