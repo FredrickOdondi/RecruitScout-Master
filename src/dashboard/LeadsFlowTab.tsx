@@ -14,7 +14,8 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   const [loading, setLoading] = useState(true);
   const [groupedMatches, setGroupedMatches] = useState<MatchedRecruiter[]>([]);
   const [selectedRecruiter, setSelectedRecruiter] = useState<MatchedRecruiter | null>(null);
-  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  
+  // Maps recruiter ID to bundled drafted email
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     }
   };
 
-  const generateTemplateForJob = (job: SupabaseJob, recruiter: any) => {
+  const generateTemplateForRecruiter = (recruiter: any, jobs: SupabaseJob[]) => {
     let recName = recruiter['Name'] ? recruiter['Name'].split(' ')[0] : '';
     if (!recName && recruiter['Agency Name']) recName = 'team at ' + recruiter['Agency Name'];
     if (!recName) recName = 'there';
@@ -76,58 +77,57 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     ];
     const intro = introOptions[Math.floor(Math.random() * introOptions.length)];
 
-    const roleOptions = [
-      `We recently came across a new opening for a ${job.title} position at ${job.company} based in ${job.location || 'a remote/flexible location'}.`,
-      `There is an exciting ${job.title} opportunity currently open at ${job.company} (${job.location || 'Remote'}).`,
-      `${job.company} is currently looking for a ${job.title} in ${job.location || 'a remote setup'}.`,
-      `I'm writing to share a ${job.title} role at ${job.company} (${job.location || 'Remote'}) that just opened up.`
+    const roleIntroOptions = [
+      `We recently came across some exciting new openings that align perfectly with your focus:`,
+      `I'm writing to share a few roles that just opened up and look like a great match for your network:`,
+      `We have several open positions right now that could be a great fit for your candidate pool:`
     ];
-    const roleText = roleOptions[Math.floor(Math.random() * roleOptions.length)];
+    const roleIntro = roleIntroOptions[Math.floor(Math.random() * roleIntroOptions.length)];
+
+    const jobListings = jobs.map((job, index) => {
+      return `${index + 1}. ${job.title} at ${job.company} (${job.location || 'Remote'})\n   Link: ${job.url}`;
+    }).join('\n\n');
 
     return `${salutation} ${recName === 'there' ? 'there' : recName},
 
 ${intro}
 
-${roleText}
+${roleIntro}
 
-Here is the link to the original posting:
-${job.url}
+${jobListings}
 
-Let me know if you have any candidates that might be a fit for this, or if you'd like to partner up!
+Let me know if you have any candidates that might be a fit for these, or if you'd like to partner up!
 
 Best,
 The RecruitScout Team`;
   };
 
-  const getDraftKey = (recruiter: any, jobId: string) => {
-    const recId = recruiter.id || recruiter['Agency Name'] || recruiter['Name'] || 'unknown';
-    return `${recId}_${jobId}`;
+  const getRecruiterId = (recruiter: any) => {
+    return recruiter.id || recruiter['Agency Name'] || recruiter['Name'] || 'unknown';
   };
 
-  const handleGenerateAllDrafts = () => {
+  const handleGenerateBundledDraft = () => {
     if (!selectedRecruiter) return;
+    const recId = getRecruiterId(selectedRecruiter.recruiter);
     
-    const newDrafts = { ...drafts };
-    selectedRecruiter.jobs.forEach(job => {
-      const key = getDraftKey(selectedRecruiter.recruiter, job.id);
-      newDrafts[key] = generateTemplateForJob(job, selectedRecruiter.recruiter);
-    });
-    
-    setDrafts(newDrafts);
-    
-    if (!expandedJobId && selectedRecruiter.jobs.length > 0) {
-      setExpandedJobId(selectedRecruiter.jobs[0].id);
-    }
-  };
-
-  const updateDraft = (jobId: string, text: string) => {
-    if (!selectedRecruiter) return;
-    const key = getDraftKey(selectedRecruiter.recruiter, jobId);
+    const draftText = generateTemplateForRecruiter(selectedRecruiter.recruiter, selectedRecruiter.jobs);
     setDrafts(prev => ({
       ...prev,
-      [key]: text
+      [recId]: draftText
     }));
   };
+
+  const updateDraft = (text: string) => {
+    if (!selectedRecruiter) return;
+    const recId = getRecruiterId(selectedRecruiter.recruiter);
+    setDrafts(prev => ({
+      ...prev,
+      [recId]: text
+    }));
+  };
+
+  const selectedRecId = selectedRecruiter ? getRecruiterId(selectedRecruiter.recruiter) : null;
+  const currentDraft = selectedRecId ? drafts[selectedRecId] : '';
 
   return (
     <div className="flex h-[calc(100vh-100px)] gap-6 bg-[#F8FAFC] p-4 text-slate-800 font-sans">
@@ -169,7 +169,6 @@ The RecruitScout Team`;
                     key={i} 
                     onClick={() => {
                       setSelectedRecruiter(group);
-                      setExpandedJobId(null);
                     }}
                     className={`p-4 cursor-pointer rounded-lg border transition-all duration-200 flex flex-col gap-3 relative overflow-hidden group
                       ${isSelected 
@@ -216,10 +215,10 @@ The RecruitScout Team`;
         </div>
       </div>
 
-      {/* RIGHT PANE: Matched Jobs & Drafts */}
+      {/* RIGHT PANE: Matched Jobs & Bundled Draft */}
       <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden relative">
         {selectedRecruiter ? (
-          <div className="flex flex-col h-full bg-slate-50/30">
+          <div className="flex flex-col h-full">
             
             {/* Header */}
             <div className="px-8 py-6 border-b border-slate-200 bg-white flex justify-between items-center shadow-[0_4px_20px_-15px_rgba(0,0,0,0.05)] z-10">
@@ -234,131 +233,91 @@ The RecruitScout Team`;
                   </p>
                 </div>
               </div>
-              
-              <button
-                onClick={handleGenerateAllDrafts}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-[0_4px_12px_-4px_rgba(79,70,229,0.5)] hover:shadow-[0_6px_16px_-4px_rgba(79,70,229,0.6)] hover:-translate-y-0.5 flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                Generate Drafts For All
-              </button>
             </div>
             
-            {/* Jobs List */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {selectedRecruiter.jobs.map((job) => {
-                const isExpanded = expandedJobId === job.id;
-                const draftKey = getDraftKey(selectedRecruiter.recruiter, job.id);
-                const draftText = drafts[draftKey];
+            {/* Split View */}
+            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-5">
+              
+              {/* Left Side: Matched Jobs List (2/5) */}
+              <div className="lg:col-span-2 border-r border-slate-200 flex flex-col h-full bg-slate-50/30">
+                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Matched Jobs</h4>
+                </div>
                 
-                return (
-                  <div key={job.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200 hover:border-slate-300">
-                    
-                    {/* Job Header (Click to expand) */}
-                    <div 
-                      className={`p-5 cursor-pointer flex justify-between items-center transition-colors ${isExpanded ? 'bg-slate-50/80 border-b border-slate-100' : 'hover:bg-slate-50'}`}
-                      onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                    >
-                      <div className="flex-1 min-w-0 pr-4">
-                        <div className="text-lg font-bold text-slate-800 truncate mb-1">{job.title}</div>
-                        <div className="text-sm font-medium text-slate-500 flex items-center gap-2">
-                          <span className="text-slate-700">{job.company}</span>
-                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          <span>{job.location || 'Remote'}</span>
-                        </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {selectedRecruiter.jobs.map((job) => (
+                    <div key={job.id} className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:border-indigo-200 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="text-[15px] font-bold text-slate-800 leading-tight">{job.title}</div>
                       </div>
-                      
-                      <div className="flex items-center gap-4 shrink-0">
-                        {draftText && !isExpanded && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded border border-emerald-200">
-                            Draft Ready
-                          </span>
-                        )}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'}`}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </div>
+                      <div className="text-[13px] font-medium text-slate-500 flex items-center gap-1.5 mb-3">
+                        <span className="text-slate-700">{job.company}</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                        <span className="truncate">{job.location || 'Remote'}</span>
                       </div>
+                      <a href={job.url} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 w-fit px-2 py-1 rounded">
+                        View Posting
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                      </a>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Job Details & Draft (Expanded) */}
-                    {isExpanded && (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
-                        
-                        {/* Left side: Job details */}
-                        <div className="p-6 bg-white">
-                          <div className="flex justify-between items-center mb-3">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Job Description</h4>
-                            <a href={job.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded">
-                              Original Posting
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                            </a>
-                          </div>
-                          
-                          <div className="text-[13px] text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100 max-h-72 overflow-y-auto whitespace-pre-wrap font-medium">
-                            {job.description ? (
-                              job.description.length > 500 
-                                ? job.description.substring(0, 500) + '...'
-                                : job.description
-                            ) : 'No description available.'}
-                          </div>
-                        </div>
-                        
-                        {/* Right side: Email Template */}
-                        <div className="p-6 flex flex-col h-full bg-slate-50/50">
-                          <div className="flex justify-between items-center mb-3">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Draft</h4>
-                            
-                            {!draftText && (
-                              <button 
-                                onClick={() => {
-                                  updateDraft(job.id, generateTemplateForJob(job, selectedRecruiter.recruiter));
-                                }}
-                                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
-                              >
-                                Generate For This Job
-                              </button>
-                            )}
-                          </div>
-                          
-                          {draftText ? (
-                            <div className="relative flex-1 flex flex-col group/textarea">
-                              <textarea 
-                                value={draftText}
-                                onChange={(e) => updateDraft(job.id, e.target.value)}
-                                className="flex-1 w-full min-h-[250px] bg-white border border-slate-200 rounded-lg p-4 text-[13px] text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 shadow-inner resize-none leading-relaxed transition-all"
-                              />
-                              <button 
-                                onClick={() => navigator.clipboard.writeText(draftText)}
-                                className="absolute top-2 right-2 p-2 bg-white shadow hover:shadow-md text-slate-500 hover:text-indigo-600 rounded-md transition-all border border-slate-200"
-                                title="Copy to clipboard"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex-1 min-h-[250px] flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-lg bg-white">
-                              <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                              </div>
-                              <p className="text-sm font-medium text-slate-500 text-center px-6">
-                                Draft not generated yet.
-                              </p>
-                              <button 
-                                onClick={() => updateDraft(job.id, generateTemplateForJob(job, selectedRecruiter.recruiter))}
-                                className="mt-4 px-4 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md hover:bg-indigo-100 transition-colors"
-                              >
-                                Generate Now
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        
+              {/* Right Side: Bundled Email Draft (3/5) */}
+              <div className="lg:col-span-3 flex flex-col h-full bg-slate-50/50">
+                <div className="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    Bundled Email Draft
+                    {currentDraft && <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Ready</span>}
+                  </h4>
+                  
+                  {!currentDraft && (
+                    <button
+                      onClick={handleGenerateBundledDraft}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      Generate Draft
+                    </button>
+                  )}
+                </div>
+                
+                <div className="flex-1 p-6 overflow-hidden flex flex-col">
+                  {currentDraft ? (
+                    <div className="relative flex-1 flex flex-col group/textarea">
+                      <textarea 
+                        value={currentDraft}
+                        onChange={(e) => updateDraft(e.target.value)}
+                        className="flex-1 w-full h-full bg-white border border-slate-200 rounded-lg p-5 text-[14px] text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 shadow-inner resize-none leading-relaxed transition-all"
+                      />
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(currentDraft)}
+                        className="absolute top-3 right-3 p-2 bg-white shadow hover:shadow-md text-slate-500 hover:text-indigo-600 rounded-md transition-all border border-slate-200"
+                        title="Copy to clipboard"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex-1 h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-lg bg-white">
+                      <div className="w-14 h-14 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                       </div>
-                    )}
-
-                  </div>
-                );
-              })}
+                      <p className="text-sm font-medium text-slate-500 text-center px-6 max-w-sm">
+                        Create a single, beautifully bundled email containing all {selectedRecruiter.jobs.length} matched roles for this recruiter.
+                      </p>
+                      <button 
+                        onClick={handleGenerateBundledDraft}
+                        className="mt-5 px-5 py-2.5 bg-indigo-50 text-indigo-700 text-sm font-bold rounded-lg hover:bg-indigo-100 transition-colors shadow-sm"
+                      >
+                        Generate Bundled Draft
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
             </div>
 
           </div>
