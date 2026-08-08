@@ -61,13 +61,34 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   };
 
   const generateTemplateForJob = (job: SupabaseJob, recruiter: any) => {
-    const recName = recruiter['Name'] ? recruiter['Name'].split(' ')[0] : 'there';
+    let recName = recruiter['Name'] ? recruiter['Name'].split(' ')[0] : '';
+    if (!recName && recruiter['Agency Name']) recName = 'team at ' + recruiter['Agency Name'];
+    if (!recName) recName = 'there';
+
+    const salutations = ["Hi", "Hello", "Hey", "Greetings"];
+    const salutation = salutations[Math.floor(Math.random() * salutations.length)];
     
-    return `Hi ${recName},
+    const introOptions = [
+      `I noticed you specialize in ${recruiter['Primary Specialty']} roles within the ${recruiter['Industry vertical']} sector.`,
+      `Given your expertise in the ${recruiter['Industry vertical']} sector, specifically for ${recruiter['Primary Specialty']} roles, I thought I'd reach out.`,
+      `We see that you focus on ${recruiter['Primary Specialty']} placements in the ${recruiter['Industry vertical']} industry.`,
+      `Your background in recruiting for ${recruiter['Primary Specialty']} within ${recruiter['Industry vertical']} caught our eye.`
+    ];
+    const intro = introOptions[Math.floor(Math.random() * introOptions.length)];
 
-I noticed you specialize in ${recruiter['Primary Specialty']} roles within the ${recruiter['Industry vertical']} sector.
+    const roleOptions = [
+      `We recently came across a new opening for a ${job.title} position at ${job.company} based in ${job.location || 'a remote/flexible location'}.`,
+      `There is an exciting ${job.title} opportunity currently open at ${job.company} (${job.location || 'Remote'}).`,
+      `${job.company} is currently looking for a ${job.title} in ${job.location || 'a remote setup'}.`,
+      `I'm writing to share a ${job.title} role at ${job.company} (${job.location || 'Remote'}) that just opened up.`
+    ];
+    const roleText = roleOptions[Math.floor(Math.random() * roleOptions.length)];
 
-We recently came across a new opening for a ${job.title} position at ${job.company} based in ${job.location || 'a remote/flexible location'}.
+    return `${salutation} ${recName === 'there' ? 'there' : recName},
+
+${intro}
+
+${roleText}
 
 Here is the link to the original posting:
 ${job.url}
