@@ -84,22 +84,27 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     ];
     const roleIntro = roleIntroOptions[Math.floor(Math.random() * roleIntroOptions.length)];
 
-    const jobListings = jobs.map((job, index) => {
-      return `${index + 1}. ${job.title} at ${job.company} (${job.location || 'Remote'})\n   Link: ${job.url}`;
-    }).join('\n\n');
+    const jobListings = jobs.map((job) => {
+      return `
+        <li style="margin-bottom: 16px; line-height: 1.4;">
+          <strong>${job.title}</strong> at ${job.company} (${job.location || 'Remote'})<br/>
+          <a href="${job.url}" style="display: inline-block; margin-top: 8px; padding: 8px 14px; background-color: #4F46E5; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 12px; font-family: sans-serif;">View Job Posting</a>
+        </li>`;
+    }).join('');
 
-    return `${salutation} ${recName === 'there' ? 'there' : recName},
-
-${intro}
-
-${roleIntro}
-
-${jobListings}
-
-Let me know if you have any candidates that might be a fit for these, or if you'd like to partner up!
-
-Best,
-The RecruitScout Team`;
+    return `
+      <div style="font-family: sans-serif; font-size: 14px; color: #334155; line-height: 1.6; max-width: 600px;">
+        <p>${salutation} ${recName === 'there' ? 'there' : recName},</p>
+        <p>${intro}</p>
+        <p>${roleIntro}</p>
+        <ol style="padding-left: 24px;">
+          ${jobListings}
+        </ol>
+        <p>Let me know if you have any candidates that might be a fit for these, or if you'd like to partner up!</p>
+        <p style="margin-bottom: 0;">Best,</p>
+        <p style="margin-top: 4px; font-weight: bold;">The RecruitScout Team</p>
+      </div>
+    `.trim();
   };
 
   const getRecruiterId = (recruiter: any) => {
@@ -128,6 +133,29 @@ The RecruitScout Team`;
 
   const selectedRecId = selectedRecruiter ? getRecruiterId(selectedRecruiter.recruiter) : null;
   const currentDraft = selectedRecId ? drafts[selectedRecId] : '';
+
+  const handleCopy = async () => {
+    if (!currentDraft) return;
+    try {
+      const clipboardItem = new ClipboardItem({
+        'text/html': new Blob([currentDraft], { type: 'text/html' }),
+        'text/plain': new Blob([currentDraft.replace(/<[^>]*>?/gm, '')], { type: 'text/plain' })
+      });
+      await navigator.clipboard.write([clipboardItem]);
+    } catch (err) {
+      // Fallback
+      const el = document.createElement('div');
+      el.innerHTML = currentDraft;
+      document.body.appendChild(el);
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+  };
 
   return (
     <div className="flex h-[calc(100vh-100px)] gap-4 bg-[#F8FAFC] text-slate-800 font-sans">
@@ -286,13 +314,15 @@ The RecruitScout Team`;
                 <div className="flex-1 p-4 overflow-hidden flex flex-col">
                   {currentDraft ? (
                     <div className="relative flex-1 flex flex-col group/textarea">
-                      <textarea 
-                        value={currentDraft}
-                        onChange={(e) => updateDraft(e.target.value)}
-                        className="flex-1 w-full h-full bg-white border border-slate-200 rounded-md p-3 text-[13px] text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500/30 focus:border-indigo-400 shadow-inner resize-none leading-relaxed transition-all"
+                      <div 
+                        contentEditable
+                        suppressContentEditableWarning={true}
+                        dangerouslySetInnerHTML={{ __html: currentDraft }}
+                        onBlur={(e) => updateDraft(e.currentTarget.innerHTML)}
+                        className="flex-1 w-full h-full bg-white border border-slate-200 rounded-md p-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-indigo-500/30 focus:border-indigo-400 shadow-inner overflow-y-auto transition-all"
                       />
                       <button 
-                        onClick={() => navigator.clipboard.writeText(currentDraft)}
+                        onClick={handleCopy}
                         className="absolute top-2 right-2 p-1.5 bg-white shadow hover:shadow-md text-slate-500 hover:text-indigo-600 rounded-md transition-all border border-slate-200"
                         title="Copy to clipboard"
                       >
