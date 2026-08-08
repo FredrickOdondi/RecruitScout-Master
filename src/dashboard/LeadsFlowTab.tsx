@@ -99,12 +99,18 @@ Best,
 The RecruitScout Team`;
   };
 
+  const getDraftKey = (recruiter: any, jobId: string) => {
+    const recId = recruiter.id || recruiter['Agency Name'] || recruiter['Name'] || 'unknown';
+    return `${recId}_${jobId}`;
+  };
+
   const handleGenerateAllDrafts = () => {
     if (!selectedRecruiter) return;
     
     const newDrafts = { ...drafts };
     selectedRecruiter.jobs.forEach(job => {
-      newDrafts[job.id] = generateTemplateForJob(job, selectedRecruiter.recruiter);
+      const key = getDraftKey(selectedRecruiter.recruiter, job.id);
+      newDrafts[key] = generateTemplateForJob(job, selectedRecruiter.recruiter);
     });
     
     setDrafts(newDrafts);
@@ -115,9 +121,11 @@ The RecruitScout Team`;
   };
 
   const updateDraft = (jobId: string, text: string) => {
+    if (!selectedRecruiter) return;
+    const key = getDraftKey(selectedRecruiter.recruiter, jobId);
     setDrafts(prev => ({
       ...prev,
-      [jobId]: text
+      [key]: text
     }));
   };
 
@@ -240,7 +248,8 @@ The RecruitScout Team`;
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {selectedRecruiter.jobs.map((job) => {
                 const isExpanded = expandedJobId === job.id;
-                const draftText = drafts[job.id];
+                const draftKey = getDraftKey(selectedRecruiter.recruiter, job.id);
+                const draftText = drafts[draftKey];
                 
                 return (
                   <div key={job.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-200 hover:border-slate-300">
