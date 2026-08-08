@@ -319,6 +319,13 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                         suppressContentEditableWarning={true}
                         dangerouslySetInnerHTML={{ __html: currentDraft }}
                         onBlur={(e) => updateDraft(e.currentTarget.innerHTML)}
+                        onClick={(e) => {
+                          const target = e.target as HTMLElement;
+                          if (target.tagName === 'A') {
+                            e.preventDefault();
+                            window.open((target as HTMLAnchorElement).href, '_blank');
+                          }
+                        }}
                         className="flex-1 w-full bg-white border border-slate-200 rounded-md p-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-indigo-500/30 focus:border-indigo-400 shadow-inner overflow-y-auto transition-all"
                       />
                       <button 
