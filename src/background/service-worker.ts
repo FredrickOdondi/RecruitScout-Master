@@ -1125,7 +1125,7 @@ class ServiceWorker {
           .replace(/\//g, '_')
           .replace(/=+$/, '');
           
-        const response = await fetch('https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send', {
+        const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
