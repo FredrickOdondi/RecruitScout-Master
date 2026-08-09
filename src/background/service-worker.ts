@@ -1078,13 +1078,29 @@ class ServiceWorker {
         const { to, subject, bodyHtml } = message.payload;
         
         const token = await new Promise<string>((resolve, reject) => {
-          chrome.identity.getAuthToken({ interactive: true }, (token) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else if (!token) {
-              reject(new Error('Failed to obtain auth token.'));
+          const clientId = '241480604524-gjgd1n67qn80rjtjkum7ik39k0n4ea2j.apps.googleusercontent.com';
+          const redirectUrl = chrome.identity.getRedirectURL(); // Typically https://<app-id>.chromiumapp.org/
+          const scopes = encodeURIComponent('https://www.googleapis.com/auth/gmail.send');
+          const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=${scopes}`;
+
+          chrome.identity.launchWebAuthFlow({
+            url: authUrl,
+            interactive: true
+          }, (redirectUri) => {
+            if (chrome.runtime.lastError || !redirectUri) {
+              reject(new Error(chrome.runtime.lastError?.message || 'Authentication failed. Please check your Client ID and Redirect URI setup.'));
+              return;
+            }
+            
+            // Extract the access token from the returned redirect URI fragment
+            const url = new URL(redirectUri);
+            const params = new URLSearchParams(url.hash.substring(1));
+            const accessToken = params.get('access_token');
+            
+            if (accessToken) {
+              resolve(accessToken);
             } else {
-              resolve(token);
+              reject(new Error('Failed to obtain access token from Google.'));
             }
           });
         });
