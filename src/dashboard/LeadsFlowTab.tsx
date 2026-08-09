@@ -157,6 +157,51 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     }
   };
 
+  const handleRejectJob = async (jobId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!confirm('Are you sure you want to reject this job? It will be removed from matches.')) return;
+    
+    try {
+      const res = await supabaseClient.deleteJobs([jobId]);
+      if (res.error) throw new Error(res.error);
+      
+      setGroupedMatches(prev => prev.map(group => {
+        if (group.jobs.some(j => j.id === jobId)) {
+          return {
+            ...group,
+            jobs: group.jobs.filter(j => j.id !== jobId)
+          };
+        }
+        return group;
+      }).filter(group => group.jobs.length > 0));
+
+      if (selectedRecruiter && selectedRecruiter.jobs.some(j => j.id === jobId)) {
+        if (selectedRecruiter.jobs.length === 1) {
+           setSelectedRecruiter(null);
+        } else {
+           setSelectedRecruiter(prev => prev ? {
+             ...prev,
+             jobs: prev.jobs.filter(j => j.id !== jobId)
+           } : null);
+        }
+      }
+      
+      // Update draft if it was already generated
+      if (currentDraft && selectedRecruiter && selectedRecruiter.jobs.length > 1) {
+        const recId = getRecruiterId(selectedRecruiter.recruiter);
+        const remainingJobs = selectedRecruiter.jobs.filter(j => j.id !== jobId);
+        setDrafts(prev => ({
+          ...prev,
+          [recId]: generateTemplateForRecruiter(selectedRecruiter.recruiter, remainingJobs)
+        }));
+      }
+    } catch (err) {
+      alert('Failed to reject job: ' + (err as Error).message);
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-100px)] gap-4 bg-[#F8FAFC] text-slate-800 font-sans">
       
@@ -276,7 +321,14 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   {selectedRecruiter.jobs.map((job) => (
                     <div key={job.id} className="bg-white rounded-md border border-slate-200 p-3 shadow-sm hover:border-indigo-200 transition-colors">
                       <div className="flex justify-between items-start mb-1.5">
-                        <div className="text-[13px] font-bold text-slate-800 leading-tight">{job.title}</div>
+                        <div className="text-[13px] font-bold text-slate-800 leading-tight pr-4">{job.title}</div>
+                        <button 
+                          onClick={(e) => handleRejectJob(job.id, e)}
+                          className="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50 shrink-0"
+                          title="Reject Job"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
                       </div>
                       <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 mb-2">
                         <span className="text-slate-700">{job.company}</span>
