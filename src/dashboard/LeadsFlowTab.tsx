@@ -157,6 +157,39 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     }
   };
 
+  const handleSendEmail = () => {
+    if (!currentDraft) return;
+    
+    // Create a temporary element to safely extract text while preserving hrefs
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = currentDraft;
+    
+    // Find all links and append their URLs in parentheses
+    const links = Array.from(tempDiv.querySelectorAll('a'));
+    links.forEach(link => {
+      const url = link.href;
+      const text = link.textContent;
+      // create a text node so we don't use innerHTML incorrectly
+      const textNode = document.createTextNode(`${text} (${url})`);
+      link.parentNode?.replaceChild(textNode, link);
+    });
+    
+    // Extract text with line breaks
+    let plainText = tempDiv.innerHTML
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '\n• ')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/?[^>]+(>|$)/g, "") // Remove remaining HTML tags
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // Fix multiple newlines
+      .trim();
+
+    const subject = encodeURIComponent(`Candidate matches for ${selectedRecruiter?.recruiter['Primary Specialty'] || 'roles'}`);
+    const body = encodeURIComponent(plainText);
+    
+    // Use mailto: for default email client
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
   const handleRejectJob = async (jobId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -380,13 +413,23 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                         }}
                         className="flex-1 w-full bg-white border border-slate-200 rounded-md p-4 text-[13px] focus:outline-none focus:ring-1 focus:ring-indigo-500/30 focus:border-indigo-400 shadow-inner overflow-y-auto transition-all"
                       />
-                      <button 
-                        onClick={handleCopy}
-                        className="absolute top-2 right-2 p-1.5 bg-white shadow hover:shadow-md text-slate-500 hover:text-indigo-600 rounded-md transition-all border border-slate-200"
-                        title="Copy to clipboard"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                      </button>
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <button 
+                          onClick={handleSendEmail}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 shadow hover:shadow-md hover:bg-indigo-700 text-white rounded-md transition-all text-[11px] font-bold"
+                          title="Open in Email Client"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                          Send Email
+                        </button>
+                        <button 
+                          onClick={handleCopy}
+                          className="p-1.5 bg-white shadow hover:shadow-md text-slate-500 hover:text-indigo-600 rounded-md transition-all border border-slate-200"
+                          title="Copy to clipboard"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex-1 h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-md bg-white">
