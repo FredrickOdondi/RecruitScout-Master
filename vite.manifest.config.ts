@@ -41,7 +41,9 @@ export default defineManifest({
     'https://jobs.netflix.com/*',
     'https://www.amazon.jobs/*',
     'http://localhost:5173/*',
-    'http://72.60.215.34/*'
+    'http://72.60.215.34/*',
+    'https://gmail.googleapis.com/*',
+    'https://accounts.google.com/*'
   ],
   background: {
     service_worker: 'src/background/service-worker.ts',
