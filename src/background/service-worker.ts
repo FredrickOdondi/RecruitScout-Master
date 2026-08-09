@@ -1072,6 +1072,66 @@ class ServiceWorker {
       return { domain: '' };
     });
 
+    // Send email via Gmail API
+    messageRouter.on(MessageType.SEND_GMAIL_MESSAGE, async (message) => {
+      try {
+        const { to, subject, bodyHtml } = message.payload;
+        
+        const token = await new Promise<string>((resolve, reject) => {
+          chrome.identity.getAuthToken({ interactive: true }, (token) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (!token) {
+              reject(new Error('Failed to obtain auth token.'));
+            } else {
+              resolve(token);
+            }
+          });
+        });
+
+        // Base64 encode the subject for UTF-8 compatibility
+        const utf8Subject = `=?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
+        
+        const emailLines = [
+          `To: ${to}`,
+          `Subject: ${utf8Subject}`,
+          'MIME-Version: 1.0',
+          'Content-Type: text/html; charset=utf-8',
+          '',
+          bodyHtml
+        ];
+        
+        const emailContent = emailLines.join('\r\n');
+        
+        // Base64url encode the entire email
+        const base64EncodedEmail = btoa(unescape(encodeURIComponent(emailContent)))
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+          
+        const response = await fetch('https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            raw: base64EncodedEmail
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Failed to send email');
+        }
+
+        return { success: true };
+      } catch (err: any) {
+        console.error('[RecruitScout] Gmail API Error:', err);
+        return { success: false, error: err.message };
+      }
+    });
+
     // Clear all data
     messageRouter.on(MessageType.CLEAR_ALL, async () => {
       await storage.clearAllData();

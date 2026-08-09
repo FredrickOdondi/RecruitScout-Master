@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabaseClient, SupabaseJob } from '../shared/supabase';
+import { MessageType } from '../shared/types';
 
 interface LeadsFlowTabProps {
   sendMessage: <T>(message: any) => Promise<T>;
@@ -17,6 +18,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   
   // Maps recruiter ID to bundled drafted email
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     fetchMatches();
@@ -157,37 +159,36 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     }
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     if (!currentDraft) return;
-    
-    // Create a temporary element to safely extract text while preserving hrefs
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = currentDraft;
-    
-    // Find all links and append their URLs in parentheses
-    const links = Array.from(tempDiv.querySelectorAll('a'));
-    links.forEach(link => {
-      const url = link.href;
-      const text = link.textContent;
-      // create a text node so we don't use innerHTML incorrectly
-      const textNode = document.createTextNode(`${text} (${url})`);
-      link.parentNode?.replaceChild(textNode, link);
-    });
-    
-    // Extract text with line breaks
-    let plainText = tempDiv.innerHTML
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<li[^>]*>/gi, '\n• ')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/?[^>]+(>|$)/g, "") // Remove remaining HTML tags
-      .replace(/\n\s*\n\s*\n/g, '\n\n') // Fix multiple newlines
-      .trim();
 
-    const subject = encodeURIComponent(`Candidate matches for ${selectedRecruiter?.recruiter['Primary Specialty'] || 'roles'}`);
-    const body = encodeURIComponent(plainText);
+    const email = prompt('Enter recipient email address:');
+    if (!email) return;
+
+    setIsSendingEmail(true);
     
-    // Use mailto: for default email client
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    try {
+      const subject = `Candidate matches for ${selectedRecruiter?.recruiter['Primary Specialty'] || 'roles'}`;
+      
+      const res = await sendMessage<{ success: boolean; error?: string }>({
+        type: MessageType.SEND_GMAIL_MESSAGE,
+        payload: {
+          to: email,
+          subject: subject,
+          bodyHtml: currentDraft
+        }
+      });
+
+      if (res && res.success) {
+        alert('Email sent successfully via Gmail!');
+      } else {
+        alert('Failed to send email: ' + (res?.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('Error sending email: ' + err.message);
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const handleRejectJob = async (jobId: string, e: React.MouseEvent) => {
@@ -416,11 +417,20 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                       <div className="absolute top-2 right-2 flex gap-2">
                         <button 
                           onClick={handleSendEmail}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-600 shadow hover:shadow-md hover:bg-indigo-700 text-white rounded-md transition-all text-[11px] font-bold"
-                          title="Open in Email Client"
+                          disabled={isSendingEmail}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 shadow text-white rounded-md transition-all text-[11px] font-bold ${
+                            isSendingEmail 
+                              ? 'bg-slate-400 cursor-not-allowed' 
+                              : 'bg-indigo-600 hover:shadow-md hover:bg-indigo-700'
+                          }`}
+                          title="Send Email via Gmail"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                          Send Email
+                          {isSendingEmail ? (
+                            <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                          )}
+                          {isSendingEmail ? 'Sending...' : 'Send Email'}
                         </button>
                         <button 
                           onClick={handleCopy}

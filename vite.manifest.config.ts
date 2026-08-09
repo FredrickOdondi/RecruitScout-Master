@@ -12,7 +12,8 @@ export default defineManifest({
     'tabs',
     'scripting',
     'offscreen',
-    'alarms'
+    'alarms',
+    'identity'
   ],
   host_permissions: [
     'https://www.linkedin.com/*',
@@ -104,6 +105,10 @@ export default defineManifest({
   offscreen: {
     document: 'src/offscreen/index.html',
     persistent: false
+  },
+  oauth2: {
+    client_id: '241480604524-gjgd1n67qn80rjtjkum7ik39k0n4ea2j.apps.googleusercontent.com',
+    scopes: ['https://www.googleapis.com/auth/gmail.send']
   },
   options_page: 'src/dashboard/index.html'
 });
