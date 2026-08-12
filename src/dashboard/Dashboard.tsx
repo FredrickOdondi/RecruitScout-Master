@@ -97,33 +97,33 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
-      <label className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">
+      <label className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
         {label}
       </label>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-slate-950/50 border border-slate-700/50 rounded-md p-2 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 shadow-lg shadow-black/20 flex justify-between items-center text-left min-h-[38px]"
+        className="w-full bg-gray-50/80 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 shadow-lg  flex justify-between items-center text-left min-h-[38px]"
       >
-        <span className="truncate pr-2 font-medium text-slate-200">{displayText}</span>
+        <span className="truncate pr-2 font-medium text-gray-800">{displayText}</span>
         <span className="text-gray-400 text-[10px]">▼</span>
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-64 bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-md shadow-lg py-1 max-h-64 overflow-y-auto left-0">
-          <div className="px-2 py-1.5 border-b border-slate-800/40 flex justify-between text-[11px] font-semibold text-cyan-400">
+        <div className="absolute z-50 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg py-1 max-h-64 overflow-y-auto left-0">
+          <div className="px-2 py-1.5 border-b border-gray-200 flex justify-between text-[11px] font-semibold text-cyan-400">
             <button type="button" onClick={handleSelectAll} className="hover:underline">Select All</button>
-            <button type="button" onClick={handleClear} className="hover:underline text-slate-500">{allowEmpty ? "Clear" : "Reset"}</button>
+            <button type="button" onClick={handleClear} className="hover:underline text-gray-400">{allowEmpty ? "Clear" : "Reset"}</button>
           </div>
           {allowEmpty && (
-            <label className="flex items-center px-3 py-1.5 hover:bg-slate-950 cursor-pointer text-[12px] text-slate-300 border-b border-slate-800/40">
+            <label className="flex items-center px-3 py-1.5 hover:bg-white cursor-pointer text-[12px] text-gray-600 border-b border-gray-200">
               <input
                 type="checkbox"
                 checked={selectedIds.length === 0 || (selectedIds.length === 1 && selectedIds[0] === '')}
                 onChange={() => onChange([])}
-                className="mr-2.5 h-3.5 w-3.5 text-cyan-400 rounded border-slate-700/50 focus:ring-cyan-500"
+                className="mr-2.5 h-3.5 w-3.5 text-cyan-400 rounded border-gray-200 focus:ring-cyan-500"
               />
-              <span className="italic text-slate-500">(No Client / General)</span>
+              <span className="italic text-gray-400">(No Client / General)</span>
             </label>
           )}
           {options.map((opt) => {
@@ -131,13 +131,13 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
             return (
               <label
                 key={opt.id}
-                className="flex items-center px-3 py-1.5 hover:bg-slate-950 cursor-pointer text-[12px] text-slate-200"
+                className="flex items-center px-3 py-1.5 hover:bg-white cursor-pointer text-[12px] text-gray-800"
               >
                 <input
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => toggleOption(opt.id)}
-                  className="mr-2.5 h-3.5 w-3.5 text-cyan-400 rounded border-slate-700/50 focus:ring-cyan-500"
+                  className="mr-2.5 h-3.5 w-3.5 text-cyan-400 rounded border-gray-200 focus:ring-cyan-500"
                 />
                 <span className="truncate">{opt.name}</span>
               </label>
@@ -429,7 +429,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans min-w-0">
+    <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans min-w-0">
       
       {/* Mobile overlay backdrop */}
       {isMobileMenuOpen && (
@@ -440,10 +440,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 z-50 border-r border-slate-800/60 bg-slate-900/40 backdrop-blur-xl flex flex-col flex-shrink-0 ${isSidebarCollapsed ? 'md:w-20 w-64' : 'w-64 xl:w-72'}`}>
+      <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 z-50 border-r border-gray-200 bg-white flex flex-col flex-shrink-0 ${isSidebarCollapsed ? 'md:w-20 w-64' : 'w-64 xl:w-72'}`}>
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="hidden md:flex absolute -right-3 top-8 bg-slate-900/40 backdrop-blur-xl rounded-full p-1 border border-slate-800/60 text-slate-400 hover:text-slate-100 z-30 shadow-lg shadow-black/20"
+          className="hidden md:flex absolute -right-3 top-8 bg-white rounded-full p-1 border border-gray-200 text-gray-500 hover:text-gray-900 z-30 shadow-lg "
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`}>
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -452,17 +452,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         <div className={`p-6 flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : ''}`}>
           <div className={`flex flex-col ${isSidebarCollapsed ? 'items-center' : ''}`}>
-            <h1 className="text-xl font-medium text-slate-100 flex items-center gap-2 overflow-hidden whitespace-nowrap">
+            <h1 className="text-xl font-medium text-gray-900 flex items-center gap-2 overflow-hidden whitespace-nowrap">
               <ServerIcon />
               {!isSidebarCollapsed && <span>RecruitScout</span>}
             </h1>
-            {!isSidebarCollapsed && <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-semibold whitespace-nowrap">Command Center</p>}
+            {!isSidebarCollapsed && <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-semibold whitespace-nowrap">Command Center</p>}
           </div>
         </div>
         
         <nav className="flex-1 px-4 py-4 space-y-2 relative overflow-x-hidden">
           
-          <div className={`text-xs font-bold text-slate-300 uppercase tracking-widest mb-2 mt-4 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
+          <div className={`text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 mt-4 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
             Agent Control
           </div>
           
@@ -471,7 +471,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button 
             onClick={() => { setActiveTab('search'); setIsMobileMenuOpen(false); }}
             title="Bulk Priority Queue"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'search' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'search' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><SearchIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Bulk Priority Queue</span>}
@@ -480,20 +480,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button 
             onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
             title="Engine Settings"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'settings' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'settings' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><SettingsIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Engine Settings</span>}
           </button>
 
-          <div className={`text-xs font-bold text-slate-300 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
+          <div className={`text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
             Database
           </div>
           
           <button 
             onClick={() => { setActiveTab('jobs'); setIsMobileMenuOpen(false); }}
             title="Extracted Jobs"
-            className={`w-full flex items-center py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0 justify-between md:justify-center' : 'px-3 justify-between'} ${activeTab === 'jobs' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0 justify-between md:justify-center' : 'px-3 justify-between'} ${activeTab === 'jobs' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="flex items-center gap-3 shrink-0">
               <div className="shrink-0 relative">
@@ -505,27 +505,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Extracted Jobs</span>}
             </div>
             {!isSidebarCollapsed && jobs.length > 0 && (
-              <span className="bg-slate-700/50 text-slate-300 text-xs px-2 py-0.5 rounded-full shrink-0">{jobs.length}</span>
+              <span className="bg-slate-700/50 text-gray-600 text-xs px-2 py-0.5 rounded-full shrink-0">{jobs.length}</span>
             )}
           </button>
 
           <button 
             onClick={() => { setActiveTab('export'); setIsMobileMenuOpen(false); }}
             title="Export & Sync"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'export' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'export' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><DownloadIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Export & Sync</span>}
           </button>
 
-          <div className={`text-xs font-bold text-slate-300 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
+          <div className={`text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
             Cloud
           </div>
           
           <button 
             onClick={() => { setActiveTab('supabase'); setIsMobileMenuOpen(false); }}
             title="Supabase Viewer"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'supabase' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'supabase' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><CloudDbIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Supabase Viewer</span>}
@@ -534,7 +534,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button 
             onClick={() => { setActiveTab('blue'); setIsMobileMenuOpen(false); }}
             title="Blue.cc Integration"
-            className={`w-full flex items-center gap-3 py-2 mt-1 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'blue' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-cyan-500/10'}`}
+            className={`w-full flex items-center gap-3 py-2 mt-1 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'blue' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-cyan-500/10'}`}
           >
             <div className="shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l8.29-8.29c.94-.94.94-2.48 0-3.42L12 2Z"></path><path d="M7 7h.01"></path></svg>
@@ -542,14 +542,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap text-cyan-400">Blue.cc Workspaces</span>}
           </button>
 
-          <div className={`text-xs font-bold text-slate-300 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
+          <div className={`text-xs font-bold text-gray-600 uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'}`}>
             Clients
           </div>
           
           <button 
             onClick={() => { setActiveTab('clients'); setIsMobileMenuOpen(false); }}
             title="Client Enrollment"
-            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'clients' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'clients' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><BriefcasePlusIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Client Enrollment</span>}
@@ -558,7 +558,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button 
             onClick={() => { setActiveTab('leads'); setIsMobileMenuOpen(false); }}
             title="Leads Management"
-            className={`w-full flex items-center gap-3 py-2 mt-1 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'leads' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 mt-1 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'leads' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><UsersIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Leads Management</span>}
@@ -567,7 +567,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button 
             onClick={() => { setActiveTab('leads-flow'); setIsMobileMenuOpen(false); }}
             title="Leads Flow"
-            className={`w-full flex items-center gap-3 py-2 mt-1 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'leads-flow' ? 'bg-slate-800/50 text-slate-100 font-medium' : 'text-slate-300 hover:text-slate-100 hover:bg-slate-950'}`}
+            className={`w-full flex items-center gap-3 py-2 mt-1 rounded-md transition-all ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'} ${activeTab === 'leads-flow' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:text-gray-900 hover:bg-white'}`}
           >
             <div className="shrink-0"><ActivityIcon /></div>
             {!isSidebarCollapsed && <span className="font-medium text-sm whitespace-nowrap">Leads Flow</span>}
@@ -576,18 +576,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </nav>
 
         {/* Logout */}
-        <div className={`p-4 border-t border-slate-800/60 flex flex-col gap-2`}>
+        <div className={`p-4 border-t border-gray-200 flex flex-col gap-2`}>
           {userEmail && (
             <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center mb-2' : 'gap-2.5 px-2 mb-1.5'} overflow-hidden`}>
               {userAvatar ? (
-                <img src={userAvatar} alt="Profile" className="w-7 h-7 rounded-full flex-shrink-0 object-cover shadow-lg shadow-black/20 border border-slate-800/60" title={isSidebarCollapsed ? userEmail : undefined} />
+                <img src={userAvatar} alt="Profile" className="w-7 h-7 rounded-full flex-shrink-0 object-cover shadow-lg  border border-gray-200" title={isSidebarCollapsed ? userEmail : undefined} />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-[11px] font-bold text-indigo-700 flex-shrink-0 shadow-lg shadow-black/20 border border-white" title={isSidebarCollapsed ? userEmail : undefined}>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center text-[11px] font-bold text-indigo-700 flex-shrink-0 shadow-lg  border border-white" title={isSidebarCollapsed ? userEmail : undefined}>
                   {userEmail[0].toUpperCase()}
                 </div>
               )}
               {!isSidebarCollapsed && (
-                <div className="text-xs text-slate-400 font-medium truncate flex-1 leading-snug" title={userEmail}>
+                <div className="text-xs text-gray-500 font-medium truncate flex-1 leading-snug" title={userEmail}>
                   {userEmail}
                 </div>
               )}
@@ -596,11 +596,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <button
             onClick={onLogout}
             title="Sign Out"
-            className={`flex items-center justify-center gap-3 py-2 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 transition-all text-sm font-medium group ${isSidebarCollapsed ? 'md:w-10 md:h-10 md:px-0 w-full px-4 mx-auto' : 'w-full px-4'}`}
+            className={`flex items-center justify-center gap-3 py-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all text-sm font-medium group ${isSidebarCollapsed ? 'md:w-10 md:h-10 md:px-0 w-full px-4 mx-auto' : 'w-full px-4'}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className="transition-colors group-hover:text-slate-100 shrink-0">
+              className="transition-colors group-hover:text-gray-900 shrink-0">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
@@ -611,15 +611,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative overflow-hidden bg-slate-950 min-w-0">
-        <header className="h-16 border-b border-slate-800/60 flex items-center px-4 md:px-8 bg-slate-950/80 backdrop-blur-md sticky top-0 z-10 transition-colors gap-3 w-full">
+      <main className="flex-1 flex flex-col relative overflow-hidden bg-white min-w-0">
+        <header className="h-16 border-b border-gray-200 flex items-center px-4 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 transition-colors gap-3 w-full">
           <button 
-            className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-100 rounded-md hover:bg-slate-800/50"
+            className="md:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
-          <h2 className="text-lg font-semibold text-slate-100 capitalize font-mono tracking-tight truncate">
+          <h2 className="text-lg font-semibold text-gray-900 capitalize font-mono tracking-tight truncate">
             / {activeTab.replace('-', ' ')}
           </h2>
         </header>
@@ -629,12 +629,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {/* BULK SEARCH MODE */}
           {activeTab === 'search' && (
             <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto space-y-6">
-              <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl p-1 border border-slate-800/60 shadow-lg shadow-black/20 transition-all">
-                <div className="bg-slate-900/40 backdrop-blur-xl rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-slate-100 mb-2 flex items-center gap-2">
+              <div className="bg-white rounded-xl p-1 border border-gray-200 shadow-lg  transition-all">
+                <div className="bg-white rounded-lg p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center gap-2">
                     <span>🚀</span> Bulk Job Priority Queue
                   </h3>
-                  <p className="text-sm text-slate-500 mb-4">
+                  <p className="text-sm text-gray-400 mb-4">
                     Paste job titles below (one per line). The remote extension agents will pick these up automatically when their engines start.
                   </p>
                   
@@ -642,7 +642,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     value={bulkTitles}
                     onChange={(e) => setBulkTitles(e.target.value)}
                     placeholder={`Software Engineer\nProduct Manager\nData Scientist\n\n(or leave blank and set a Location to scrape all jobs in that area)`}
-                    className="w-full h-40 bg-slate-950 border border-slate-800/60 rounded-lg p-4 text-sm font-mono text-slate-100 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none shadow-lg shadow-black/20"
+                    className="w-full h-40 bg-white border border-gray-200 rounded-lg p-4 text-sm font-mono text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none shadow-lg "
                   />
                   
                   <div className="mt-4 md:grid md:grid-cols-12 md:gap-4 md:items-end">
@@ -671,13 +671,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       />
                     </div>
                     <div className="col-span-12 sm:col-span-6 md:col-span-2">
-                      <label className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">
+                      <label className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
                         Date Posted
                       </label>
                       <select 
                         value={dateFilter} 
                         onChange={(e) => setDateFilter(e.target.value)} 
-                        className="w-full bg-slate-950/50 border border-slate-700/50 rounded-md p-2 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 appearance-none shadow-lg shadow-black/20 min-h-[38px]"
+                        className="w-full bg-gray-50/80 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none shadow-lg  min-h-[38px]"
                         disabled={selectedTargetSites.length === 1 && selectedTargetSites[0] === 'trovolavoro'}
                       >
                         <option value="">All Dates</option>
@@ -689,7 +689,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       </select>
                     </div>
                     <div className="col-span-12 sm:col-span-6 md:col-span-2">
-                      <label className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 block">
+                      <label className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
                         Location Filter
                       </label>
                       <input 
@@ -697,18 +697,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         placeholder="e.g. Remote, New York..."
                         value={locationFilter}
                         onChange={(e) => setLocationFilter(e.target.value)}
-                        className="w-full bg-slate-950/50 border border-slate-700/50 rounded-md p-2 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-slate-100 placeholder-gray-400 focus:outline-none focus:border-slate-600/50 transition-all shadow-lg shadow-black/20"
+                        className="w-full bg-gray-50/80 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-slate-600/50 transition-all shadow-lg "
                       />
                     </div>
                     <div className="col-span-12 sm:col-span-6 md:col-span-2">
-                      <label className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1.5 flex justify-between items-center">
+                      <label className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 flex justify-between items-center">
                         <span>Assigned Worker</span> 
                         <span className="text-emerald-400 font-medium">{activeAgents.length} Online</span>
                       </label>
                       <select 
                         value={assignedTo} 
                         onChange={(e) => setAssignedTo(e.target.value)} 
-                        className="w-full bg-slate-950/50 border border-slate-700/50 rounded-md p-2 text-slate-200 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 appearance-none shadow-lg shadow-black/20" 
+                        className="w-full bg-gray-50/80 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none shadow-lg " 
                       >
                         <option value="">Leave blank for any available node...</option>
                         {activeAgents.map(agent => (
@@ -722,7 +722,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       <button 
                         onClick={handleUpdateLocations}
                         disabled={!locationFilter.trim()}
-                        className="bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 border border-slate-800/60 px-3 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg shadow-black/20 flex-1"
+                        className="bg-gray-100 hover:bg-slate-700/50 text-gray-600 border border-gray-200 px-3 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg  flex-1"
                         title="Update location for all existing queue tasks"
                       >
                         Apply Location
@@ -730,7 +730,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       <button 
                         onClick={handleSaveBulkSearch}
                         disabled={!bulkTitles.trim() && !locationFilter.trim()}
-                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-white px-3 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg shadow-black/20 flex-1 text-center"
+                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-white px-3 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg  flex-1 text-center"
                       >
                         {bulkTitles.trim() ? 'Enqueue' : 'Scrape'}
                       </button>
@@ -739,11 +739,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 </div>
               </div>
               
-              <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl p-1 border border-slate-800/60 shadow-lg shadow-black/20 mt-6">
-                <div className="bg-slate-900/40 backdrop-blur-xl rounded-lg p-6">
+              <div className="bg-white rounded-xl p-1 border border-gray-200 shadow-lg  mt-6">
+                <div className="bg-white rounded-lg p-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
                     <div>
-                      <h3 className="text-sm font-medium text-slate-100 flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
                         Queue Status
                         <button 
                           onClick={() => {
@@ -756,7 +756,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                               else if (r?.data) setActiveAgents(r.data);
                             });
                           }} 
-                          className="text-slate-400 hover:text-slate-200 text-[12px] px-2"
+                          className="text-gray-500 hover:text-gray-800 text-[12px] px-2"
                         >
                           ↻ Refresh
                         </button>
@@ -783,7 +783,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         </button>
                       </h3>
                       <div className="flex gap-3 mt-2 text-[12px]">
-                        <span className="bg-slate-800/50 text-slate-300 px-2 py-0.5 rounded font-medium border border-slate-800/60">
+                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium border border-gray-200">
                           Total: {queue.length}
                         </span>
                         <span className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded font-medium border border-cyan-500/20">
@@ -802,25 +802,25 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                            bridgeSendMessage<any>({ type: 'SUPABASE_GET_QUEUE' as any }).then(r => r?.data && setQueue(r.data));
                         });
                       }}
-                      className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-md uppercase font-bold text-[11px] border border-red-200 transition-all shadow-lg shadow-black/20"
+                      className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-md uppercase font-bold text-[11px] border border-red-200 transition-all shadow-lg "
                     >
                       STOP / KILL ENGINE
                     </button>
                   </div>
                   
-                  <div className="overflow-x-auto overflow-y-auto max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] rounded-md border border-slate-800/60 w-full relative">
-                    <table className="w-full text-left text-[13px] text-slate-300 min-w-[800px]">
-                      <thead className="text-[11px] font-bold text-slate-400 uppercase tracking-widest bg-slate-950 border-b border-slate-800/60 sticky top-0 z-10 shadow-lg shadow-black/20">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] rounded-md border border-gray-200 w-full relative">
+                    <table className="w-full text-left text-[13px] text-gray-600 min-w-[800px]">
+                      <thead className="text-[11px] font-bold text-gray-500 uppercase tracking-widest bg-white border-b border-gray-200 sticky top-0 z-10 shadow-lg ">
                         <tr>
-                          <th className="px-3 py-2 bg-slate-950">Task</th>
-                          <th className="px-3 py-2 bg-slate-950">Site</th>
-                          <th className="px-3 py-2 bg-slate-950">Date</th>
-                          <th className="px-3 py-2 bg-slate-950">Client</th>
-                          <th className="px-3 py-2 bg-slate-950">Location</th>
-                          <th className="px-3 py-2 bg-slate-950">Status</th>
-                          <th className="px-3 py-2 bg-slate-950">Worker ID</th>
-                          <th className="px-3 py-2 bg-slate-950">Created</th>
-                          <th className="px-3 py-2 bg-slate-950 text-right">Actions</th>
+                          <th className="px-3 py-2 bg-white">Task</th>
+                          <th className="px-3 py-2 bg-white">Site</th>
+                          <th className="px-3 py-2 bg-white">Date</th>
+                          <th className="px-3 py-2 bg-white">Client</th>
+                          <th className="px-3 py-2 bg-white">Location</th>
+                          <th className="px-3 py-2 bg-white">Status</th>
+                          <th className="px-3 py-2 bg-white">Worker ID</th>
+                          <th className="px-3 py-2 bg-white">Created</th>
+                          <th className="px-3 py-2 bg-white text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -829,7 +829,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                           const isEditing = q.id === editingTaskId;
                           
                           return (
-                            <tr key={q.id} className={`border-b border-slate-800/60 ${i % 2 === 0 ? 'bg-slate-900/40 backdrop-blur-xl' : 'bg-slate-950/50'} hover:bg-slate-800/50`}>
+                            <tr key={q.id} className={`border-b border-gray-200 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/80'} hover:bg-gray-100`}>
                               {isEditing ? (
                                 <>
                                   <td className="px-3 py-1.5">
@@ -837,14 +837,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       type="text" 
                                       value={editTaskDraft.job_title} 
                                       onChange={e => setEditTaskDraft({...editTaskDraft, job_title: e.target.value})}
-                                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded px-2 py-1 text-[13px] text-slate-100 shadow-lg shadow-black/20"
+                                      className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[13px] text-gray-900 shadow-lg "
                                     />
                                   </td>
                                   <td className="px-3 py-1.5">
                                     <select 
                                       value={editTaskDraft.target_site} 
                                       onChange={e => setEditTaskDraft({...editTaskDraft, target_site: e.target.value})}
-                                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded px-2 py-1 text-[13px] text-slate-100 shadow-lg shadow-black/20"
+                                      className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[13px] text-gray-900 shadow-lg "
                                     >
                                       <option value="indeed">Indeed</option>
                                       <option value="spanish-indeed">Spanish Indeed</option>
@@ -855,7 +855,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                     <select 
                                       value={editTaskDraft.date_filter || ''} 
                                       onChange={e => setEditTaskDraft({...editTaskDraft, date_filter: e.target.value || undefined})}
-                                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded px-2 py-1 text-[13px] text-slate-100 shadow-lg shadow-black/20"
+                                      className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[13px] text-gray-900 shadow-lg "
                                     >
                                       <option value="">All</option>
                                       <option value="last">No Ads</option>
@@ -869,7 +869,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                     <select 
                                       value={editTaskDraft.client_id} 
                                       onChange={e => setEditTaskDraft({...editTaskDraft, client_id: e.target.value})}
-                                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded px-2 py-1 text-[13px] text-slate-100 shadow-lg shadow-black/20"
+                                      className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[13px] text-gray-900 shadow-lg "
                                     >
                                       <option value="">(No Client)</option>
                                       {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -880,21 +880,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       type="text" 
                                       value={editTaskDraft.location} 
                                       onChange={e => setEditTaskDraft({...editTaskDraft, location: e.target.value})}
-                                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded px-2 py-1 text-[13px] text-slate-100 shadow-lg shadow-black/20"
+                                      className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[13px] text-gray-900 shadow-lg "
                                       placeholder="-"
                                     />
                                   </td>
                                   <td className="px-3 py-1.5" colSpan={3}>
-                                    <span className="text-[11px] text-slate-500 italic">Editing task...</span>
+                                    <span className="text-[11px] text-gray-400 italic">Editing task...</span>
                                   </td>
                                   <td className="px-3 py-1.5 text-right whitespace-nowrap">
                                     <button onClick={handleSaveEdit} className="text-emerald-400 hover:text-emerald-400 font-medium px-2 py-1 text-[12px]">Save</button>
-                                    <button onClick={handleCancelEdit} className="text-slate-500 hover:text-slate-300 font-medium px-2 py-1 text-[12px]">Cancel</button>
+                                    <button onClick={handleCancelEdit} className="text-gray-400 hover:text-gray-600 font-medium px-2 py-1 text-[12px]">Cancel</button>
                                   </td>
                                 </>
                               ) : (
                                 <>
-                                  <td className="px-3 py-1.5 font-medium text-slate-100 truncate max-w-[200px]">{q.job_title}</td>
+                                  <td className="px-3 py-1.5 font-medium text-gray-900 truncate max-w-[200px]">{q.job_title}</td>
                                   <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-[10px] uppercase font-bold bg-purple-50 text-purple-700 border-purple-200">{q.target_site || 'indeed'}</span></td>
                                   <td className="px-3 py-1.5">
                                     {q.date_filter ? (
@@ -905,14 +905,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                                       <span className="text-gray-400 italic text-[11px]">Any</span>
                                     )}
                                   </td>
-                                  <td className="px-3 py-1.5 text-slate-300 font-semibold">{clientRecord ? clientRecord.name : <span className="text-gray-400 italic font-normal">—</span>}</td>
-                                  <td className="px-3 py-1.5 text-slate-300">{q.location || '-'}</td>
+                                  <td className="px-3 py-1.5 text-gray-600 font-semibold">{clientRecord ? clientRecord.name : <span className="text-gray-400 italic font-normal">—</span>}</td>
+                                  <td className="px-3 py-1.5 text-gray-600">{q.location || '-'}</td>
                                   <td className="px-3 py-1.5">
                                     <span className={`px-2 py-0.5 rounded border text-[11px] uppercase tracking-wider ${q.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : q.status === 'running' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 border-cyan-500/20' : q.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-50 text-red-700 border-red-200'}`}>
                                       {q.status}
                                     </span>
                                   </td>
-                                  <td className="px-4 py-3">{q.assigned_to || <span className="text-slate-300 italic">Unassigned</span>}</td>
+                                  <td className="px-4 py-3">{q.assigned_to || <span className="text-gray-600 italic">Unassigned</span>}</td>
                                   <td className="px-4 py-3">{new Date(q.created_at).toLocaleString()}</td>
                                   <td className="px-3 py-1.5 text-right">
                                     <button 
@@ -938,7 +938,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                           );
                         })}
                         {queue.length === 0 && (
-                          <tr><td colSpan={9} className="px-4 py-6 text-center text-slate-400 italic">Queue is currently empty</td></tr>
+                          <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-500 italic">Queue is currently empty</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -953,59 +953,59 @@ export default function Dashboard({ onLogout }: DashboardProps) {
              <div className="w-full max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* General Settings */}
-                <div className="bg-slate-900/40 backdrop-blur-xl rounded-md p-5 border border-slate-800/60 shadow-lg shadow-black/20 space-y-4">
-                  <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800/60 pb-2 mb-3">General Settings</h3>
+                <div className="bg-white rounded-md p-5 border border-gray-200 shadow-lg  space-y-4">
+                  <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3">General Settings</h3>
                   
                   <label className="flex items-center justify-between cursor-pointer group">
                     <div>
-                      <div className="text-[13px] font-medium text-slate-100 group-hover:text-slate-300 transition-colors">Auto Extract</div>
-                      <div className="text-[12px] text-slate-400 mt-0.5">Automatically extract jobs when visiting job boards</div>
+                      <div className="text-[13px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Auto Extract</div>
+                      <div className="text-[12px] text-gray-500 mt-0.5">Automatically extract jobs when visiting job boards</div>
                     </div>
-                    <input type="checkbox" checked={settings.autoExtract || false} onChange={e => updateSetting('autoExtract', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-slate-700/50 bg-slate-900/40 backdrop-blur-xl cursor-pointer" />
+                    <input type="checkbox" checked={settings.autoExtract || false} onChange={e => updateSetting('autoExtract', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
                   </label>
 
                   <label className="flex items-center justify-between cursor-pointer group">
                     <div>
-                      <div className="text-[13px] font-medium text-slate-100 group-hover:text-slate-300 transition-colors">Notifications</div>
-                      <div className="text-[12px] text-slate-400 mt-0.5">Show notifications when extraction completes</div>
+                      <div className="text-[13px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Notifications</div>
+                      <div className="text-[12px] text-gray-500 mt-0.5">Show notifications when extraction completes</div>
                     </div>
-                    <input type="checkbox" checked={settings.notificationEnabled !== false} onChange={e => updateSetting('notificationEnabled', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-slate-700/50 bg-slate-900/40 backdrop-blur-xl cursor-pointer" />
+                    <input type="checkbox" checked={settings.notificationEnabled !== false} onChange={e => updateSetting('notificationEnabled', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
                   </label>
 
-                  <div className="space-y-3 pt-4 border-t border-slate-800/60 mt-2">
-                    <h4 className="text-[12px] font-semibold text-slate-300 flex items-center gap-2">
+                  <div className="space-y-3 pt-4 border-t border-gray-200 mt-2">
+                    <h4 className="text-[12px] font-semibold text-gray-600 flex items-center gap-2">
                       <span>📡</span> Distributed Worker Mode
                     </h4>
 
                     <label className="flex items-center justify-between cursor-pointer group">
                       <div>
-                        <div className="text-[13px] font-medium text-slate-100 group-hover:text-slate-300 transition-colors">Enable Remote Polling</div>
-                        <div className="text-[12px] text-slate-400 mt-0.5">Automatically pull and execute jobs pushed to Supabase queue</div>
+                        <div className="text-[13px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Enable Remote Polling</div>
+                        <div className="text-[12px] text-gray-500 mt-0.5">Automatically pull and execute jobs pushed to Supabase queue</div>
                       </div>
-                      <input type="checkbox" checked={settings.pollingEnabled || false} onChange={e => updateSetting('pollingEnabled', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-slate-700/50 bg-slate-900/40 backdrop-blur-xl cursor-pointer" />
+                      <input type="checkbox" checked={settings.pollingEnabled || false} onChange={e => updateSetting('pollingEnabled', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
                     </label>
 
                     <div className="space-y-1.5">
-                      <label className="text-[13px] font-medium text-slate-100">Worker ID / Agent Name (assigned_to)</label>
+                      <label className="text-[13px] font-medium text-gray-900">Worker ID / Agent Name (assigned_to)</label>
                       <input
                         type="text"
                         placeholder="e.g. Node-A"
                         value={settings.friendName || ''}
                         onChange={e => updateSetting('friendName', e.target.value)}
-                        className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-md px-3 py-2 text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 shadow-lg shadow-black/20"
+                        className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 shadow-lg "
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-4 border-t border-slate-800/60 mt-2">
-                    <h4 className="text-[12px] font-semibold text-slate-300 flex items-center gap-2">
+                  <div className="space-y-3 pt-4 border-t border-gray-200 mt-2">
+                    <h4 className="text-[12px] font-semibold text-gray-600 flex items-center gap-2">
                       <span>🇪🇸</span> Spanish Indeed Settings
                     </h4>
 
                     <label className="flex items-center justify-between cursor-pointer group">
                       <div>
-                        <div className="text-[13px] font-medium text-slate-100 group-hover:text-slate-300 transition-colors">Spanish Companies Whitelist</div>
-                        <div className="text-[12px] text-slate-400 mt-0.5">
+                        <div className="text-[13px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Spanish Companies Whitelist</div>
+                        <div className="text-[12px] text-gray-500 mt-0.5">
                           {settings.spanishWhitelistEnabled !== false
                             ? 'ON — only companies in Spanish_Companies table sync to sheet'
                             : 'OFF — all extracted Spanish Indeed jobs sync to sheet'}
@@ -1016,42 +1016,42 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         id="spanish-whitelist-toggle"
                         checked={settings.spanishWhitelistEnabled !== false}
                         onChange={e => updateSetting('spanishWhitelistEnabled', e.target.checked)}
-                        className="form-checkbox h-4 w-4 rounded border-slate-700/50 bg-slate-900/40 backdrop-blur-xl cursor-pointer"
+                        className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer"
                       />
                     </label>
                   </div>
                 </div>
 
                 {/* Extraction Settings */}
-                <div className="bg-slate-900/40 backdrop-blur-xl rounded-md p-5 border border-slate-800/60 shadow-lg shadow-black/20 space-y-4">
-                  <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800/60 pb-2 mb-3">Extraction Settings</h3>
+                <div className="bg-white rounded-md p-5 border border-gray-200 shadow-lg  space-y-4">
+                  <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3">Extraction Settings</h3>
 
                   <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium text-slate-100">Max Jobs per Page</label>
+                    <label className="text-[13px] font-medium text-gray-900">Max Jobs per Page</label>
                     <input
                       type="number"
                       min="10"
                       max="500"
                       value={settings.maxJobsPerPage || 100}
                       onChange={e => updateSetting('maxJobsPerPage', parseInt(e.target.value))}
-                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-md px-3 py-2 text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 shadow-lg shadow-black/20"
+                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 shadow-lg "
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium text-slate-100">Pagination Limit</label>
+                    <label className="text-[13px] font-medium text-gray-900">Pagination Limit</label>
                     <input
                       type="number"
                       min="1"
                       max="100"
                       value={settings.paginationLimit || 10}
                       onChange={e => updateSetting('paginationLimit', parseInt(e.target.value))}
-                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-md px-3 py-2 text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 shadow-lg shadow-black/20"
+                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 shadow-lg "
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium text-slate-100">Crawl Delay (ms)</label>
+                    <label className="text-[13px] font-medium text-gray-900">Crawl Delay (ms)</label>
                     <input
                       type="number"
                       min="100"
@@ -1059,16 +1059,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       step="100"
                       value={settings.crawlDelay || 1000}
                       onChange={e => updateSetting('crawlDelay', parseInt(e.target.value))}
-                      className="w-full bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 rounded-md px-3 py-2 text-[13px] text-slate-100 focus:outline-none focus:border-slate-600/50 shadow-lg shadow-black/20"
+                      className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-slate-600/50 shadow-lg "
                     />
                   </div>
 
                   <label className="flex items-center justify-between cursor-pointer group">
                     <div>
-                      <div className="text-[13px] font-medium text-slate-100 group-hover:text-slate-300 transition-colors">Respect robots.txt</div>
-                      <div className="text-[12px] text-slate-400 mt-0.5">Respect guidelines when crawling</div>
+                      <div className="text-[13px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Respect robots.txt</div>
+                      <div className="text-[12px] text-gray-500 mt-0.5">Respect guidelines when crawling</div>
                     </div>
-                    <input type="checkbox" checked={settings.respectRobotsTxt !== false} onChange={e => updateSetting('respectRobotsTxt', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-slate-700/50 bg-slate-900/40 backdrop-blur-xl cursor-pointer" />
+                    <input type="checkbox" checked={settings.respectRobotsTxt !== false} onChange={e => updateSetting('respectRobotsTxt', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
                   </label>
                 </div>
 
@@ -1077,7 +1077,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* JOBS VIEWER */}
           {activeTab === 'jobs' && (
-             <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto bg-slate-900/40 backdrop-blur-xl p-6 rounded-md border border-slate-800/60 shadow-lg shadow-black/20 mt-4">
+             <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto bg-white p-6 rounded-md border border-gray-200 shadow-lg  mt-4">
                <JobsTab 
                  jobs={jobs} 
                  onJobsUpdate={setJobs} 
@@ -1088,7 +1088,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
           {/* DATA EXPORT & SYNC */}
           {activeTab === 'export' && (
-             <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto bg-slate-900/40 backdrop-blur-xl p-6 rounded-md border border-slate-800/60 shadow-lg shadow-black/20 mt-4">
+             <div className="w-full max-w-[1400px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto bg-white p-6 rounded-md border border-gray-200 shadow-lg  mt-4">
                <ExportTab 
                  jobs={jobs} 
                  settings={settings} 

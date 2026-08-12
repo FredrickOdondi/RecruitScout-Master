@@ -54,18 +54,18 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
   ];
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 overflow-y-auto w-full">
+    <div className="flex flex-col h-full bg-white overflow-y-auto w-full">
       {/* Header */}
-      <div className="bg-slate-900/40 backdrop-blur-xl border-b border-slate-800/40 px-8 py-5 flex items-center gap-4 sticky top-0 z-20 shadow-lg shadow-black/20">
+      <div className="bg-white border-b border-gray-200 px-8 py-5 flex items-center gap-4 sticky top-0 z-20 shadow-lg ">
         <button 
           onClick={onBack}
-          className="p-2 rounded-full hover:bg-slate-800/50 text-slate-500 transition-colors"
+          className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
           title="Back to Leads Management"
         >
           <ArrowLeft />
         </button>
         <div>
-          <h1 className="text-xl font-semibold text-slate-100 tracking-tight flex items-center gap-3">
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
             {name}
             {recruiter.status && (
               <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
@@ -77,7 +77,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
               </span>
             )}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Recruiter Performance Dashboard</p>
+          <p className="text-xs text-gray-400 mt-0.5">Recruiter Performance Dashboard</p>
         </div>
       </div>
 
@@ -85,39 +85,39 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
         
         {/* Top Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-5 shadow-lg shadow-black/20 flex items-start gap-4 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-lg  flex items-start gap-4 overflow-hidden">
             <div className="bg-cyan-500/10 text-cyan-400 p-2.5 rounded-lg flex-shrink-0"><Building /></div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Industry</p>
-              <p className="text-sm font-semibold text-slate-100 mt-1 truncate" title={industry}>{industry}</p>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Industry</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1 truncate" title={industry}>{industry}</p>
             </div>
           </div>
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-5 shadow-lg shadow-black/20 flex items-start gap-4 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-lg  flex items-start gap-4 overflow-hidden">
             <div className="bg-cyan-500/10 text-cyan-400 p-2.5 rounded-lg flex-shrink-0"><Globe /></div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Domain</p>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Domain</p>
               <a href={domain.startsWith('http') ? domain : `https://${domain}`} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-sky-600 hover:underline mt-1 block truncate" title={domain}>
                 {domain}
               </a>
             </div>
           </div>
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-5 shadow-lg shadow-black/20 flex items-start gap-4 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-lg  flex items-start gap-4 overflow-hidden">
             <div className="bg-indigo-500/10 text-indigo-400 p-2.5 rounded-lg flex-shrink-0"><MapPin /></div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Location</p>
-              <p className="text-sm font-semibold text-slate-100 mt-1 truncate" title={location}>{location}</p>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Location</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1 truncate" title={location}>{location}</p>
             </div>
           </div>
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-5 shadow-lg shadow-black/20 flex flex-col justify-center gap-1 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-lg  flex flex-col justify-center gap-1 overflow-hidden">
             <div className="flex items-center gap-2 mb-1">
               <div className="bg-fuchsia-500/10 text-fuchsia-400 p-1.5 rounded-md flex-shrink-0"><Users /></div>
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Contacts</p>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Contacts</p>
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-slate-100 truncate" title={String(associatedContacts)}>{associatedContacts}</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate" title={String(associatedContacts)}>{associatedContacts}</p>
           </div>
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-5 shadow-lg shadow-black/20 flex flex-col justify-center gap-1 overflow-hidden">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider truncate">Total Leads Sent</p>
-            <p className="text-3xl font-bold font-mono tracking-tight text-slate-100 truncate">{leadsTotal}</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-lg  flex flex-col justify-center gap-1 overflow-hidden">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Total Leads Sent</p>
+            <p className="text-3xl font-bold font-mono tracking-tight text-gray-900 truncate">{leadsTotal}</p>
           </div>
         </div>
 
@@ -125,8 +125,8 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Main Trend Chart */}
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-6 shadow-lg shadow-black/20 lg:col-span-2">
-            <h3 className="text-sm font-semibold text-slate-200 mb-6">Leads Output Progression</h3>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-lg  lg:col-span-2">
+            <h3 className="text-sm font-semibold text-gray-800 mb-6">Leads Output Progression</h3>
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={progressionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -144,9 +144,9 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
           </div>
 
           {/* Teaser Threshold Donut */}
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-6 shadow-lg shadow-black/20 flex flex-col items-center">
-            <h3 className="text-sm font-semibold text-slate-200 self-start mb-2">Teaser Threshold Progress</h3>
-            <p className="text-xs text-slate-500 self-start mb-4">Leads sent towards teaser mode activation</p>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-lg  flex flex-col items-center">
+            <h3 className="text-sm font-semibold text-gray-800 self-start mb-2">Teaser Threshold Progress</h3>
+            <p className="text-xs text-gray-400 self-start mb-4">Leads sent towards teaser mode activation</p>
             <div className="h-48 w-full relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -166,19 +166,19 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-bold text-slate-100">{leadsBeforeTeaser}</span>
-                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">/ {teaserThreshold}</span>
+                <span className="text-2xl font-bold text-gray-900">{leadsBeforeTeaser}</span>
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-widest">/ {teaserThreshold}</span>
               </div>
             </div>
-            <div className="mt-4 flex gap-4 text-xs font-medium text-slate-400">
+            <div className="mt-4 flex gap-4 text-xs font-medium text-gray-500">
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sky-600"></span>Sent</div>
               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sky-100"></span>Remaining</div>
             </div>
           </div>
 
           {/* Daily Limit Utilization */}
-          <div className="bg-slate-900/40 backdrop-blur-xl rounded-xl border border-slate-800/40 p-6 shadow-lg shadow-black/20 lg:col-span-3">
-             <h3 className="text-sm font-semibold text-slate-200 mb-6">Daily Capacity vs Limit (Est. 30d Avg)</h3>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-lg  lg:col-span-3">
+             <h3 className="text-sm font-semibold text-gray-800 mb-6">Daily Capacity vs Limit (Est. 30d Avg)</h3>
              <div className="h-40 w-full">
                <ResponsiveContainer width="100%" height="100%">
                  <BarChart data={dailyData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>

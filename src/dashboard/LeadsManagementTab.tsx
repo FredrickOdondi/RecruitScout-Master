@@ -271,7 +271,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
       {/* Bulk Config Bar */}
       <div className="bg-slate-50 border-b border-gray-100 px-8 py-3 flex items-center gap-6 z-10 overflow-x-auto">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Bulk Update Configurations</span>
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">Bulk Update Configurations</span>
         
         <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
           <label className="text-xs font-medium text-gray-700 px-3 whitespace-nowrap">Leads Sent (Pre-teaser):</label>
@@ -370,25 +370,25 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-gray-100">
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Name</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Domain</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Country</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Location</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Size</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Industry</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Specialty</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">LinkedIn</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Teaser Threshold</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Leads Sent (pre-teaser)</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Daily Limit</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Suspension End Date</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Leads (7d)</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Leads (30d)</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Total Leads</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Most Recent Lead</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Associated Contacts</th>
-                    <th className="px-3 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Actions</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Domain</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Country</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Location</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Size</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Industry</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Specialty</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">LinkedIn</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Teaser Threshold</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Leads Sent (pre-teaser)</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Daily Limit</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Suspension End Date</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Leads (7d)</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Leads (30d)</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Leads</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Most Recent Lead</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Associated Contacts</th>
+                    <th className="px-3 py-2.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
