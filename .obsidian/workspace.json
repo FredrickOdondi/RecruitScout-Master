@@ -181,8 +181,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "ba2815aa34226d63",
+  "active": "96eaa851e6f4523f",
   "lastOpenFiles": [
+    "src/dashboard/theme.css",
+    "node_modules/fs-extra/README.md",
     "vite.config.ts.timestamp-1786568103970-e95c35fede6cd8.mjs",
     "dist/index.html.js",
     "dist/index.ts-loader.js",
