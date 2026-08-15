@@ -109,6 +109,17 @@ export interface ClientRecord {
   created_at: string;
 }
 
+// Email Log Record
+export interface EmailLogRecord {
+  id?: string;
+  recruiter_id: string;
+  recruiter_name: string;
+  matched_jobs: { id: string; title: string; company: string }[];
+  email_content: string;
+  email_address: string;
+  sent_at?: string;
+}
+
 
 // Settings
 export interface ExtensionSettings {

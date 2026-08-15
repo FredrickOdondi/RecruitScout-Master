@@ -181,6 +181,21 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
       if (res && res.success) {
         alert('Email sent successfully via Gmail!');
+        
+        // Log the sent email
+        if (selectedRecruiter) {
+          const recName = selectedRecruiter.recruiter['Name'] || selectedRecruiter.recruiter['Agency Name'] || 'Unknown';
+          const recId = getRecruiterId(selectedRecruiter.recruiter);
+          const matchedJobsLog = selectedRecruiter.jobs.map(j => ({ id: j.id, title: j.title, company: j.company }));
+          
+          await supabaseClient.logEmailSent({
+            recruiter_id: recId,
+            recruiter_name: recName,
+            matched_jobs: matchedJobsLog,
+            email_content: currentDraft,
+            email_address: email
+          });
+        }
       } else {
         alert('Failed to send email: ' + (res?.error || 'Unknown error'));
       }

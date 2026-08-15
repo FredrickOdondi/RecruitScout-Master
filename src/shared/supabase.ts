@@ -1,4 +1,4 @@
-import { JobData, BulkQueueRecord, ClientRecord } from './types';
+import { JobData, BulkQueueRecord, ClientRecord, EmailLogRecord } from './types';
 
 // Supabase configuration
 export const SUPABASE_URL = 'http://72.60.215.34:8000';
@@ -776,6 +776,32 @@ export class SupabaseClient {
       });
       if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
       return { data: await res.json(), error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Log sent emails
+   */
+  async logEmailSent(log: EmailLogRecord): Promise<SupabaseResponse<{ inserted: boolean }>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/email_logs`, {
+        method: 'POST',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(log)
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}` };
+      }
+
+      return { data: { inserted: true }, error: null };
     } catch (error) {
       return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
