@@ -12,6 +12,7 @@ const Building = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height
 const Globe = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>;
 const MapPin = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
 const Users = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
 interface RecruiterDashboardProps {
   recruiter: any;
@@ -21,6 +22,7 @@ interface RecruiterDashboardProps {
 export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashboardProps) {
   const [emailLogs, setEmailLogs] = useState<EmailLogRecord[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [selectedEmailLog, setSelectedEmailLog] = useState<EmailLogRecord | null>(null);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -230,6 +232,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
                     <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Sent</th>
                     <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
                     <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jobs Included</th>
+                    <th className="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -248,6 +251,14 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
                           ))}
                         </ul>
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => setSelectedEmailLog(log)}
+                          className="text-sky-600 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-md transition-colors"
+                        >
+                          View Email
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -257,6 +268,36 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
         </div>
 
       </div>
+
+      {/* Email Modal */}
+      {selectedEmailLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
+            onClick={() => setSelectedEmailLog(null)}
+          ></div>
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-slate-50 rounded-t-xl">
+              <h2 className="text-lg font-bold text-slate-800">
+                Email Content
+              </h2>
+              <button 
+                onClick={() => setSelectedEmailLog(null)}
+                className="text-gray-400 hover:text-gray-700 transition-colors p-1.5 rounded-full hover:bg-white hover:shadow-sm"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-white rounded-b-xl text-sm text-gray-800">
+              <div 
+                dangerouslySetInnerHTML={{ __html: selectedEmailLog.email_content }}
+                className="prose prose-sm max-w-none prose-a:text-sky-600 hover:prose-a:text-sky-800"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
