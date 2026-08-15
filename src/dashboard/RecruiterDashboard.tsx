@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
+import { supabaseClient } from '../shared/supabase';
+import { EmailLogRecord } from '../shared/types';
 
 // Custom icons inline for independence
 const ArrowLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
@@ -17,6 +19,23 @@ interface RecruiterDashboardProps {
 }
 
 export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashboardProps) {
+  const [emailLogs, setEmailLogs] = useState<EmailLogRecord[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      if (!recruiter) return;
+      setLoadingLogs(true);
+      const recId = recruiter.id || recruiter['Name'] || recruiter['Agency Name'] || 'Unknown';
+      const res = await supabaseClient.getEmailLogsByRecruiter(recId);
+      if (res && res.data) {
+        setEmailLogs(res.data);
+      }
+      setLoadingLogs(false);
+    };
+    fetchLogs();
+  }, [recruiter]);
+
   if (!recruiter) return null;
 
   const name = recruiter['Name'] || recruiter['Agency Name'] || 'Unknown Agency';
@@ -195,6 +214,48 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
           </div>
 
         </div>
+
+        {/* Email Logs Section */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-lg mt-6">
+          <h3 className="text-sm font-semibold text-gray-800 mb-4">Email Logs</h3>
+          {loadingLogs ? (
+            <div className="text-sm text-gray-500 py-4">Loading logs...</div>
+          ) : emailLogs.length === 0 ? (
+            <div className="text-sm text-gray-500 py-4">No email logs found for this recruiter.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Sent</th>
+                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+                    <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jobs Included</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {emailLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        {log.sent_at ? new Date(log.sent_at).toLocaleString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                        {log.email_address}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <ul className="list-disc pl-4">
+                          {log.matched_jobs && log.matched_jobs.map((j: any) => (
+                            <li key={j.id} className="truncate max-w-md" title={j.title}>{j.title} at {j.company}</li>
+                          ))}
+                        </ul>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

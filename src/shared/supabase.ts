@@ -807,6 +807,34 @@ export class SupabaseClient {
     }
   }
 
+  /**
+   * Get email logs for a specific recruiter
+   */
+  async getEmailLogsByRecruiter(recruiterId: string): Promise<SupabaseResponse<EmailLogRecord[]>> {
+    try {
+      const url = `${this.baseUrl}/rest/v1/email_logs?recruiter_id=eq.${encodeURIComponent(recruiterId)}&order=sent_at.desc`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(60000),
+      });
+
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error) {
+      console.error('[Supabase] Get email logs error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   // ── Auth ────────────────────────────────────────────────────────────────────
 
   private readonly SESSION_KEY = 'recruitscout_auth_session';
