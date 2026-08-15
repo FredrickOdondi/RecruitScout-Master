@@ -183,6 +183,7 @@
   },
   "active": "96eaa851e6f4523f",
   "lastOpenFiles": [
+    "vite.config.ts.timestamp-1786571011892-9f6bf8b5b484a.mjs",
     "src/dashboard/theme.css",
     "node_modules/fs-extra/README.md",
     "vite.config.ts.timestamp-1786568103970-e95c35fede6cd8.mjs",
@@ -199,7 +200,6 @@
     "dist/constants.js",
     "dist/index.ts.js",
     "dist/icon-32.png",
-    "vite.config.ts.timestamp-1786567909229-2c8090fc754c4.mjs",
     "DESIGN.md",
     "PRODUCT.md"
   ]

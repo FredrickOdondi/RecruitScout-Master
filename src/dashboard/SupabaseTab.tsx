@@ -92,20 +92,18 @@ const PAGE_SIZE = 50;
 const SHEETS_CONFIG_KEY = 'recruitscout_sheets_config';
 
 const ALLOWED_CATEGORIES = [
-  "Staffing & Recruiting Agency",
-  "Executive Search / Headhunting",
-  "HR Consulting & Services",
-  "Employment & Training Agency",
-  "IT, Tech & Telecommunications",
-  "Manufacturing & Automotive",
-  "Food, Beverage & Agriculture",
-  "Logistics & Supply Chain",
-  "Business Services, Consulting & Finance",
-  "Energy, Utilities & Engineering",
-  "Hospitality, Tourism & Events",
-  "Healthcare & Pharmaceuticals",
-  "Retail & Consumer Goods",
-  "Government, Non-Profit & Real Estate"
+  "Technology / IT",
+  "Engineering",
+  "Finance / Accounting / Investment",
+  "Healthcare / Clinical",
+  "Executive / Leadership",
+  "Sales / Business Development",
+  "Manufacturing / Production",
+  "Construction / Property",
+  "Retail / Hospitality / Frontline",
+  "HR / Talent",
+  "Legal / Risk / Compliance",
+  "Creative / Design / Media"
 ];
 
 // ── Google Sheets helpers ─────────────────────────────────────────────────────
