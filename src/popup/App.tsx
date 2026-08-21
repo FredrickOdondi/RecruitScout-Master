@@ -90,7 +90,11 @@ export default function App() {
   const handleStart = () => {
     // If we are in Swarm Connect Remote Mode, force queue polling instantly!
     if (settings.pollingEnabled) {
-      sendMessage({ type: 'FORCE_POLL_QUEUE' as any });
+      sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any }).then((res) => {
+        if (res && !res.foundTask) {
+          alert('No pending tasks found in the remote queue. The agent will keep listening in the background.');
+        }
+      });
       return; 
     }
 

@@ -1305,8 +1305,8 @@ class ServiceWorker {
     });
 
     messageRouter.on('FORCE_POLL_QUEUE' as any, async () => {
-      this.pollQueue();
-      return { success: true };
+      const foundTask = await this.pollQueue();
+      return { success: true, foundTask };
     });
 
     // Google Sheets Sync
@@ -1422,18 +1422,19 @@ class ServiceWorker {
     return true;
   }
 
-  private async pollQueue(): Promise<void> {
-    if (this.isPollingQueue) return;
+  private async pollQueue(): Promise<boolean> {
+    if (this.isPollingQueue) return false;
     this.isPollingQueue = true;
+    let foundTask = false;
     try {
       const state = stateManager.getState();
-      if (state.status === 'running') return; // Busy
+      if (state.status === 'running') return false; // Busy
 
       const settings = await storage.getSettings();
-      if (!settings.pollingEnabled) return; // Not enabled
+      if (!settings.pollingEnabled) return false; // Not enabled
 
       const workerId = await this.getActiveWorkerId();
-      if (!workerId) return; // Cannot fetch if unidentified
+      if (!workerId) return false; // Cannot fetch if unidentified
 
       let hasMoreTasks = true;
       while (hasMoreTasks) {
@@ -1455,6 +1456,7 @@ class ServiceWorker {
           if (this.abortRequested) break; // Check again after the network call
 
           if (response?.data) {
+            foundTask = true;
             const queueTask = response.data;
             const taskLabel = queueTask.job_title?.trim() || `[All Jobs${queueTask.location ? ' in ' + queueTask.location : ''}]`;
             console.log(`[RecruitScout] Pulled remote queue task: ${taskLabel}`);
@@ -1513,14 +1515,15 @@ class ServiceWorker {
               hasMoreTasks = false;
             }
           }
-        } catch (e) {
-          console.error('[RecruitScout] Polling error:', e);
+        } catch (err) {
+          console.error('[RecruitScout] Polling error:', err);
           hasMoreTasks = false;
         }
       }
     } finally {
       this.isPollingQueue = false;
     }
+    return foundTask;
   }
 
   private async setupOffscreenDocument(): Promise<void> {
