@@ -36,7 +36,8 @@
     "https://autocomplete.clearbit.com/*",
     "https://qyceqgttvvairnaxwicm.supabase.co/*",
     "https://www.wikidata.org/*",
-    "https://html.duckduckgo.com/*"
+    "https://html.duckduckgo.com/*",
+    "https://next-api.useplunk.com/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",
