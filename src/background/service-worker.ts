@@ -1099,78 +1099,41 @@ class ServiceWorker {
       return { domain: '' };
     });
 
-    // Send email via Gmail API
+    // Send email via Plunk transactional email API
     messageRouter.on(MessageType.SEND_GMAIL_MESSAGE, async (message) => {
       try {
         const { to, subject, bodyHtml } = message.payload;
-        
-        const token = await new Promise<string>((resolve, reject) => {
-          const clientId = '241480604524-gjgd1n67qn80rjtjkum7ik39k0n4ea2j.apps.googleusercontent.com';
-          const redirectUrl = chrome.identity.getRedirectURL(); // Typically https://<app-id>.chromiumapp.org/
-          const scopes = encodeURIComponent('https://www.googleapis.com/auth/gmail.send');
-          const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=${scopes}`;
 
-          chrome.identity.launchWebAuthFlow({
-            url: authUrl,
-            interactive: true
-          }, (redirectUri) => {
-            if (chrome.runtime.lastError || !redirectUri) {
-              reject(new Error(chrome.runtime.lastError?.message || 'Authentication failed. Please check your Client ID and Redirect URI setup.'));
-              return;
-            }
-            
-            // Extract the access token from the returned redirect URI fragment
-            const url = new URL(redirectUri);
-            const params = new URLSearchParams(url.hash.substring(1));
-            const accessToken = params.get('access_token');
-            
-            if (accessToken) {
-              resolve(accessToken);
-            } else {
-              reject(new Error('Failed to obtain access token from Google.'));
-            }
-          });
-        });
+        const plunkSecretKey = import.meta.env.VITE_PLUNK_SECRET_KEY as string;
+        if (!plunkSecretKey) {
+          return { success: false, error: 'Plunk secret key is not configured. Please add VITE_PLUNK_SECRET_KEY to your .env file.' };
+        }
 
-        // Base64 encode the subject for UTF-8 compatibility
-        const utf8Subject = `=?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
-        
-        const emailLines = [
-          `To: ${to}`,
-          `Subject: ${utf8Subject}`,
-          'MIME-Version: 1.0',
-          'Content-Type: text/html; charset=utf-8',
-          '',
-          bodyHtml
-        ];
-        
-        const emailContent = emailLines.join('\r\n');
-        
-        // Base64url encode the entire email
-        const base64EncodedEmail = btoa(unescape(encodeURIComponent(emailContent)))
-          .replace(/\+/g, '-')
-          .replace(/\//g, '_')
-          .replace(/=+$/, '');
-          
-        const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        const response = await fetch('https://next-api.useplunk.com/v1/send', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${plunkSecretKey}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            raw: base64EncodedEmail
+            to,
+            subject,
+            body: bodyHtml
           })
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error?.message || 'Failed to send email');
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          const errMsg = data?.error?.message || 'Unknown error from Plunk';
+          console.error('[RecruitScout] Plunk API Error:', data?.error);
+          return { success: false, error: errMsg };
         }
 
+        console.log('[RecruitScout] ✉️ Email sent via Plunk to:', to);
         return { success: true };
       } catch (err: any) {
-        console.error('[RecruitScout] Gmail API Error:', err);
+        console.error('[RecruitScout] Plunk send error:', err);
         return { success: false, error: err.message };
       }
     });
