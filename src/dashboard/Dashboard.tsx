@@ -781,6 +781,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         >
                           ↺ Reset to Pending
                         </button>
+                        <button
+                          onClick={() => updateSetting('filterRecruitersEnabled', !settings.filterRecruitersEnabled)}
+                          className={`px-2 py-1 rounded text-[11px] font-medium border transition-all ${settings.filterRecruitersEnabled ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'}`}
+                          title="If enabled, jobs from companies in the Recruiters table will not be synced to Google Sheets"
+                        >
+                          {settings.filterRecruitersEnabled ? '☑ Filter Recruiters (Skip Sheets)' : '☐ Filter Recruiters (Skip Sheets)'}
+                        </button>
                       </h3>
                       <div className="flex gap-3 mt-2 text-[12px]">
                         <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium border border-gray-200">

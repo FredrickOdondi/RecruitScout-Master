@@ -738,6 +738,7 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
   }
 
   const enrolledClients = clientsRes.data;
+  const engineSettings = await storage.getSettings();
 
   for (const clientName of clientNames) {
     const client = enrolledClients.find((c: any) => c.name === clientName);
@@ -763,7 +764,6 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
     // Engine Settings, in which case all Spanish Indeed jobs pass through.
     const hasSpanishJobs = clientJobs.some((job: any) => job.source === 'es.indeed.com');
     if (hasSpanishJobs) {
-      const engineSettings = await storage.getSettings();
       // spanishWhitelistEnabled defaults to true (filter ON) if never explicitly set
       const whitelistActive = engineSettings.spanishWhitelistEnabled !== false;
 
@@ -790,8 +790,35 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── Recruiters Filter ────────────────────────────────────────────────────
+    if (engineSettings.filterRecruitersEnabled) {
+      const recruitersRes = await supabaseClient.getRecruiters();
+      if (!recruitersRes.error && recruitersRes.data) {
+        const recruiterNames = new Set<string>();
+        for (const r of recruitersRes.data) {
+          if (r.Name) recruiterNames.add(r.Name.toLowerCase().trim());
+          if (r['Agency Name']) recruiterNames.add(r['Agency Name'].toLowerCase().trim());
+        }
+        
+        const beforeRecruiterCount = clientJobs.length;
+        clientJobs = clientJobs.filter((job: any) => {
+          const compName = (job.company || '').toLowerCase().trim();
+          return !recruiterNames.has(compName);
+        });
+        const droppedRecruiters = beforeRecruiterCount - clientJobs.length;
+        if (droppedRecruiters > 0) {
+          console.log(`[RecruitScout] 🕵️‍♂️ Recruiter Filter: Dropped ${droppedRecruiters} job(s) from known recruiters. Syncing remaining ${clientJobs.length} job(s).`);
+        } else {
+          console.log(`[RecruitScout] 🕵️‍♂️ Recruiter Filter: No jobs matched known recruiters.`);
+        }
+      } else {
+        console.warn(`[RecruitScout] Failed to fetch Recruiters table for filtering:`, recruitersRes.error);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (clientJobs.length === 0) {
-      console.log(`[RecruitScout] No jobs remaining after Spanish whitelist filter for client "${clientName}". Skipping sync.`);
+      console.log(`[RecruitScout] No jobs remaining after filters for client "${clientName}". Skipping sync.`);
       continue;
     }
     const headers = [

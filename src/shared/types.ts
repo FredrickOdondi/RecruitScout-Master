@@ -141,6 +141,8 @@ export interface ExtensionSettings {
   };
   /** When false, Spanish Indeed jobs bypass the Spanish_Companies whitelist and all are synced to Google Sheets */
   spanishWhitelistEnabled?: boolean;
+  /** When true, extracted jobs whose company matches a record in the Recruiters table will not be synced to Google Sheets */
+  filterRecruitersEnabled?: boolean;
 }
 
 // Message types
