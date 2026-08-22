@@ -718,11 +718,28 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         ))}
                       </select>
                     </div>
-                    <div className="col-span-12 sm:col-span-6 md:col-span-2 flex gap-2 justify-end">
+                    <div className="col-span-12 sm:col-span-6 md:col-span-2">
+                      <label className="text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
+                        Sheets Sync
+                      </label>
+                      <button
+                        onClick={() => updateSetting('filterRecruitersEnabled', !settings.filterRecruitersEnabled)}
+                        className={`w-full text-left px-3 py-2 rounded-md text-[13px] font-medium border transition-all shadow-lg min-h-[38px] flex items-center justify-between ${
+                          settings.filterRecruitersEnabled 
+                            ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 focus:ring-1 focus:ring-indigo-500' 
+                            : 'bg-gray-50/80 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                        title="If enabled, jobs from companies in the Recruiters table will not be synced to Google Sheets"
+                      >
+                        <span className="truncate">Filter Recruiters</span>
+                        <span>{settings.filterRecruitersEnabled ? '☑' : '☐'}</span>
+                      </button>
+                    </div>
+                    <div className="col-span-12 flex gap-2 justify-end md:mt-2">
                       <button 
                         onClick={handleUpdateLocations}
                         disabled={!locationFilter.trim()}
-                        className="bg-gray-100 hover:bg-slate-700/50 text-gray-600 border border-gray-200 px-3 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg  flex-1"
+                        className="bg-gray-100 hover:bg-slate-700/50 text-gray-600 border border-gray-200 px-4 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg"
                         title="Update location for all existing queue tasks"
                       >
                         Apply Location
@@ -730,7 +747,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       <button 
                         onClick={handleSaveBulkSearch}
                         disabled={!bulkTitles.trim() && !locationFilter.trim()}
-                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-white px-3 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg  flex-1 text-center"
+                        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-white px-6 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[12px] shadow-lg text-center min-w-[120px]"
                       >
                         {bulkTitles.trim() ? 'Enqueue' : 'Scrape'}
                       </button>
@@ -780,13 +797,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                           title="Reset all completed tasks back to pending so they run again today"
                         >
                           ↺ Reset to Pending
-                        </button>
-                        <button
-                          onClick={() => updateSetting('filterRecruitersEnabled', !settings.filterRecruitersEnabled)}
-                          className={`px-2 py-1 rounded text-[11px] font-medium border transition-all ${settings.filterRecruitersEnabled ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30' : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'}`}
-                          title="If enabled, jobs from companies in the Recruiters table will not be synced to Google Sheets"
-                        >
-                          {settings.filterRecruitersEnabled ? '☑ Filter Recruiters (Skip Sheets)' : '☐ Filter Recruiters (Skip Sheets)'}
                         </button>
                       </h3>
                       <div className="flex gap-3 mt-2 text-[12px]">

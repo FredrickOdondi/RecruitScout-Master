@@ -1117,6 +1117,7 @@ class ServiceWorker {
           },
           body: JSON.stringify({
             to,
+            from: { email: 'hi@www.recruitscout.tech', name: 'RecruitScout' },
             subject,
             body: bodyHtml
           })
@@ -1125,8 +1126,8 @@ class ServiceWorker {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-          const errMsg = data?.error?.message || 'Unknown error from Plunk';
-          console.error('[RecruitScout] Plunk API Error:', data?.error);
+          const errMsg = data?.error?.message || data?.message || JSON.stringify(data?.error) || 'Unknown error from Plunk';
+          console.error('[RecruitScout] Plunk API Error:', data);
           return { success: false, error: errMsg };
         }
 

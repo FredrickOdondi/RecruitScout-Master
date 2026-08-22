@@ -15,10 +15,23 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   const [loading, setLoading] = useState(true);
   const [groupedMatches, setGroupedMatches] = useState<MatchedRecruiter[]>([]);
   const [selectedRecruiter, setSelectedRecruiter] = useState<MatchedRecruiter | null>(null);
+  const [filterByContact, setFilterByContact] = useState(false);
   
   // Maps recruiter ID to bundled drafted email
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  // Send modal state
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [sendToEmail, setSendToEmail] = useState('');
+
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   useEffect(() => {
     fetchMatches();
@@ -39,13 +52,30 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
       recruiters.forEach((rec: any) => {
         const recCat = rec['Primary Specialty']?.trim().toLowerCase();
         const recInd = rec['Industry vertical']?.trim().toLowerCase();
+        const recCountry = rec['Country']?.trim().toLowerCase();
+        const recLocation = rec['Location']?.trim().toLowerCase();
         
         if (!recCat || !recInd) return;
 
         const matchedJobs = jobs.filter(job => {
           const cat = job.category?.trim().toLowerCase();
           const ind = job['industry vertical']?.trim().toLowerCase();
-          return cat === recCat && ind === recInd;
+          const jobLoc = job.location?.trim().toLowerCase() || '';
+          
+          const matchesCategory = cat === recCat;
+          const matchesIndustry = ind === recInd;
+          
+          let matchesLocation = true;
+          // Only enforce location matching if recruiter has a geography specified and the job has a location
+          if ((recCountry || recLocation) && jobLoc) {
+            const hasCountryMatch = recCountry ? jobLoc.includes(recCountry) : false;
+            const hasCityMatch = recLocation ? jobLoc.includes(recLocation) : false;
+            const isRemote = jobLoc.includes('remote');
+            
+            matchesLocation = hasCountryMatch || hasCityMatch || isRemote;
+          }
+
+          return matchesCategory && matchesIndustry && matchesLocation;
         });
 
         if (matchedJobs.length > 0) {
@@ -136,6 +166,12 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   const selectedRecId = selectedRecruiter ? getRecruiterId(selectedRecruiter.recruiter) : null;
   const currentDraft = selectedRecId ? drafts[selectedRecId] : '';
 
+  // Apply contact filter
+  const filteredMatches = filterByContact
+    ? groupedMatches.filter(g => !!g.recruiter['Associated contacts']?.trim())
+    : groupedMatches;
+  const contactCount = groupedMatches.filter(g => !!g.recruiter['Associated contacts']?.trim()).length;
+
   const handleCopy = async () => {
     if (!currentDraft) return;
     try {
@@ -159,12 +195,28 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
     }
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = () => {
     if (!currentDraft) return;
+    // Grab email directly from the recruiter's "Associated contacts" column
+    const contactEmail = selectedRecruiter?.recruiter['Associated contacts']?.trim() || '';
+    if (contactEmail) {
+      // Email found — send directly without prompting
+      setSendToEmail(contactEmail);
+      doSend(contactEmail);
+    } else {
+      // No email on record — open modal as fallback
+      setSendToEmail('');
+      setSendModalOpen(true);
+    }
+  };
 
-    const email = prompt('Enter recipient email address:');
-    if (!email) return;
+  const confirmSend = () => {
+    if (!sendToEmail.trim()) return;
+    setSendModalOpen(false);
+    doSend(sendToEmail.trim());
+  };
 
+  const doSend = async (email: string) => {
     setIsSendingEmail(true);
     
     try {
@@ -180,7 +232,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
       });
 
       if (res && res.success) {
-        alert('Email sent successfully via Plunk!');
+        showToast(`Email sent to ${email} via Plunk ✓`, 'success');
         
         // Log the sent email
         if (selectedRecruiter) {
@@ -197,10 +249,10 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
           });
         }
       } else {
-        alert('Failed to send email: ' + (res?.error || 'Unknown error'));
+        showToast('Send failed: ' + (res?.error || 'Unknown error'), 'error');
       }
     } catch (err: any) {
-      alert('Error sending email: ' + err.message);
+      showToast('Error: ' + err.message, 'error');
     } finally {
       setIsSendingEmail(false);
     }
@@ -252,7 +304,76 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
   };
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-4 bg-[#F8FAFC] text-slate-800 font-sans">
+    <div className="flex h-[calc(100vh-100px)] gap-4 bg-[#F8FAFC] text-slate-800 font-sans relative">
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl text-white text-[13px] font-semibold transition-all duration-300 ${
+          toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-500'
+        }`}>
+          {toast.type === 'success' ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          )}
+          {toast.message}
+        </div>
+      )}
+
+      {/* Send Email Modal */}
+      {sendModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setSendModalOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[420px] p-6 border border-slate-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <div>
+                <h3 className="text-[15px] font-bold text-slate-900">Send via Plunk</h3>
+                <p className="text-[12px] text-slate-500 mt-0.5">from hi@www.recruitscout.tech</p>
+              </div>
+            </div>
+
+            <div className="mb-2">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Recipient Email</label>
+              <input
+                type="email"
+                value={sendToEmail}
+                onChange={e => setSendToEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && confirmSend()}
+                placeholder="recruiter@agency.com"
+                autoFocus
+                className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div className="mb-5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Subject</label>
+              <div className="border border-slate-100 rounded-lg px-3 py-2.5 text-[13px] text-slate-500 bg-slate-50">
+                Candidate matches for {selectedRecruiter?.recruiter['Primary Specialty'] || 'roles'}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSendModalOpen(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-[13px] font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSend}
+                disabled={!sendToEmail.trim()}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-[13px] font-bold hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       
       {/* LEFT PANE: Recruiters List */}
       <div className="w-[340px] bg-white rounded-lg shadow-sm border border-slate-200 flex flex-col overflow-hidden">
@@ -261,15 +382,29 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
         <div className="px-4 py-3 border-b border-slate-100 bg-white flex justify-between items-center z-10 sticky top-0">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-slate-800 text-[13px] tracking-wide">MATCHED RECRUITERS</h3>
-            <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-medium">{groupedMatches.length}</span>
+            <span className="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded-full font-medium">{filteredMatches.length}</span>
           </div>
-          <button 
-            onClick={fetchMatches}
-            className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 rounded-md hover:bg-indigo-50"
-            title="Refresh Matches"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setFilterByContact(f => !f)}
+              title={filterByContact ? 'Show all recruiters' : 'Show only recruiters with contact email'}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${
+                filterByContact
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300 hover:text-indigo-600'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              {filterByContact ? `${filteredMatches.length} with contact` : `Has Contact (${contactCount})`}
+            </button>
+            <button 
+              onClick={fetchMatches}
+              className="text-slate-400 hover:text-indigo-600 transition-colors p-1.5 rounded-md hover:bg-indigo-50"
+              title="Refresh Matches"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            </button>
+          </div>
         </div>
         
         {/* Recruiter List */}
@@ -278,13 +413,13 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
             <div className="p-8 flex justify-center items-center h-full">
               <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             </div>
-          ) : groupedMatches.length === 0 ? (
+          ) : filteredMatches.length === 0 ? (
             <div className="p-8 text-center text-slate-500 text-sm">
-              No matching recruiters found.
+              {filterByContact ? 'No recruiters with a contact email found.' : 'No matching recruiters found.'}
             </div>
           ) : (
             <div className="flex flex-col gap-1.5 p-2">
-              {groupedMatches.map((group, i) => {
+              {filteredMatches.map((group, i) => {
                 const isSelected = selectedRecruiter === group;
                 return (
                   <div 

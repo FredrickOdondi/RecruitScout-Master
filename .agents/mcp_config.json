@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "plunk": {
+      "command": "npx",
+      "args": ["-y", "@plunk/mcp"],
+      "env": {
+        "PLUNK_API_KEY": "sk_8caf4f7f6579829128d01098f8d5c21c1c340e749e3ac44dfd87965da9c40141",
+        "PLUNK_PUBLIC_KEY": "pk_890d1d0ce5cbf709c26c09e51f1566bf0f8a4eafdcc2b6d35d181fc524e452af",
+        "PLUNK_API_URL": "https://next-api.useplunk.com"
+      }
+    }
+  }
+}
