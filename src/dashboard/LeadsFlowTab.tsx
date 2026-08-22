@@ -57,25 +57,23 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
         if (!recCat || !recInd) return;
 
-        // Match all jobs on category + industry — no location exclusions
-        const matchedJobs = jobs
-          .filter(job => {
-            const cat = job.category?.trim().toLowerCase();
-            const ind = job['industry vertical']?.trim().toLowerCase();
-            return cat === recCat && ind === recInd;
-          })
-          .sort((a, b) => {
-            // Score jobs by how close they are to the recruiter geographically
-            const score = (job: typeof a) => {
-              const loc = job.location?.trim().toLowerCase() || '';
-              if (!loc) return 0;
-              if (recLocation && loc.includes(recLocation)) return 3; // same city
-              if (recCountry && loc.includes(recCountry)) return 2;  // same country
-              if (loc.includes('remote')) return 1;                   // remote
-              return 0;                                               // anywhere else
-            };
-            return score(b) - score(a);
-          });
+        const matchedJobs = jobs.filter(job => {
+          const cat = job.category?.trim().toLowerCase();
+          const ind = job['industry vertical']?.trim().toLowerCase();
+          const jobLoc = job.location?.trim().toLowerCase() || '';
+
+          // Must match on category and industry
+          if (cat !== recCat || ind !== recInd) return false;
+
+          // If recruiter has no location info, just match on category + industry
+          if (!recCountry && !recLocation) return true;
+
+          // Job must be in the same country or same city as the recruiter
+          const inSameCountry = recCountry ? jobLoc.includes(recCountry) : false;
+          const inSameCity = recLocation ? jobLoc.includes(recLocation) : false;
+
+          return inSameCountry || inSameCity;
+        });
 
         if (matchedJobs.length > 0) {
           const key = rec.id || rec['Agency Name'] || rec['Name'] || Math.random().toString();
