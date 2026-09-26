@@ -685,6 +685,11 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
     if (existing) {
       return {
         ...existing,
+        // Always carry the current session's client stamp forward.
+        // 'existing' is from the local cache and won't have the client name
+        // set for this scraping session, causing triggerAutomaticGoogleSheetsSync
+        // to silently skip the job (it only processes jobs where job.client is truthy).
+        client: job.client || existing.client,
         description: job.description || existing.description,
         salary: job.salary || existing.salary,
         metadata: { ...existing.metadata, ...job.metadata }
@@ -694,15 +699,21 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
   });
   await storage.addJobs(finalJobs);
 
+  // ── Step 6: Persist to Supabase & auto-sync to Google Sheets ─────────────
+  // Google Sheets sync runs INDEPENDENTLY of Supabase success/failure.
+  // A partial Supabase batch failure (e.g. rate-limit on one batch) must NOT
+  // block jobs from reaching the client's Google Sheet.
   supabaseClient.upsertJobs(finalJobs, workerId).then(result => {
     if (result.error) {
-      console.error('[RecruitScout] Supabase sync error:', result.error);
-    } else {
-      // Auto-sync to Google Sheets for matching enrolled clients
-      triggerAutomaticGoogleSheetsSync(finalJobs).catch(err => {
-        console.error('[RecruitScout] Auto-Sheets Sync failed:', err);
-      });
+      console.error('[RecruitScout] Supabase sync error (non-fatal for Sheets):', result.error);
     }
+  }).catch(err => {
+    console.error('[RecruitScout] Supabase upsert threw:', err);
+  });
+
+  // Always attempt Google Sheets auto-sync regardless of Supabase outcome
+  triggerAutomaticGoogleSheetsSync(finalJobs).catch(err => {
+    console.error('[RecruitScout] Auto-Sheets Sync failed:', err);
   });
 
   return { newCount, skippedCount };
@@ -718,17 +729,30 @@ function sanitizeCell(val: any): string {
 
 async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
   const clientJobsMap: Record<string, any[]> = {};
+  let noClientCount = 0;
+
   for (const job of jobs) {
     if (job.client) {
       if (!clientJobsMap[job.client]) {
         clientJobsMap[job.client] = [];
       }
       clientJobsMap[job.client].push(job);
+    } else {
+      noClientCount++;
     }
   }
 
+  if (noClientCount > 0) {
+    console.log(`[RecruitScout] ℹ️ ${noClientCount} job(s) have no client stamp — they will NOT be auto-synced to any Sheet. Make sure a scraping session is started from the Queue with a client_id set.`);
+  }
+
   const clientNames = Object.keys(clientJobsMap);
-  if (clientNames.length === 0) return;
+  if (clientNames.length === 0) {
+    console.log(`[RecruitScout] ℹ️ triggerAutomaticGoogleSheetsSync: no client-stamped jobs in this batch (${jobs.length} total). Nothing to sync.`);
+    return;
+  }
+
+  console.log(`[RecruitScout] 📋 Auto-sync: ${jobs.length} jobs, ${clientNames.length} client(s) identified: ${clientNames.join(', ')}`);
 
   // Load unique enrolled clients from Supabase
   const clientsRes = await supabaseClient.getClients();
@@ -863,7 +887,8 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
       ])
     ];
 
-    console.log(`[RecruitScout] 🚀 Automatically syncing ${clientJobs.length} jobs to enrolled client "${clientName}" Google Sheet...`);
+    const sheetName = client.sheet_name || 'Sheet1';
+    console.log(`[RecruitScout] 🚀 Syncing ${clientJobs.length} job(s) to "${clientName}" (sheet: "${sheetName}")...`);
 
     try {
       await fetch(client.apps_script_url, {
@@ -872,13 +897,13 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           spreadsheetId: client.spreadsheet_id || '',
-          sheetName: client.sheet_name || 'Sheet1',
+          sheetName,
           data: rows
         })
       });
-      console.log(`[RecruitScout] ✓ Auto-synced jobs to "${clientName}" successfully.`);
+      console.log(`[RecruitScout] ✅ Synced ${clientJobs.length} job(s) to "${clientName}" sheet "${sheetName}".`);
     } catch (err) {
-      console.error(`[RecruitScout] ❌ Auto-sync failed for client "${clientName}":`, err);
+      console.error(`[RecruitScout] ❌ Sync failed for "${clientName}":`, err);
     }
   }
 }
@@ -895,7 +920,9 @@ class ServiceWorker {
   private isPollingQueue = false;
 
   constructor() {
-    this.initialize();
+    this.initialize().catch(err => {
+      console.warn('[RecruitScout] Service Worker initialization warning:', err);
+    });
   }
 
   private async initialize(): Promise<void> {
@@ -933,13 +960,67 @@ class ServiceWorker {
     // Start extraction
     messageRouter.on(MessageType.START_EXTRACTION, async (message, sender) => {
       console.log('[RecruitScout] Handling START_EXTRACTION', { payload: message.payload, sender });
-      return this.startExtraction(message.payload, sender);
+
+      // Resolve client_id → client name if present in the payload
+      const payloadClientId: string | undefined = message.payload?.options?.client_id ?? message.payload?.client_id;
+      let resolvedClientName: string | null = null;
+      if (payloadClientId) {
+        try {
+          const clientsRes = await supabaseClient.getClients();
+          if (clientsRes.data) {
+            const match = clientsRes.data.find((c: any) => c.id === payloadClientId);
+            if (match) {
+              resolvedClientName = match.name;
+              console.log(`[RecruitScout] START_EXTRACTION: resolved client_id "${payloadClientId}" → "${resolvedClientName}"`);
+            }
+          }
+        } catch (err) {
+          console.error('[RecruitScout] START_EXTRACTION: failed to resolve client_id:', err);
+        }
+      }
+
+      try {
+        activeClientNameForScraping = resolvedClientName;
+        return await this.startExtraction(message.payload, sender);
+      } finally {
+        activeClientNameForScraping = null;
+      }
     });
 
     // Start bulk extraction
     messageRouter.on(MessageType.START_BULK_EXTRACTION, async (message, sender) => {
       console.log('[RecruitScout] Handling START_BULK_EXTRACTION', { payload: message.payload, sender });
-      return this.startBulkExtraction(message.payload, sender);
+
+      // If the payload carries a client_id (e.g. launched from Dashboard / Command Center),
+      // resolve the human-readable client name and stamp it on activeClientNameForScraping
+      // so every job enriched during this session gets client: <name> and is auto-synced
+      // to that client's Google Sheet. Without this, activeClientNameForScraping stays null
+      // and triggerAutomaticGoogleSheetsSync skips all the jobs silently.
+      const payloadClientId: string | undefined = message.payload?.options?.client_id ?? message.payload?.client_id;
+      let resolvedClientName: string | null = null;
+      if (payloadClientId) {
+        try {
+          const clientsRes = await supabaseClient.getClients();
+          if (clientsRes.data) {
+            const match = clientsRes.data.find((c: any) => c.id === payloadClientId);
+            if (match) {
+              resolvedClientName = match.name;
+              console.log(`[RecruitScout] START_BULK_EXTRACTION: resolved client_id "${payloadClientId}" → "${resolvedClientName}"`);
+            } else {
+              console.warn(`[RecruitScout] START_BULK_EXTRACTION: client_id "${payloadClientId}" not found in enrolled clients.`);
+            }
+          }
+        } catch (err) {
+          console.error('[RecruitScout] START_BULK_EXTRACTION: failed to resolve client_id:', err);
+        }
+      }
+
+      try {
+        activeClientNameForScraping = resolvedClientName;
+        return await this.startBulkExtraction(message.payload, sender);
+      } finally {
+        activeClientNameForScraping = null;
+      }
     });
 
     // Stop extraction
@@ -1117,9 +1198,10 @@ class ServiceWorker {
           },
           body: JSON.stringify({
             to,
-            from: { email: 'hi@www.recruitscout.tech', name: 'RecruitScout' },
+            from: { email: 'diana@www.recruitscout.tech', name: 'Diana' },
             subject,
-            body: bodyHtml
+            body: bodyHtml,
+            subscribed: true   // ensure contact is opted-in; Plunk silently drops emails to unsubscribed contacts
           })
         });
 
@@ -1248,8 +1330,12 @@ class ServiceWorker {
       return await supabaseClient.updateAllRecruitersTeaserThreshold(message.payload?.threshold ?? 5);
     });
 
-    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_DAILY_LIMIT' as MessageType, async (message) => {
-      return await supabaseClient.updateAllRecruitersDailyLimit(message.payload?.limit ?? 50);
+    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_MIN_LEADS' as MessageType, async (message) => {
+      return await supabaseClient.updateAllRecruitersMinLeads(message.payload?.limit ?? 10);
+    });
+
+    messageRouter.on('SUPABASE_UPDATE_ALL_RECRUITERS_MAX_LEADS' as MessageType, async (message) => {
+      return await supabaseClient.updateAllRecruitersMaxLeads(message.payload?.limit ?? 50);
     });
 
     messageRouter.on('SUPABASE_UPDATE_RECRUITER_STATUS' as MessageType, async (message) => {
@@ -1258,6 +1344,10 @@ class ServiceWorker {
 
     messageRouter.on('SUPABASE_UPDATE_RECRUITER' as MessageType, async (message) => {
       return await supabaseClient.updateRecruiter(message.payload.originalName, message.payload.updates);
+    });
+
+    messageRouter.on('SUPABASE_SYNC_RECRUITER_CONTACTS' as MessageType, async () => {
+      return await supabaseClient.syncRecruiterContactEmails();
     });
 
     messageRouter.on('SUPABASE_ENROLL_CLIENT' as MessageType, async (message) => {

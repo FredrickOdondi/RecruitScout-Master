@@ -3,6 +3,8 @@ import {
   JobData,
   ExtractionState,
   ExtensionSettings,
+  EmailScheduleConfig,
+  EmailScheduleState,
 } from './types';
 import { STORAGE_LIMITS } from './constants';
 
@@ -262,6 +264,55 @@ export class StorageManager {
       darkMode: false,
       language: 'en',
     };
+  }
+
+  /**
+   * Get email schedule configuration
+   */
+  async getEmailScheduleConfig(): Promise<EmailScheduleConfig> {
+    const config = await this.get<EmailScheduleConfig>(STORAGE_KEYS.EMAIL_SCHEDULE_CONFIG);
+    return config || {
+      enabled: false,
+      startTime: '09:00',
+      endTime: '11:00',
+      intervalMinutes: 2,
+      maxDailyEmails: 50,
+      daysOfWeek: [1, 2, 3, 4, 5],
+    };
+  }
+
+  /**
+   * Save email schedule configuration
+   */
+  async setEmailScheduleConfig(config: Partial<EmailScheduleConfig>): Promise<void> {
+    const current = await this.getEmailScheduleConfig();
+    const updated = { ...current, ...config };
+    await this.set(STORAGE_KEYS.EMAIL_SCHEDULE_CONFIG, updated);
+  }
+
+  /**
+   * Get email schedule runtime state
+   */
+  async getEmailScheduleState(): Promise<EmailScheduleState> {
+    const today = new Date().toISOString().split('T')[0];
+    const state = await this.get<EmailScheduleState>(STORAGE_KEYS.EMAIL_SCHEDULE_STATE);
+    if (!state || state.lastResetDate !== today) {
+      return {
+        sentTodayCount: 0,
+        lastResetDate: today,
+        logs: state?.logs ? state.logs.slice(0, 50) : [],
+      };
+    }
+    return state;
+  }
+
+  /**
+   * Update email schedule runtime state
+   */
+  async setEmailScheduleState(state: Partial<EmailScheduleState>): Promise<void> {
+    const current = await this.getEmailScheduleState();
+    const updated = { ...current, ...state };
+    await this.set(STORAGE_KEYS.EMAIL_SCHEDULE_STATE, updated);
   }
 
   /**

@@ -19,6 +19,8 @@ export interface JobData {
   status?: string;
   category?: string;
   industry_vertical?: string;
+  /** Name of the enrolled client this job was scraped for (used for Google Sheets auto-sync routing) */
+  client?: string | null;
 }
 
 // Location type
@@ -198,9 +200,11 @@ export const MessageType = {
   SUPABASE_UPDATE_ALL_RECRUITERS_STATUS: 'SUPABASE_UPDATE_ALL_RECRUITERS_STATUS',
   SUPABASE_UPDATE_ALL_RECRUITERS_LEADS_SENT: 'SUPABASE_UPDATE_ALL_RECRUITERS_LEADS_SENT',
   SUPABASE_UPDATE_ALL_RECRUITERS_TEASER_THRESHOLD: 'SUPABASE_UPDATE_ALL_RECRUITERS_TEASER_THRESHOLD',
-  SUPABASE_UPDATE_ALL_RECRUITERS_DAILY_LIMIT: 'SUPABASE_UPDATE_ALL_RECRUITERS_DAILY_LIMIT',
+  SUPABASE_UPDATE_ALL_RECRUITERS_MIN_LEADS: 'SUPABASE_UPDATE_ALL_RECRUITERS_MIN_LEADS',
+  SUPABASE_UPDATE_ALL_RECRUITERS_MAX_LEADS: 'SUPABASE_UPDATE_ALL_RECRUITERS_MAX_LEADS',
   SUPABASE_UPDATE_RECRUITER_STATUS: 'SUPABASE_UPDATE_RECRUITER_STATUS',
   SUPABASE_UPDATE_RECRUITER: 'SUPABASE_UPDATE_RECRUITER',
+  SUPABASE_SYNC_RECRUITER_CONTACTS: 'SUPABASE_SYNC_RECRUITER_CONTACTS',
   SEND_GMAIL_MESSAGE: 'SEND_GMAIL_MESSAGE',
 } as const;
 
@@ -232,7 +236,40 @@ export const STORAGE_KEYS = {
   STATE: 'recruitscout_state',
   SETTINGS: 'recruitscout_settings',
   EXTRACTED_JOBS: 'recruitscout_extracted_jobs',
+  EMAIL_SCHEDULE_CONFIG: 'recruitscout_email_schedule_config',
+  EMAIL_SCHEDULE_STATE: 'recruitscout_email_schedule_state',
 } as const;
+
+// Email Schedule Configuration
+export interface EmailScheduleConfig {
+  enabled: boolean;
+  startTime: string; // "HH:MM" e.g. "09:00"
+  endTime: string;   // "HH:MM" e.g. "11:00"
+  intervalMinutes: number; // e.g. 2
+  maxDailyEmails: number;  // e.g. 50
+  daysOfWeek: number[];    // 0 = Sun, 1 = Mon, ..., 6 = Sat
+}
+
+// Email Schedule Activity Log
+export interface EmailScheduleLog {
+  id: string;
+  recruiterId: string;
+  recruiterName: string;
+  recipientEmail: string;
+  recipientFirstName?: string;
+  jobCount: number;
+  timestamp: string;
+  status: 'success' | 'failed';
+  error?: string;
+}
+
+// Email Schedule Runtime State
+export interface EmailScheduleState {
+  lastSentAt?: number;
+  sentTodayCount: number;
+  lastResetDate: string; // "YYYY-MM-DD"
+  logs: EmailScheduleLog[];
+}
 
 // Default export fields
 export const DEFAULT_EXPORT_FIELDS: ExportField[] = [

@@ -55,6 +55,11 @@ export interface SupabaseResponse<T> {
 export class SupabaseClient {
   private baseUrl: string;
   private apiKey: string;
+  private cachedRecruiters: any[] | null = null;
+  private cachedRecruitersTime: number = 0;
+  private cachedRecruiterContacts: any[] | null = null;
+  private cachedRecruiterContactsTime: number = 0;
+  private readonly RECRUITERS_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
   constructor() {
     this.baseUrl = SUPABASE_URL;
@@ -96,7 +101,7 @@ export class SupabaseClient {
       // Write worker_id so we know exactly which extension scraped this job
       worker_id: job.workerId ?? (job as any).worker_id ?? null,
       category: job.category ?? (job as any).category ?? null,
-      client: (job as any).client ?? null,
+      client: job.client ?? null,
       'industry vertical': job.industry_vertical ?? (job as any)['industry vertical'] ?? null,
     };
   }
@@ -299,7 +304,7 @@ export class SupabaseClient {
    */
   async getCategorizedJobs(): Promise<SupabaseResponse<SupabaseJob[]>> {
     try {
-      const url = `${this.baseUrl}/rest/v1/jobs?select=id,title,company,location,employmenttype,url,description,dateposted,salary,source,extractedat,category,"industry vertical"&category=not.is.null&"industry vertical"=not.is.null&order=extractedat.desc`;
+      const url = `${this.baseUrl}/rest/v1/jobs?select=id,title,company,location,employmenttype,url,description,dateposted,salary,source,extractedat,category,%22industry%20vertical%22&category=not.is.null&%22industry%20vertical%22=not.is.null&order=extractedat.desc`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -835,6 +840,42 @@ export class SupabaseClient {
     }
   }
 
+  /**
+   * Fetch all email logs (only recruiter_id + matched_jobs) for bulk deduplication.
+   * Used by LeadsFlow to filter out already-sent vacancies per recruiter.
+   */
+  async getAllEmailLogs(): Promise<SupabaseResponse<{ recruiter_id: string; matched_jobs: any[] }[]>> {
+    try {
+      const allLogs: { recruiter_id: string; matched_jobs: any[] }[] = [];
+      const pageSize = 1000;
+      let offset = 0;
+
+      while (true) {
+        const url = `${this.baseUrl}/rest/v1/email_logs?select=recruiter_id,matched_jobs&limit=${pageSize}&offset=${offset}`;
+        const res = await fetch(url, {
+          headers: {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json',
+          },
+          signal: AbortSignal.timeout(60000),
+        });
+
+        if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
+
+        const page = await res.json();
+        allLogs.push(...page);
+        if (page.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      return { data: allLogs, error: null };
+    } catch (error) {
+      console.error('[Supabase] getAllEmailLogs error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   // ── Auth ────────────────────────────────────────────────────────────────────
 
   private readonly SESSION_KEY = 'recruitscout_auth_session';
@@ -1094,35 +1135,283 @@ export class SupabaseClient {
       return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
+  /**
+   * Get all unique country values from the Recruiters table.
+   * Used to supplement the smart country filter dropdown with dataset-specific values.
+   */
+  async getUniqueRecruiterCountries(): Promise<string[]> {
+    try {
+      const url = `${this.baseUrl}/rest/v1/Recruiters?select=Country&Country=not.is.null&limit=5000`;
+      const res = await fetch(url, {
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) return [];
+      const rows: { Country: string }[] = await res.json();
+      return Array.from(new Set(rows.map(r => r.Country?.trim()).filter(Boolean))).sort();
+    } catch {
+      return [];
+    }
+  }
 
   /**
-   * Get all recruiters from Supabase
+   * Get the Name (or Agency Name) of all recruiters matching filters — no pagination.
+   * Used to populate the "Select All" feature across all pages.
+   * Uses no select= restriction to avoid PostgREST column-quoting issues with spaced column names.
    */
-  async getRecruiters(searchQuery?: string): Promise<SupabaseResponse<any[]>> {
+  async getAllRecruiterNames(
+    searchQuery: string,
+    filters: { country?: string, location?: string, specialty?: string, industry?: string }
+  ): Promise<string[]> {
     try {
-      let url = `${this.baseUrl}/rest/v1/Recruiters`;
+      const escapeVal = (val: string) => val.replace(/"/g, '""');
+      const queryParams: string[] = [];
+
       if (searchQuery) {
-        url += `?or=(Name.ilike.*${encodeURIComponent(searchQuery)}*,Domain.ilike.*${encodeURIComponent(searchQuery)}*)`;
+        const sq = escapeVal(searchQuery);
+        queryParams.push(`or=(Name.ilike.*${encodeURIComponent(sq)}*,Domain.ilike.*${encodeURIComponent(sq)}*)`);
       }
-      
-      const response = await fetch(url, {
+      if (filters.country) {
+        queryParams.push(`Country=ilike.*${encodeURIComponent(escapeVal(filters.country))}*`);
+      }
+      if (filters.location) {
+        queryParams.push(`Location=ilike.*${encodeURIComponent(escapeVal(filters.location))}*`);
+      }
+      if (filters.specialty) {
+        queryParams.push(`"Primary Specialty"=ilike.*${encodeURIComponent(escapeVal(filters.specialty))}*`);
+      }
+      if (filters.industry) {
+        queryParams.push(`"Industry vertical"=ilike.*${encodeURIComponent(escapeVal(filters.industry))}*`);
+      }
+
+      const queryString = queryParams.length > 0 ? `&${queryParams.join('&')}` : '';
+      // No select= restriction — matches the pattern of the working paginated fetch
+      const url = `${this.baseUrl}/rest/v1/Recruiters?limit=10000&offset=0${queryString}`;
+      const res = await fetch(url, {
         method: 'GET',
         headers: {
           'apikey': this.apiKey,
           'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(60000),
+        signal: AbortSignal.timeout(30000),
       });
+      if (!res.ok) return [];
+      const rows: { Name?: string; 'Agency Name'?: string }[] = await res.json();
+      return rows.map(r => r['Name'] || r['Agency Name'] || '').filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
 
-      if (!response.ok) {
-        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+  /**
+   * Get recruiters with server-side pagination and filtering.
+   * This is extremely fast for UI display of large tables.
+   */
+  async getRecruitersPaginated(
+    page: number,
+    pageSize: number,
+    searchQuery: string,
+    filters: { country?: string, location?: string, specialty?: string, industry?: string }
+  ): Promise<{ data: any[] | null, totalCount: number, error: string | null }> {
+    try {
+      let queryParams = [];
+      
+      const escapeVal = (val: string) => val.replace(/"/g, '""');
+
+      if (searchQuery) {
+        const sq = escapeVal(searchQuery);
+        queryParams.push(`or=(Name.ilike.*${encodeURIComponent(sq)}*,Domain.ilike.*${encodeURIComponent(sq)}*)`);
+      }
+      if (filters.country) {
+        queryParams.push(`Country=ilike.*${encodeURIComponent(escapeVal(filters.country))}*`);
+      }
+      if (filters.location) {
+        queryParams.push(`Location=ilike.*${encodeURIComponent(escapeVal(filters.location))}*`);
+      }
+      if (filters.specialty) {
+        queryParams.push(`"Primary Specialty"=ilike.*${encodeURIComponent(escapeVal(filters.specialty))}*`);
+      }
+      if (filters.industry) {
+        queryParams.push(`"Industry vertical"=ilike.*${encodeURIComponent(escapeVal(filters.industry))}*`);
       }
 
-      const data = await response.json();
-      return { data, error: null };
+      const queryString = queryParams.length > 0 ? `&${queryParams.join('&')}` : '';
+      const offset = (page - 1) * pageSize;
+
+      // 1. Get the total count for pagination
+      const countRes = await fetch(`${this.baseUrl}/rest/v1/Recruiters?select=id&limit=0${queryString}`, {
+        method: 'HEAD',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Prefer': 'count=exact'
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      let totalCount = 0;
+      const cr = countRes.headers.get('content-range');
+      if (cr && cr.includes('/')) {
+        totalCount = parseInt(cr.split('/')[1] || '0', 10);
+      }
+
+      if (totalCount === 0) {
+        return { data: [], totalCount: 0, error: null };
+      }
+
+      // 2. Fetch only the requested page
+      const pageUrl = `${this.baseUrl}/rest/v1/Recruiters?limit=${pageSize}&offset=${offset}${queryString}`;
+      const pageRes = await fetch(pageUrl, {
+        method: 'GET',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!pageRes.ok) {
+        throw new Error(`HTTP ${pageRes.status}: ${await pageRes.text()}`);
+      }
+
+      const data = await pageRes.json();
+      return { data, totalCount, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] getRecruitersPaginated error:', error);
+      return { data: null, totalCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+
+  /**
+   * Get ALL recruiters from Supabase for UI display.
+   * Paginates through the entire table in parallel so it loads quickly.
+   * An optional search query filters by Name or Domain.
+   */
+  async getRecruiters(searchQuery?: string, forceRefresh = false): Promise<SupabaseResponse<any[]>> {
+    try {
+      // Use in-memory cache if it's a default fetch (no query) and not forced to refresh
+      const isDefaultFetch = !searchQuery;
+      if (isDefaultFetch && !forceRefresh && this.cachedRecruiters && (Date.now() - this.cachedRecruitersTime < this.RECRUITERS_CACHE_TTL)) {
+        return { data: this.cachedRecruiters, error: null };
+      }
+      // 1. Get the total count of rows first
+      let countUrl = `${this.baseUrl}/rest/v1/Recruiters?select=id&limit=0`;
+      if (searchQuery) {
+        countUrl += `&or=(Name.ilike.*${encodeURIComponent(searchQuery)}*,Domain.ilike.*${encodeURIComponent(searchQuery)}*)`;
+      }
+
+      const countRes = await fetch(countUrl, {
+        method: 'HEAD',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Prefer': 'count=exact'
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      let totalCount = 0;
+      const cr = countRes.headers.get('content-range');
+      if (cr && cr.includes('/')) {
+        totalCount = parseInt(cr.split('/')[1] || '0', 10);
+      }
+
+      if (totalCount === 0) {
+        return { data: [], error: null };
+      }
+
+      // 2. Fetch pages in chunks to avoid overwhelming the browser/server
+      const pageSize = 1000;
+      const pagesToFetch = Math.ceil(totalCount / pageSize);
+      const concurrencyLimit = 5;
+      const allRecruiters: any[] = [];
+      
+      for (let i = 0; i < pagesToFetch; i += concurrencyLimit) {
+        const chunk = Array.from({ length: Math.min(concurrencyLimit, pagesToFetch - i) }).map((_, j) => {
+          const pageIndex = i + j;
+          const offset = pageIndex * pageSize;
+          let url = `${this.baseUrl}/rest/v1/Recruiters?limit=${pageSize}&offset=${offset}`;
+          if (searchQuery) {
+            url += `&or=(Name.ilike.*${encodeURIComponent(searchQuery)}*,Domain.ilike.*${encodeURIComponent(searchQuery)}*)`;
+          }
+
+          return fetch(url, {
+            method: 'GET',
+            headers: {
+              'apikey': this.apiKey,
+              'Authorization': `Bearer ${this.apiKey}`,
+              'Accept': 'application/json',
+            },
+            signal: AbortSignal.timeout(60000),
+          }).then(async (response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
+            return response.json();
+          });
+        });
+
+        const pages = await Promise.all(chunk);
+        for (const page of pages) {
+          allRecruiters.push(...page);
+        }
+      }
+
+      if (isDefaultFetch) {
+        this.cachedRecruiters = allRecruiters;
+        this.cachedRecruitersTime = Date.now();
+      }
+
+      return { data: allRecruiters, error: null };
     } catch (error) {
       console.error('[Supabase] Get recruiters error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Get ALL recruiters from Supabase with full pagination.
+   * Use this only for bulk operations (e.g. contact sync) — NOT for UI display.
+   */
+  async getAllRecruiters(): Promise<SupabaseResponse<any[]>> {
+    try {
+      const allRecruiters: any[] = [];
+      const pageSize = 1000;
+      let offset = 0;
+
+      while (true) {
+        const url = `${this.baseUrl}/rest/v1/Recruiters?limit=${pageSize}&offset=${offset}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json',
+          },
+          signal: AbortSignal.timeout(60000),
+        });
+
+        if (!response.ok) {
+          return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+        }
+
+        const page: any[] = await response.json();
+        allRecruiters.push(...page);
+        if (page.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      return { data: allRecruiters, error: null };
+    } catch (error) {
+      console.error('[Supabase] getAllRecruiters error:', error);
       return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -1217,7 +1506,7 @@ export class SupabaseClient {
   /**
    * Update all recruiters' daily limit
    */
-  async updateAllRecruitersDailyLimit(limit: number): Promise<SupabaseResponse<any>> {
+  async updateAllRecruitersMinLeads(limit: number): Promise<SupabaseResponse<any>> {
     try {
       const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?or=(status.is.null,status.not.is.null)`, {
         method: 'PATCH',
@@ -1227,7 +1516,7 @@ export class SupabaseClient {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ 'Daily Sending Limit': limit }),
+        body: JSON.stringify({ 'Minimum leads per email': limit }),
         signal: AbortSignal.timeout(60000),
       });
 
@@ -1239,7 +1528,33 @@ export class SupabaseClient {
       const data = await response.json();
       return { data, error: null };
     } catch (error: any) {
-      return { data: null, error: error.message || 'Unknown error updating daily limit' };
+      return { data: null, error: error.message || 'Unknown error updating minimum leads' };
+    }
+  }
+
+  async updateAllRecruitersMaxLeads(limit: number): Promise<SupabaseResponse<any>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/Recruiters?or=(status.is.null,status.not.is.null)`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ 'Maximum leads per email': limit }),
+        signal: AbortSignal.timeout(60000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { data: null, error: `HTTP ${response.status}: ${errorText}` };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error: any) {
+      return { data: null, error: error.message || 'Unknown error updating maximum leads' };
     }
   }
 
@@ -1410,6 +1725,149 @@ export class SupabaseClient {
     } catch (error) {
       console.error('[Supabase] getSpanishCompanies error:', error);
       return new Set(); // Block everything on failure
+    }
+  }
+
+  /**
+   * Fetch all rows from the RecruiterContact table.
+   */
+  async getRecruiterContacts(forceRefresh = false): Promise<SupabaseResponse<any[]>> {
+    if (!forceRefresh && this.cachedRecruiterContacts && (Date.now() - this.cachedRecruiterContactsTime < this.RECRUITERS_CACHE_TTL)) {
+      return { data: this.cachedRecruiterContacts, error: null };
+    }
+
+    try {
+      // Fetch in pages of 1000 to cover large contact lists
+      const allContacts: any[] = [];
+      let offset = 0;
+      const pageSize = 1000;
+
+      while (true) {
+        const url = `${this.baseUrl}/rest/v1/RecruiterContact?limit=${pageSize}&offset=${offset}`;
+        const res = await fetch(url, {
+          headers: {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json',
+          },
+          signal: AbortSignal.timeout(60000),
+        });
+
+        if (!res.ok) {
+          return { data: this.cachedRecruiterContacts || null, error: `HTTP ${res.status}: ${await res.text()}` };
+        }
+
+        const page: any[] = await res.json();
+        allContacts.push(...page);
+        if (page.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      this.cachedRecruiterContacts = allContacts;
+      this.cachedRecruiterContactsTime = Date.now();
+      return { data: allContacts, error: null };
+    } catch (error) {
+      console.error('[Supabase] getRecruiterContacts error:', error);
+      return { data: this.cachedRecruiterContacts || null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Sync emails from RecruiterContact into the Recruiters table.
+   *
+   * Matching logic (case-insensitive):
+   *   1. RecruiterContact."Company Name" === Recruiters."Name"
+   *   2. OR RecruiterContact."website" domain matches Recruiters."Domain"
+   *
+   * Multiple contacts for the same recruiter are comma-joined.
+   * Returns counts of how many recruiters were updated vs skipped.
+   */
+  async syncRecruiterContactEmails(): Promise<SupabaseResponse<{ updated: number; skipped: number; errors: number }>> {
+    try {
+      // 1. Fetch all contacts and all recruiters in parallel
+      const [contactsRes, recruitersRes] = await Promise.all([
+        this.getRecruiterContacts(),
+        this.getAllRecruiters(),
+      ]);
+
+      if (contactsRes.error) return { data: null, error: `Contacts fetch failed: ${contactsRes.error}` };
+      if (recruitersRes.error) return { data: null, error: `Recruiters fetch failed: ${recruitersRes.error}` };
+
+      const contacts: any[] = contactsRes.data || [];
+      const recruiters: any[] = recruitersRes.data || [];
+
+      if (contacts.length === 0) return { data: { updated: 0, skipped: 0, errors: 0 }, error: null };
+
+      // 2. Build a map from recruiter id → collected email list
+      //    Key: recruiter id (number)
+      const recruiterEmailMap = new Map<number, Set<string>>();
+
+      // Helper: normalise a domain string (strip www., lowercase, trim)
+      const normDomain = (d: string | null | undefined): string =>
+        (d || '').toLowerCase().replace(/^www\./, '').trim();
+
+      for (const contact of contacts) {
+        const email: string = (contact['Email'] || '').trim();
+        if (!email) continue;
+
+        const contactCompany: string = (contact['Company Name'] || '').toLowerCase().trim();
+        const contactDomain: string = normDomain(contact['website']);
+
+        for (const recruiter of recruiters) {
+          const recName: string = (recruiter['Name'] || '').toLowerCase().trim();
+          const recDomain: string = normDomain(recruiter['Domain']);
+          const recId: number = recruiter['id'];
+
+          const matchByName = contactCompany && recName && contactCompany === recName;
+          const matchByDomain = contactDomain && recDomain && contactDomain === recDomain;
+
+          if (matchByName || matchByDomain) {
+            if (!recruiterEmailMap.has(recId)) recruiterEmailMap.set(recId, new Set());
+            recruiterEmailMap.get(recId)!.add(email);
+          }
+        }
+      }
+
+      if (recruiterEmailMap.size === 0) {
+        return { data: { updated: 0, skipped: recruiters.length, errors: 0 }, error: null };
+      }
+
+      // 3. Patch each matched recruiter
+      let updated = 0;
+      let errors = 0;
+
+      const updatePromises = Array.from(recruiterEmailMap.entries()).map(async ([recId, emailSet]) => {
+        const emailString = Array.from(emailSet).join(', ');
+        const res = await fetch(`${this.baseUrl}/rest/v1/Recruiters?id=eq.${recId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({ 'Associated contacts': emailString }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (res.ok) {
+          updated++;
+        } else {
+          errors++;
+          console.error(`[Supabase] syncRecruiterContactEmails: PATCH failed for id=${recId}`, await res.text());
+        }
+      });
+
+      // Process in parallel batches of 20 to avoid flooding the API
+      const batchSize = 20;
+      for (let i = 0; i < updatePromises.length; i += batchSize) {
+        await Promise.all(updatePromises.slice(i, i + batchSize));
+      }
+
+      const skipped = recruiters.length - recruiterEmailMap.size;
+      return { data: { updated, skipped, errors }, error: errors > 0 ? `${errors} updates failed` : null };
+    } catch (error) {
+      console.error('[Supabase] syncRecruiterContactEmails error:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }

@@ -94,9 +94,5 @@
       "resources": ["icons/*"],
       "matches": ["<all_urls>"]
     }
-  ],
-  "offscreen": {
-    "document": "src/offscreen/index.html",
-    "persistent": false
-  }
+  ]
 }

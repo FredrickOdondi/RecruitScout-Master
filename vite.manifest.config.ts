@@ -100,11 +100,12 @@ export default defineManifest({
     {
       resources: ['public/icons/*'],
       matches: ['<all_urls>']
+    },
+    {
+      // Preferences page — opened via email link by external recruiter contacts
+      resources: ['src/preferences/index.html'],
+      matches: ['<all_urls>']
     }
   ],
-  offscreen: {
-    document: 'src/offscreen/index.html',
-    persistent: false
-  },
   options_page: 'src/dashboard/index.html'
 });

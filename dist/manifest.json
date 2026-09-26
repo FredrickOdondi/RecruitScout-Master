@@ -47,7 +47,7 @@
   "content_scripts": [
     {
       "js": [
-        "index.ts-loader.js"
+        "assets/index.ts-loader-Bi9tPX9D.js"
       ],
       "matches": [
         "https://www.linkedin.com/*",
@@ -101,7 +101,8 @@
         "<all_urls>"
       ],
       "resources": [
-        "public/icons/*"
+        "public/icons/*",
+        "src/preferences/index.html"
       ],
       "use_dynamic_url": false
     },
@@ -135,17 +136,12 @@
         "https://www.ziprecruiter.com/*"
       ],
       "resources": [
-        "constants.js",
-        "utils.js",
-        "types.js",
-        "index.ts.js"
+        "assets/utils-2myCanQr.js",
+        "assets/types-DL2FCqoz.js",
+        "assets/index.ts-CUXf20l4.js"
       ],
       "use_dynamic_url": false
     }
   ],
-  "offscreen": {
-    "document": "src/offscreen/index.html",
-    "persistent": false
-  },
   "options_page": "src/dashboard/index.html"
 }
