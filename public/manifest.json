@@ -8,8 +8,16 @@
     "activeTab",
     "tabs",
     "scripting",
-    "offscreen"
+    "offscreen",
+    "identity"
   ],
+  "oauth2": {
+    "client_id": "YOUR_CLIENT_ID_HERE",
+    "scopes": [
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/drive.readonly"
+    ]
+  },
   "host_permissions": [
     "https://www.linkedin.com/*",
     "*://*.indeed.com/*",

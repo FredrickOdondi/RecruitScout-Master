@@ -60,6 +60,7 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
   const [spreadsheets, setSpreadsheets] = useState<{id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingSheets, setLoadingSheets] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
  const [tableMissing, setTableMissing] = useState(false);
  const [copiedSql, setCopiedSql] = useState(false);
@@ -105,8 +106,10 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
     try {
       const sheets = await listSharedSpreadsheets();
       setSpreadsheets(sheets);
+      setIsConnected(true);
     } catch (err: any) {
       console.error('Failed to load spreadsheets from Google:', err);
+      setIsConnected(false);
     } finally {
       setLoadingSheets(false);
     }
@@ -277,7 +280,15 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
  Google Spreadsheet <span className="text-red-500">*</span>
  </label>
- {loadingSheets ? (
+ {!isConnected ? (
+ <button
+ type="button"
+ onClick={fetchSpreadsheets}
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm transition-all"
+ >
+ Connect Google Account
+ </button>
+ ) : loadingSheets ? (
  <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-500 italic">
  Loading spreadsheets...
  </div>
@@ -296,9 +307,6 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  ))}
  </select>
  )}
- <p className="text-[10px] text-gray-500 mt-1.5">
- Share your target Google Sheet with <strong className="select-all cursor-pointer text-green-600">recruitscout-sync@recruitscout-sheets-1790600555.iam.gserviceaccount.com</strong> to see it here.
- </p>
  </div>
 
  <div>
