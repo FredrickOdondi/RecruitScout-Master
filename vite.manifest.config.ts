@@ -12,8 +12,16 @@ export default defineManifest({
     'tabs',
     'scripting',
     'offscreen',
-    'alarms'
+    'alarms',
+    'identity'
   ],
+  oauth2: {
+    client_id: '241480604524-pk45mp8ol398cmoaa67886ja4cdfb1ho.apps.googleusercontent.com',
+    scopes: [
+      'https://www.googleapis.com/auth/spreadsheets',
+      'https://www.googleapis.com/auth/drive.readonly'
+    ]
+  },
   host_permissions: [
     'https://www.linkedin.com/*',
     '*://*.indeed.com/*',
