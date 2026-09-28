@@ -101,15 +101,30 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
  }
  };
 
+  const [driveError, setDriveError] = useState<string | null>(null);
+  const [manualMode, setManualMode] = useState(false);
+
+  const extractSpreadsheetId = (input: string): string => {
+    const trimmed = input.trim();
+    const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : trimmed;
+  };
+
   const fetchSpreadsheets = async () => {
     setLoadingSheets(true);
+    setDriveError(null);
     try {
       const sheets = await listSharedSpreadsheets();
       setSpreadsheets(sheets);
       setIsConnected(true);
+      if (sheets.length === 0) {
+        setManualMode(true);
+      }
     } catch (err: any) {
       console.error('Failed to load spreadsheets from Google:', err);
-      setIsConnected(false);
+      const msg = err.message || 'Failed to fetch spreadsheets';
+      setDriveError(msg);
+      setManualMode(true);
     } finally {
       setLoadingSheets(false);
     }
@@ -122,7 +137,8 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
 
  const handleEnroll = async (e: React.FormEvent) => {
  e.preventDefault();
- if (!name.trim() || !spreadsheetId.trim()) return;
+ const cleanSheetId = extractSpreadsheetId(spreadsheetId);
+ if (!name.trim() || !cleanSheetId) return;
 
  setEnrolling(true);
  setSuccessMsg(null);
@@ -130,7 +146,7 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
  const clientData: SupabaseClientRecord = {
  name: name.trim(),
  apps_script_url: 'https://google.com',
- spreadsheet_id: spreadsheetId.trim(),
+ spreadsheet_id: cleanSheetId,
  sheet_name: sheetName.trim() ||'Sheet1'
  };
 
@@ -277,35 +293,67 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  </div>
 
  <div>
- <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
- Google Spreadsheet <span className="text-red-500">*</span>
- </label>
- {!isConnected ? (
- <button
- type="button"
- onClick={fetchSpreadsheets}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm transition-all"
- >
- Connect Google Account
- </button>
- ) : loadingSheets ? (
- <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-500 italic">
- Loading spreadsheets...
+ <div className="flex items-center justify-between mb-1.5">
+   <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest block">
+     Google Spreadsheet <span className="text-red-500">*</span>
+   </label>
+   <button
+     type="button"
+     onClick={() => setManualMode(!manualMode)}
+     className="text-[10px] text-primary-600 hover:underline font-medium"
+   >
+     {manualMode ? 'Switch to list from Drive' : 'Paste Sheet URL / ID manually'}
+   </button>
  </div>
+
+ {driveError && (
+   <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-800 leading-snug">
+     ⚠️ <strong>Google Drive Error:</strong> {driveError}.
+     <br />
+     <span className="text-gray-600">Make sure the <strong>Google Drive API</strong> is enabled in your Google Cloud Project, or paste the Sheet URL below directly.</span>
+   </div>
+ )}
+
+ {manualMode ? (
+   <div>
+     <input
+       type="text"
+       required
+       placeholder="Paste full Google Sheet URL or Spreadsheet ID..."
+       value={spreadsheetId}
+       onChange={(e) => setSpreadsheetId(e.target.value)}
+       className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+     />
+     <p className="text-[10px] text-gray-400 mt-1">
+       Paste either the full URL (e.g. <code>https://docs.google.com/spreadsheets/d/...</code>) or the ID.
+     </p>
+   </div>
+ ) : !isConnected ? (
+   <button
+     type="button"
+     onClick={fetchSpreadsheets}
+     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm transition-all"
+   >
+     Connect Google Account / Fetch Spreadsheets
+   </button>
+ ) : loadingSheets ? (
+   <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-500 italic">
+     Loading spreadsheets...
+   </div>
  ) : (
- <select
- required
- value={spreadsheetId}
- onChange={(e) => setSpreadsheetId(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
- >
- <option value="">Select a Spreadsheet...</option>
- {spreadsheets.map(sheet => (
- <option key={sheet.id} value={sheet.id}>
- {sheet.name}
- </option>
- ))}
- </select>
+   <select
+     required
+     value={spreadsheetId}
+     onChange={(e) => setSpreadsheetId(e.target.value)}
+     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+   >
+     <option value="">Select a Spreadsheet ({spreadsheets.length} found)...</option>
+     {spreadsheets.map(sheet => (
+       <option key={sheet.id} value={sheet.id}>
+         {sheet.name}
+       </option>
+     ))}
+   </select>
  )}
  </div>
 

@@ -15,7 +15,12 @@ export async function listSharedSpreadsheets() {
   const res = await fetch("https://www.googleapis.com/drive/v3/files?q=mimeType='application/vnd.google-apps.spreadsheet'&fields=files(id,name)", {
     headers: { 'Authorization': `Bearer ${token}` }
   });
-  if (!res.ok) throw new Error('Failed to fetch spreadsheets');
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const message = errData.error?.message || `Google Drive API responded with status ${res.status}`;
+    console.error("Google Drive API Error:", errData);
+    throw new Error(message);
+  }
   const data = await res.json();
   return data.files || [];
 }
