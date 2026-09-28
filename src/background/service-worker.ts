@@ -1559,6 +1559,9 @@ class ServiceWorker {
             // Small cooldown boundary to prevent bot blocking between queue iterations
             await new Promise(r => setTimeout(r, 2000));
           } else {
+            if (response?.error) {
+              console.warn('[RecruitScout] Remote queue fetch returned error:', response.error);
+            }
             // Queue is empty — check if it's a new day and reset completed tasks
             const wasReset = await this.checkAndResetDailyQueue();
             if (wasReset) {

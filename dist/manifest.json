@@ -47,7 +47,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/index.ts-loader-Bi9tPX9D.js"
+        "assets/index.ts-loader-C5T7fTqN.js"
       ],
       "matches": [
         "https://www.linkedin.com/*",
@@ -138,7 +138,7 @@
       "resources": [
         "assets/utils-2myCanQr.js",
         "assets/types-DL2FCqoz.js",
-        "assets/index.ts-CUXf20l4.js"
+        "assets/index.ts-C_zahUnA.js"
       ],
       "use_dynamic_url": false
     }

@@ -34,15 +34,21 @@ class ContentScript {
     this.setupMessageListeners();
 
     // Notify background that content script is ready
-    chrome.runtime.sendMessage({
-      type: MessageType.CONTENT_SCRIPT_READY,
-      payload: {
-        url: window.location.href,
-        pageInfo: this.pageMonitor.detectPage(),
-      },
-    }).catch(() => {
-      // Background might not be ready yet
-    });
+    if (chrome.runtime?.id) {
+      try {
+        chrome.runtime.sendMessage({
+          type: MessageType.CONTENT_SCRIPT_READY,
+          payload: {
+            url: window.location.href,
+            pageInfo: this.pageMonitor.detectPage(),
+          },
+        }).catch(() => {
+          // Background might not be ready yet
+        });
+      } catch {
+        // Context might be invalidated
+      }
+    }
   }
 
   private setupMessageListeners(): void {
@@ -62,15 +68,28 @@ class ContentScript {
 
       // We only accept messages from our dashboard script
       if (event.data && event.data.source === 'recruitscout-dashboard') {
-        chrome.runtime.sendMessage(event.data, (response) => {
-          // Relay success state back to the web app
-          window.postMessage({
-            source: 'recruitscout-extension',
-            type: event.data.type + '_SUCCESS',
-            response,
-            _id: event.data._id
-          }, '*'); // Since we verified origin above, responding to '*' in the same window is safe
-        });
+        if (!chrome.runtime?.id) {
+          console.warn('[RecruitScout] Extension context invalidated. Please refresh the page.');
+          return;
+        }
+
+        try {
+          chrome.runtime.sendMessage(event.data, (response) => {
+            if (chrome.runtime.lastError) {
+              console.warn('[RecruitScout] Extension relay error:', chrome.runtime.lastError.message);
+              return;
+            }
+            // Relay success state back to the web app
+            window.postMessage({
+              source: 'recruitscout-extension',
+              type: event.data.type + '_SUCCESS',
+              response,
+              _id: event.data._id
+            }, '*'); // Since we verified origin above, responding to '*' in the same window is safe
+          });
+        } catch (err: any) {
+          console.warn('[RecruitScout] Could not relay message to extension background:', err?.message || err);
+        }
       }
     });
 
