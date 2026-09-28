@@ -712,9 +712,12 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
   });
 
   // Always attempt Google Sheets auto-sync regardless of Supabase outcome
-  triggerAutomaticGoogleSheetsSync(finalJobs).catch(err => {
-    console.error('[RecruitScout] Auto-Sheets Sync failed:', err);
-  });
+  // Only sync newly enriched jobs to prevent appending duplicates to the Google Sheet!
+  if (enriched.length > 0) {
+    triggerAutomaticGoogleSheetsSync(enriched).catch(err => {
+      console.error('[RecruitScout] Auto-Sheets Sync failed:', err);
+    });
+  }
 
   return { newCount, skippedCount };
 }
