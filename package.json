@@ -23,6 +23,7 @@
     "@pinecone-database/pinecone": "^7.2.0",
     "@supabase/supabase-js": "^2.107.0",
     "clsx": "^2.1.0",
+    "jose": "^6.2.12",
     "lucide-react": "^1.39.0",
     "openai": "^6.41.0",
     "react": "^18.3.1",

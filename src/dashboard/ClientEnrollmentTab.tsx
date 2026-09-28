@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from'react';
-import { SupabaseClientRecord } from'../shared/supabase';
+import { SupabaseClientRecord } from '../shared/supabase';
+import { listSharedSpreadsheets } from '../lib/export/google-sheets-api';
 
 // Icons
 const TrashIcon = () => (
@@ -55,9 +56,11 @@ interface ClientEnrollmentTabProps {
 }
 
 export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTabProps) {
- const [clients, setClients] = useState<SupabaseClientRecord[]>([]);
- const [loading, setLoading] = useState(false);
- const [error, setError] = useState<string | null>(null);
+  const [clients, setClients] = useState<SupabaseClientRecord[]>([]);
+  const [spreadsheets, setSpreadsheets] = useState<{id: string, name: string}[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingSheets, setLoadingSheets] = useState(false);
+  const [error, setError] = useState<string | null>(null);
  const [tableMissing, setTableMissing] = useState(false);
  const [copiedSql, setCopiedSql] = useState(false);
 
@@ -97,27 +100,34 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
  }
  };
 
- useEffect(() => {
- fetchClients();
- }, []);
+  const fetchSpreadsheets = async () => {
+    setLoadingSheets(true);
+    try {
+      const sheets = await listSharedSpreadsheets();
+      setSpreadsheets(sheets);
+    } catch (err: any) {
+      console.error('Failed to load spreadsheets from Google:', err);
+    } finally {
+      setLoadingSheets(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+    fetchSpreadsheets();
+  }, []);
 
  const handleEnroll = async (e: React.FormEvent) => {
  e.preventDefault();
- if (!name.trim() || !appsScriptUrl.trim()) return;
-
- // Basic URL pattern validation
- if (!appsScriptUrl.startsWith('http://') && !appsScriptUrl.startsWith('https://')) {
- alert('⚠️ Please enter a valid Apps Script Web App URL starting with http:// or https://');
- return;
- }
+ if (!name.trim() || !spreadsheetId.trim()) return;
 
  setEnrolling(true);
  setSuccessMsg(null);
  try {
  const clientData: SupabaseClientRecord = {
  name: name.trim(),
- apps_script_url: appsScriptUrl.trim(),
- spreadsheet_id: spreadsheetId.trim() || null,
+ apps_script_url: 'https://google.com',
+ spreadsheet_id: spreadsheetId.trim(),
  sheet_name: sheetName.trim() ||'Sheet1'
  };
 
@@ -131,7 +141,6 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
  } else {
  setSuccessMsg(`✅ Enrolled"${name.trim()}" successfully!`);
  setName('');
- setAppsScriptUrl('');
  setSpreadsheetId('');
  setSheetName('Sheet1');
  fetchClients(true);
@@ -266,29 +275,30 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
 
  <div>
  <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
- Apps Script Web App URL <span className="text-red-500">*</span>
+ Google Spreadsheet <span className="text-red-500">*</span>
  </label>
- <input
- type="url"
- placeholder="https://script.google.com/macros/s/.../exec"
- required
- value={appsScriptUrl}
- onChange={(e) => setAppsScriptUrl(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
- />
+ {loadingSheets ? (
+ <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-500 italic">
+ Loading spreadsheets...
  </div>
-
- <div>
- <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
- Spreadsheet ID
- </label>
- <input
- type="text"
- placeholder="e.g. 1BxiMVs0XRA5nFMd..."
+ ) : (
+ <select
+ required
  value={spreadsheetId}
  onChange={(e) => setSpreadsheetId(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
- />
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+ >
+ <option value="">Select a Spreadsheet...</option>
+ {spreadsheets.map(sheet => (
+ <option key={sheet.id} value={sheet.id}>
+ {sheet.name}
+ </option>
+ ))}
+ </select>
+ )}
+ <p className="text-[10px] text-gray-500 mt-1.5">
+ Share your target Google Sheet with <strong className="select-all cursor-pointer text-green-600">recruitscout-sync@recruitscout-sheets-1790600555.iam.gserviceaccount.com</strong> to see it here.
+ </p>
  </div>
 
  <div>
@@ -371,9 +381,6 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <tr key={client.id} className="hover:bg-gray-50">
  <td className="px-4 py-3">
  <div className="font-semibold text-gray-900">{client.name}</div>
- <div className="text-[9px] text-gray-600 truncate max-w-[200px]" title={client.apps_script_url}>
- URL: {client.apps_script_url}
- </div>
  </td>
  <td className="px-4 py-3 text-gray-600">
  <div><span className="font-medium text-gray-900">Sheet:</span> {client.sheet_name ||'Sheet1'}</div>

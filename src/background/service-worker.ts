@@ -771,11 +771,7 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
       continue;
     }
 
-    if (!client.apps_script_url) {
-      console.warn(`[RecruitScout] Enrolled client "${clientName}" does not have an Apps Script Web App URL. Skipping auto sheets sync.`);
-      continue;
-    }
-
+    // No need for apps_script_url anymore, we just need the spreadsheet_id which is checked below
     let clientJobs = clientJobsMap[clientName].filter((job: any) => job.description && job.description.trim() !== '');
     if (clientJobs.length === 0) {
       console.log(`[RecruitScout] No jobs with non-empty descriptions for client "${clientName}". Skipping auto sync.`);
@@ -891,17 +887,14 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
     console.log(`[RecruitScout] 🚀 Syncing ${clientJobs.length} job(s) to "${clientName}" (sheet: "${sheetName}")...`);
 
     try {
-      await fetch(client.apps_script_url, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          spreadsheetId: client.spreadsheet_id || '',
-          sheetName,
-          data: rows
-        })
-      });
-      console.log(`[RecruitScout] ✅ Synced ${clientJobs.length} job(s) to "${clientName}" sheet "${sheetName}".`);
+      if (!client.spreadsheet_id) {
+        console.warn(`[RecruitScout] ❌ Client "${clientName}" has no spreadsheet_id. Cannot sync using direct API.`);
+        continue;
+      }
+      
+      const { appendToGoogleSheet } = await import('../lib/export/google-sheets-api');
+      await appendToGoogleSheet(client.spreadsheet_id, sheetName, rows);
+      console.log(`[RecruitScout] ✅ Synced ${clientJobs.length} job(s) to "${clientName}" sheet "${sheetName}" using Google API.`);
     } catch (err) {
       console.error(`[RecruitScout] ❌ Sync failed for "${clientName}":`, err);
     }
