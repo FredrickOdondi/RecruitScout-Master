@@ -87,32 +87,39 @@ export default function App() {
  });
  }
 
- const handleStart = () => {
- // If we are in Swarm Connect Remote Mode, force queue polling instantly!
- if (settings.pollingEnabled) {
- sendMessage<any>({ type:'FORCE_POLL_QUEUE' as any }).then((res) => {
- if (res && !res.foundTask) {
- alert('No pending tasks found in the remote queue. The agent will keep listening in the background.');
- }
- });
- return; 
- }
+  const handleStart = async () => {
+    // 1. If remote mode is active, poll remote queue
+    if (settings.pollingEnabled) {
+      const res = await sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any });
+      if (res && !res.foundTask) {
+        alert('No pending tasks found in the remote queue. The agent will keep listening in the background.');
+      }
+      return;
+    }
 
- if (chrome.storage && chrome.storage.local) {
- chrome.storage.local.get('recruitscout_pending_bulk', (res) => {
- const titles = res.recruitscout_pending_bulk || [];
- if (titles.length === 0) {
- alert('No jobs in local queue. Please push titles from the Command Center or enable Remote Swarm Mode!');
- return;
- }
- sendMessage({ 
- type: MessageType.START_BULK_EXTRACTION, 
- payload: { titles, options: {} } 
- });
- setState({ ...state, status:'running' });
- });
- }
- };
+    // 2. Check local queue
+    let localTitles: string[] = [];
+    if (chrome.storage && chrome.storage.local) {
+      const res = await chrome.storage.local.get('recruitscout_pending_bulk');
+      localTitles = res.recruitscout_pending_bulk || [];
+    }
+
+    if (localTitles.length > 0) {
+      sendMessage({
+        type: MessageType.START_BULK_EXTRACTION,
+        payload: { titles: localTitles, options: {} }
+      });
+      setState({ ...state, status: 'running' });
+      return;
+    }
+
+    // 3. Fallback: local queue is empty, so automatically switch to Remote Swarm Mode and poll Supabase!
+    await updateSetting('pollingEnabled', true);
+    const res = await sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any });
+    if (res && !res.foundTask) {
+      alert('No pending tasks found in the remote queue. The agent will keep listening in the background.');
+    }
+  };
 
  const handleStop = () => {
  sendMessage({ type: MessageType.STOP_EXTRACTION });
