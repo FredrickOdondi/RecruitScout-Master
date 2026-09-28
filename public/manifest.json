@@ -12,7 +12,7 @@
     "identity"
   ],
   "oauth2": {
-    "client_id": "YOUR_CLIENT_ID_HERE",
+    "client_id": "241480604524-pk45mp8ol398cmoaa67886ja4cdfb1ho.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive.readonly"
