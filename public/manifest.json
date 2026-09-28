@@ -68,9 +68,7 @@
         "https://jobs.careers.microsoft.com/*",
         "https://careers.google.com/*",
         "https://careers.apple.com/*",
-        "https://www.amazon.jobs/*",
-        "http://72.60.215.34/*",
-        "http://72.60.215.34:8000/*"
+        "https://www.amazon.jobs/*"
       ],
       "js": ["src/content/index.js"],
       "run_at": "document_end"
