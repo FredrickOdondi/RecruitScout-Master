@@ -555,8 +555,8 @@ export class SupabaseClient {
    */
   async fetchNextTaskAndLock(workerId: string): Promise<SupabaseResponse<BulkQueueRecord>> {
     try {
-      // Find one pending or failed task (anyone can pick up failed tasks to retry)
-      const url = `${this.baseUrl}/rest/v1/BulkQueue?select=*&status=in.(pending,failed)&order=created_at.asc&limit=1`;
+      // Find one pending task that is either unassigned or assigned to this specific worker
+      const url = `${this.baseUrl}/rest/v1/BulkQueue?select=*&status=eq.pending&or=(assigned_to.is.null,assigned_to.eq.${encodeURIComponent(workerId)})&order=created_at.asc&limit=1`;
 
       const res = await fetch(url, {
         method: 'GET',
@@ -573,9 +573,9 @@ export class SupabaseClient {
 
       const task = data[0];
 
-      // Lock it atomically with patch where status was either pending or failed.
+      // Lock it atomically with patch where status was pending
       // We claim the assignment simply by setting assigned_to.
-      const lockRes = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?id=eq.${task.id}&status=in.(pending,failed)`, {
+      const lockRes = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?id=eq.${task.id}&status=eq.pending`, {
         method: 'PATCH',
         headers: {
           'apikey': this.apiKey,
