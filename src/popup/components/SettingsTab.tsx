@@ -182,7 +182,8 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
 
  {/* Footer */}
  <div className="text-center text-xs text-gray-500">
- <div>RecruitScout v1.0.0</div>
+ <div>© 2026 RecruitScout</div>
+ <div className="mt-1">RecruitScout v1.0.0</div>
  <div className="mt-1">
  <a
  href="https://github.com/recruitscout/recruitscout"
