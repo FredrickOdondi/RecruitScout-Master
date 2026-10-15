@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \"./.claude/skills/impeccable/scripts/hook.mjs\" ] || node \"./.claude/skills/impeccable/scripts/hook.mjs\"",
+            "command": "[ ! -f \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\" ] || node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\"",
             "timeout": 5,
             "statusMessage": "Checking UI changes"
           }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \"./.claude/skills/impeccable/scripts/hook.mjs\" ] || node \"./.claude/skills/impeccable/scripts/hook.mjs\"",
+            "command": "[ ! -f \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\" ] || node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\"",
             "timeout": 30,
             "statusMessage": "Design deep pass"
           }
