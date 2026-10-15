@@ -20,7 +20,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const VISUAL_SOURCE_DIRS = ['src', 'app', 'pages', 'components', 'site', 'styles', 'public'];
 
 const HOOK_MANIFESTS_BY_PROVIDER = Object.freeze({
-  'claude-code': ['.claude/settings.local.json', '.claude/settings.json'],
+  'perplexity': ['.claude/settings.local.json', '.claude/settings.json'],
   codex: ['.codex/hooks.json'],
   agents: ['.codex/hooks.json'],
   cursor: ['.cursor/hooks.json'],
