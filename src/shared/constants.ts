@@ -2,7 +2,7 @@ import { ExtensionSettings, ExportConfig, DEFAULT_EXPORT_FIELDS } from './types'
 
 // Extension metadata
 export const EXTENSION_NAME = 'RecruitScout';
-export const EXTENSION_VERSION = '1.0.0';
+export const EXTENSION_VERSION = '1.0.1';
 
 // Default settings
 export const DEFAULT_SETTINGS: ExtensionSettings = {

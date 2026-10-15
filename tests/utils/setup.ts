@@ -11,7 +11,7 @@ export function setupTestEnvironment() {
         removeListener: jest.fn(),
       },
       getURL: jest.fn(path => path),
-      getManifest: jest.fn(() => ({ name: 'RecruitScout', version: '1.0.0' })),
+      getManifest: jest.fn(() => ({ name: 'RecruitScout', version: '1.0.1' })),
     },
     storage: {
       local: {
