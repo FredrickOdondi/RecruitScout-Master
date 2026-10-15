@@ -1,4 +1,8 @@
 {
+  "llm": {
+    "provider": "perplexity",
+    "env": ["PERPLEXITY_API_KEY"]
+  },
   "mcpServers": {
     "plunk": {
       "command": "npx",
