@@ -49,16 +49,43 @@ const SUGGESTIONS: { area: string; prompts: string[] }[] = [
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 /** Slash commands: quick prompts for common jobs (typed as "/" in the composer). */
+/**
+ * Slash commands. A command whose prompt ends with ": " needs the user's input
+ * (e.g. "/queue Chef, Nurse in Milano"); the others run as soon as they're picked.
+ * Every one is a full request the Assistant carries out with its tools.
+ */
 const COMMANDS: { cmd: string; hint: string; prompt: string }[] = [
-  { cmd: 'diagnose', hint: 'Check why the swarm is or isn\'t scraping', prompt: 'Diagnose the swarm: queue, agents, Indeed accounts and this browser\'s engine.' },
-  { cmd: 'queue', hint: 'Queue scrape tasks', prompt: 'Queue these job titles on Indeed: ' },
+  { cmd: 'diagnose', hint: 'Why the swarm is or isn\'t scraping', prompt: 'Diagnose the swarm: queue, agents, Indeed accounts and this browser\'s engine. Tell me what is blocking scraping and fix what you can.' },
   { cmd: 'status', hint: 'Platform overview in numbers', prompt: 'Give me the platform overview with the key numbers.' },
+  { cmd: 'queue', hint: 'Queue scrape tasks: titles, location', prompt: 'Queue these job titles on Indeed: ' },
+  { cmd: 'tasks', hint: 'Queue tasks by status', prompt: 'Show the queue broken down by status, and list the failed and running tasks.' },
+  { cmd: 'retry', hint: 'Send failed tasks back to pending', prompt: 'Set every failed queue task back to pending so agents run them again.' },
+  { cmd: 'start', hint: 'Start the engine in this browser', prompt: 'Start the engine on this browser so it claims pending queue tasks.' },
+  { cmd: 'stop', hint: 'Stop the engine in this browser', prompt: 'Stop the engine on this browser.' },
+  { cmd: 'agents', hint: 'Which agents are online', prompt: 'Which scraping agents are online, and when did each last check in?' },
+  { cmd: 'jobs', hint: 'Search jobs: title, company or place', prompt: 'Find jobs matching: ' },
+  { cmd: 'recruiters', hint: 'Search recruiters: name, place or status', prompt: 'Find recruiters matching: ' },
+  { cmd: 'blacklist', hint: 'Blacklisted recruiters', prompt: 'List the blacklisted recruiters with their country and specialty.' },
   { cmd: 'leads', hint: 'Match recruiters and draft emails', prompt: 'Match recruiters to new jobs and draft emails for the top 3.' },
+  { cmd: 'emails', hint: 'Lead emails sent recently', prompt: 'Show the lead emails sent in the last 7 days: recruiter, address and number of jobs.' },
   { cmd: 'clients', hint: 'Clients and their sheets', prompt: 'List clients and which ones have no sheet connected.' },
+  { cmd: 'sync', hint: 'Sync jobs to client sheets', prompt: 'Sync the latest jobs to every client\'s Google Sheet.' },
   { cmd: 'indeed', hint: 'Indeed account health', prompt: 'Which Indeed accounts are in use, blocked or expired?' },
   { cmd: 'blue', hint: 'Blue.cc boards', prompt: 'Summarise my Blue.cc workspaces and what changed recently.' },
   { cmd: 'export', hint: 'Download jobs as a file', prompt: 'Export the latest 1000 jobs as CSV.' },
+  { cmd: 'db', hint: 'Ask anything of the database', prompt: 'From the database: ' },
 ];
+
+const needsInput = (c: { prompt: string }) => c.prompt.endsWith(': ');
+
+/** "/queue Chef, Nurse in Milano" → the command's full request plus what was typed. */
+function expandCommand(text: string): string {
+  const m = text.match(/^\/(\w+)\s+([\s\S]+)$/);
+  if (!m) return text;
+  const c = COMMANDS.find((x) => x.cmd === m[1].toLowerCase());
+  if (!c) return text;
+  return needsInput(c) ? c.prompt + m[2].trim() : `${c.prompt} ${m[2].trim()}`;
+}
 
 /** Short detail for a step chip, from the tool's arguments. */
 function argsDetail(args: any): string | undefined {
@@ -321,7 +348,7 @@ export default function AssistantTab({ sendMessage, focusNonce = 0, variant = 'p
   };
 
   const submit = async (text?: string) => {
-    const prompt = (text ?? input).trim();
+    const prompt = expandCommand((text ?? input).trim());
     if (!prompt || busy || !userId) return;
 
     let activeThreadId = threadId;
@@ -389,9 +416,14 @@ export default function AssistantTab({ sendMessage, focusNonce = 0, variant = 'p
   const slash = input.startsWith('/') && !input.includes(' ') ? input.slice(1).toLowerCase() : null;
   const commandMatches = slash === null ? [] : COMMANDS.filter((c) => c.cmd.startsWith(slash));
   const pickCommand = (c: (typeof COMMANDS)[number]) => {
-    setInput(c.prompt);
     setCmdIndex(0);
-    inputRef.current?.focus();
+    if (needsInput(c)) {
+      setInput(c.prompt);
+      inputRef.current?.focus();
+      return;
+    }
+    setInput('');
+    void submit(c.prompt);
   };
 
   return (
@@ -555,18 +587,19 @@ export default function AssistantTab({ sendMessage, focusNonce = 0, variant = 'p
         {/* Composer */}
         <div className={`shrink-0 px-4 ${isPanel ? 'pb-3' : 'md:px-6 pb-5'} pt-2`}>
           {commandMatches.length > 0 && (
-            <div className="ai-in mx-auto max-w-[760px] mb-2 ai-glass rounded-xl p-1.5 shadow-dialog" role="listbox" aria-label="Commands">
+            <div className="ai-in mx-auto max-w-[760px] mb-2 ai-glass rounded-xl p-1.5 shadow-dialog max-h-[min(360px,45vh)] overflow-y-auto" role="listbox" aria-label="Commands">
               {commandMatches.map((c, i) => (
                 <button
                   key={c.cmd} type="button" role="option" aria-selected={i === cmdIndex}
+                  ref={i === cmdIndex ? (el) => el?.scrollIntoView({ block: 'nearest' }) : undefined}
                   onMouseEnter={() => setCmdIndex(i)} onClick={() => pickCommand(c)}
                   className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-left transition-colors ${i === cmdIndex ? 'bg-hover' : ''}`}
                 >
-                  <span className="mono-id text-accent-text w-16 shrink-0">/{c.cmd}</span>
+                  <span className="mono-id text-accent-text w-20 shrink-0">/{c.cmd}</span>
                   <span className="text-sm text-fg-muted truncate">{c.hint}</span>
                 </button>
               ))}
-              <p className="px-2.5 pt-1 pb-0.5 text-xs text-fg-subtle">Type to filter · Enter to use</p>
+              <p className="px-2.5 pt-1 pb-0.5 text-xs text-fg-subtle">Type to filter · Enter to run · commands with “:” take your details</p>
             </div>
           )}
           <form

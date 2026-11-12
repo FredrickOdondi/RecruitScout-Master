@@ -22,6 +22,17 @@ const strList = (description?: string): JsonSchema => ({ type: 'array', items: {
 const SITES = ['indeed', 'spanish-indeed', 'trovolavoro'];
 const QUEUE_STATUSES = ['pending', 'running', 'completed', 'failed'];
 
+const FILTERS: JsonSchema = {
+  type: 'array',
+  description: 'Conditions, all must match. like/ilike match a substring; in takes values; is/not_is take null, true or false.',
+  items: obj({
+    column: str(),
+    op: str(undefined, { enum: ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'in', 'is', 'not_is'] }),
+    value: str('Value as text'),
+    values: strList('For op "in"'),
+  }, ['column', 'op']),
+};
+
 export const ASSISTANT_TOOLS: ToolDefinition[] = [
   // ── Overview and diagnosis ──────────────────────────────────────────────
   {
@@ -40,6 +51,56 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
     parameters: obj({
       view: str('Tab to open', { enum: ['overview', 'search', 'indeed-sessions', 'jobs', 'export', 'graph', 'supabase', 'clients', 'leads', 'leads-flow', 'blue', 'settings'] }),
     }, ['view']),
+  },
+
+  // ── Database (any table, schema-checked) ────────────────────────────────
+  {
+    name: 'describe_database', label: 'Read the database schema', risk: 'read',
+    description: 'Every RecruitScout table with its columns and types, and which tables can be changed. Call this before query_database when you are unsure of a table or column name.',
+    parameters: obj({ table: str('Only this table') }),
+  },
+  {
+    name: 'query_database', label: 'Query the database', risk: 'read',
+    description: 'Read rows from any RecruitScout table with filters, sorting and paging, or just count them. Use it for any question no specific tool answers, e.g. blacklisted recruiters (Recruiters, status eq Blacklisted), jobs from one company, emails sent last week. Column names are exact and case-sensitive, e.g. "Primary Specialty".',
+    parameters: obj({
+      table: str('Table name, e.g. Recruiters, jobs, BulkQueue, clients, email_logs'),
+      columns: strList('Columns to return; omit for all. Prefer a few columns on wide tables.'),
+      filters: FILTERS,
+      order_by: str('Column to sort by'),
+      descending: bool(),
+      limit: num('Rows to return, default 50, max 200', { minimum: 1, maximum: 200 }),
+      offset: num('Rows to skip for paging', { minimum: 0 }),
+      count_only: bool('Return only the number of matching rows'),
+    }, ['table']),
+  },
+  {
+    name: 'count_by', label: 'Break down by a column', risk: 'read',
+    description: 'Count rows per value of one column (e.g. recruiters by status, jobs by source or client, queue by status), optionally filtered.',
+    parameters: obj({
+      table: str(), column: str(), filters: FILTERS,
+      top: num('Groups to return, default 50', { minimum: 1, maximum: 200 }),
+    }, ['table', 'column']),
+  },
+  {
+    name: 'update_records', label: 'Update records', risk: 'bulk',
+    description: 'Change fields on every row of a table that matches the filters (at least one filter). The user approves after seeing how many rows match. Use specific tools first when one fits.',
+    parameters: obj({
+      table: str(), filters: FILTERS,
+      updates: { type: 'object', additionalProperties: true, description: 'Column → new value' },
+    }, ['table', 'filters', 'updates']),
+  },
+  {
+    name: 'insert_records', label: 'Add records', risk: 'bulk',
+    description: 'Insert new rows into a table. The user approves first.',
+    parameters: obj({
+      table: str(),
+      rows: { type: 'array', items: { type: 'object', additionalProperties: true }, description: 'Rows as column → value' },
+    }, ['table', 'rows']),
+  },
+  {
+    name: 'delete_records', label: 'Delete records', risk: 'destructive',
+    description: 'Delete every row of a table that matches the filters (at least one filter). The user approves after seeing how many rows match. This can\'t be undone.',
+    parameters: obj({ table: str(), filters: FILTERS }, ['table', 'filters']),
   },
 
   // ── Queue ────────────────────────────────────────────────────────────────
@@ -275,9 +336,10 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   // ── Recruiters and leads ─────────────────────────────────────────────────
   {
     name: 'get_recruiters', label: 'Search recruiters', risk: 'read',
-    description: 'Search the recruiter directory, paged.',
+    description: 'Search the recruiter directory, paged. For any other filter use query_database on Recruiters.',
     parameters: obj({
       search: str('Name or domain'), country: str(), location: str(), specialty: str(), industry: str(),
+      status: str(undefined, { enum: ['Active', 'Suspended', 'Blacklisted', 'Pending'] }),
       page: num(undefined, { minimum: 1 }), page_size: num('Default 20', { minimum: 1, maximum: 100 }),
     }),
   },

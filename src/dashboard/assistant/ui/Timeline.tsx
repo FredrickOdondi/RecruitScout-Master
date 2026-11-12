@@ -233,6 +233,9 @@ export default function Timeline({ steps, live, elapsedMs, onDecide }: { steps: 
   const waiting = steps.some((s) => s.state === 'waiting');
   const showSteps = live || waiting || expanded;
   const failed = steps.filter((s) => s.state === 'error').length;
+  // Saved chats have no turn timing; fall back to the steps' own durations
+  const stepTotal = steps.reduce((sum, s) => sum + (s.durationMs || 0), 0);
+  const took = elapsedMs ?? (stepTotal > 0 ? stepTotal : undefined);
 
   return (
     <div>
@@ -240,7 +243,7 @@ export default function Timeline({ steps, live, elapsedMs, onDecide }: { steps: 
         <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="flex items-center gap-2 text-sm text-fg-subtle hover:text-fg-muted transition-colors">
           <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
           <span>
-            Worked for {fmt(elapsedMs)} · {steps.length} {steps.length === 1 ? 'step' : 'steps'}
+            {took !== undefined ? `Worked for ${fmt(took)}` : 'Worked'} · {steps.length} {steps.length === 1 ? 'step' : 'steps'}
             {failed ? <span className="text-danger-fg"> · {failed} failed</span> : null}
           </span>
           <ChevronDown size={14} className="ai-summary-chevron" />

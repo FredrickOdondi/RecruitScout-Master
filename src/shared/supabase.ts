@@ -1308,7 +1308,7 @@ export class SupabaseClient {
     page: number,
     pageSize: number,
     searchQuery: string,
-    filters: { country?: string, location?: string, specialty?: string, industry?: string }
+    filters: { country?: string, location?: string, specialty?: string, industry?: string, status?: string }
   ): Promise<{ data: any[] | null, totalCount: number, error: string | null }> {
     try {
       let queryParams = [];
@@ -1330,6 +1330,9 @@ export class SupabaseClient {
       }
       if (filters.industry) {
         queryParams.push(`"Industry vertical"=ilike.*${encodeURIComponent(escapeVal(filters.industry))}*`);
+      }
+      if (filters.status) {
+        queryParams.push(`status=eq.${encodeURIComponent(filters.status)}`);
       }
 
       const queryString = queryParams.length > 0 ? `&${queryParams.join('&')}` : '';
