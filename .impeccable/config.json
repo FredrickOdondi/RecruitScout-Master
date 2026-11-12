@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/dashboard/assistant/assistant.css"
+        ],
+        "createdAt": "2026-11-12T22:34:14.629Z",
+        "reason": "Grey-to-foreground shimmer on the live working verb (.ai-shimmer), a loading-state pattern from beautifului.dev the user asked to use on the AI page; not decorative heading/metric text"
+      }
+    ]
+  }
+}
