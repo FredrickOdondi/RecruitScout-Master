@@ -40,7 +40,7 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  <div className="space-y-4">
  {/* General settings */}
  <div className="bg-white border border-gray-200 rounded-md shadow-sm p-5 space-y-4">
- <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2 mb-3">General settings</h2>
+ <h2 className="text-xs font-semibold text-gray-600 border-b border-gray-200 pb-2 mb-3">General settings</h2>
 
  <label className="flex items-center justify-between cursor-pointer">
  <div>
@@ -105,14 +105,14 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  placeholder="e.g. Node-A"
  value={settings.friendName ||''}
  onChange={(e) => updateSetting('friendName', e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 mt-1 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:border-gray-400 mt-1 shadow-sm"
  />
  </div>
  </div>
 
  {/* Extraction settings */}
  <div className="bg-white border border-gray-200 rounded-md shadow-sm p-5 space-y-4">
- <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2 mb-3">Extraction settings</h2>
+ <h2 className="text-xs font-semibold text-gray-600 border-b border-gray-200 pb-2 mb-3">Extraction settings</h2>
 
  <div className="space-y-1.5">
  <label className="text-sm font-medium text-gray-900">Max jobs per page</label>
@@ -122,7 +122,7 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  max="500"
  value={settings.maxJobsPerPage || 100}
  onChange={(e) => updateSetting('maxJobsPerPage', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:border-gray-400 shadow-sm"
  />
  </div>
 
@@ -134,7 +134,7 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  max="100"
  value={settings.paginationLimit || 10}
  onChange={(e) => updateSetting('paginationLimit', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:border-gray-400 shadow-sm"
  />
  </div>
 
@@ -147,7 +147,7 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  step="100"
  value={settings.crawlDelay || 1000}
  onChange={(e) => updateSetting('crawlDelay', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:border-gray-400 shadow-sm"
  />
  </div>
 
@@ -167,7 +167,7 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
 
  {/* Danger zone */}
  <div className="bg-red-50 border border-red-100 rounded-md p-5 space-y-4 shadow-sm">
- <h2 className="text-xs font-bold text-red-600 border-b border-red-100 pb-2 mb-3">Danger zone</h2>
+ <h2 className="text-xs font-semibold text-red-600 border-b border-red-100 pb-2 mb-3">Danger zone</h2>
 
  <button
  onClick={clearAllData}

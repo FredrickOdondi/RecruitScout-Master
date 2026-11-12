@@ -21,18 +21,31 @@ export class BlueCcClient {
       headers['X-Bloo-Project-ID'] = projectId;
     }
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query, variables }),
-    });
-
-    const result = await response.json();
-    if (result.errors) {
-      throw new Error(`Blue.cc GraphQL Error: ${result.errors.map((e: any) => e.message).join(', ')}`);
+    let response: Response;
+    try {
+      response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ query, variables }),
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch (err: any) {
+      throw new Error(err?.name === 'TimeoutError'
+        ? 'Blue.cc didn\'t respond in time. Try again.'
+        : 'Couldn\'t reach Blue.cc. Check your connection and try again.');
     }
 
-    return result.data as T;
+    const result = await response.json().catch(() => null);
+    if (!response.ok && !result?.errors) {
+      throw new Error(response.status === 401 || response.status === 403
+        ? 'Blue.cc rejected the API credentials. Check them in Blue.cc settings.'
+        : `Blue.cc returned an error (HTTP ${response.status}). Try again.`);
+    }
+    if (result?.errors?.length) {
+      throw new Error(result.errors.map((e: any) => e.message).join(', '));
+    }
+
+    return (result?.data ?? {}) as T;
   }
 
   async ensureCompanyId() {
@@ -374,11 +387,17 @@ export class BlueCcClient {
         }
       }
     `;
+    // Escape the text so characters like < and & arrive as typed, and keep line breaks
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
     const inputPayload: any = {
       categoryId,
       category,
       text,
-      html: `<p>${text}</p>`,
+      html: escaped.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join(''),
     };
     if (parentId) {
       inputPayload.parentId = parentId;

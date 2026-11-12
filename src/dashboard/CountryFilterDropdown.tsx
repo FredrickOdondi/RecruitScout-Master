@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { searchCountries, CountryItem } from '../shared/countries';
-import { ChevronDown, X, Globe } from 'lucide-react';
+import { ChevronDown, X, Globe, Check } from 'lucide-react';
 
 interface CountryFilterDropdownProps {
   value: string;
@@ -112,7 +112,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
     return (
       <span className="truncate">
         {before}
-        <span className="font-bold text-cyan-600 underline decoration-cyan-500/50 decoration-2 underline-offset-2">
+        <span className="font-semibold text-cyan-600 underline decoration-cyan-500/50 decoration-2 underline-offset-2">
           {match}
         </span>
         {after}
@@ -138,7 +138,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
           onFocus={() => setIsOpen(true)}
           onClick={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-gray-50 border border-gray-200 rounded-md pl-3 pr-14 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
+          className="w-full bg-gray-50 border border-gray-200 rounded-md pl-3 pr-14 py-1.5 text-xs text-gray-900 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
         />
 
         <div className="absolute right-2 flex items-center gap-1">
@@ -172,7 +172,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
         <div
           ref={listRef}
           role="listbox"
-          className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl py-1 text-xs backdrop-blur-md transition-all animate-in fade-in zoom-in-95 duration-100"
+          className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl py-1 text-xs transition-all animate-in fade-in zoom-in-95 duration-100"
         >
           {filteredCountries.length === 0 ? (
             <div className="px-3 py-2 text-xs text-gray-500 italic text-center">
@@ -208,8 +208,8 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <span className="text-sm select-none" role="img" aria-label={country.name}>
-                        {country.flag}
+                      <span className="mono-id text-fg-subtle w-6 shrink-0" aria-hidden="true">
+                        {country.code}
                       </span>
                       <span className="truncate">
                         {renderHighlightedText(country.name, value)}
@@ -223,7 +223,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
                         </span>
                       )}
                       {isSelected && (
-                        <span className="text-primary-600 text-xs">✓</span>
+                        <Check size={14} className="text-accent-text shrink-0" aria-label="Selected" />
                       )}
                     </div>
                   </button>

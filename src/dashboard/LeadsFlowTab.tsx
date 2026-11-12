@@ -962,20 +962,20 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
       {/* Send Email Modal */}
       {sendModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setSendModalOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setSendModalOpen(false)}>
           <div className="bg-white rounded-2xl w-[420px] p-6 border border-slate-200 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-primary-600" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Send via Plunk</h3>
+                <h3 className="text-sm font-semibold text-slate-900">Send via Plunk</h3>
                 <p className="text-xs text-slate-500 mt-0.5">from hi@www.recruitscout.tech</p>
               </div>
             </div>
 
             <div className="mb-3">
-              <label className="text-xs font-bold text-slate-500 block mb-1.5">Recipient email</label>
+              <label className="text-xs font-semibold text-slate-500 block mb-1.5">Recipient email</label>
               <input
                 type="email"
                 value={sendToEmail}
@@ -983,12 +983,12 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                 onKeyDown={e => e.key === 'Enter' && confirmSend()}
                 placeholder="recruiter@agency.com"
                 autoFocus
-                className="w-full border border-slate-200 bg-white rounded-lg px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all"
+                className="w-full border border-slate-200 bg-white rounded-lg px-3 py-2.5 text-xs text-slate-800 transition-all"
               />
             </div>
 
             <div className="mb-5">
-              <label className="text-xs font-bold text-slate-500 block mb-1.5">Subject</label>
+              <label className="text-xs font-semibold text-slate-500 block mb-1.5">Subject</label>
               <div className="border border-slate-200 rounded-lg px-3 py-2.5 text-xs text-slate-600 bg-slate-50">
                 Candidate matches for {selectedRecruiter?.recruiter['Primary Specialty'] || 'roles'}
               </div>
@@ -1004,7 +1004,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
               <button
                 onClick={confirmSend}
                 disabled={!sendToEmail.trim()}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-accent text-on-accent text-xs font-bold hover:bg-accent-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                className="flex-1 px-4 py-2.5 rounded-lg bg-accent text-on-accent text-xs font-semibold hover:bg-accent-700 transition-colors disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 Send email
@@ -1034,7 +1034,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="font-bold text-slate-900 text-sm tracking-tight">
+                <h3 className="font-semibold text-slate-900 text-sm">
                   Automated emailing schedule
                 </h3>
                 
@@ -1081,8 +1081,8 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
           <div className="flex items-center gap-3 self-end md:self-auto flex-wrap">
             {/* Quick Stat: Sent Today */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-xs font-bold text-slate-400">Sent today</span>
-              <span className="text-xs font-bold text-slate-800">
+              <span className="text-xs font-semibold text-slate-400">Sent today</span>
+              <span className="text-xs font-semibold text-slate-800">
                 {scheduleState.lastResetDate === new Date().toISOString().split('T')[0] ? scheduleState.sentTodayCount : 0}
                 <span className="text-slate-400 font-normal"> / {scheduleConfig.maxDailyEmails}</span>
               </span>
@@ -1095,14 +1095,14 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
               title="Click to view recruiter queue"
             >
               <span>Queue:</span>
-              <span className="font-bold text-primary-600">{matchedWithContacts.length}</span>
+              <span className="font-semibold text-primary-600">{matchedWithContacts.length}</span>
             </button>
 
             {/* Manual Send Next Button */}
             <button
               onClick={handleSendNextScheduledNow}
               disabled={isSendingScheduled || matchedWithContacts.length === 0}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
                 isSendingScheduled || matchedWithContacts.length === 0
                   ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                   : 'bg-primary-50 border-primary-200 text-primary-700 hover:bg-primary-100 shadow-sm'
@@ -1120,7 +1120,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
             {/* Schedule Settings & Queue Modal Trigger */}
             <button
               onClick={() => { setScheduleDrawerTab('settings'); setIsScheduleDrawerOpen(true); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               Configure
@@ -1130,7 +1130,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
             <button
               onClick={() => { bustCache(); fetchMatches(); }}
               disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed"
               title="Force-refresh matches from Supabase"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={loading ? 'animate-spin' : ''}><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -1142,7 +1142,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
               <button
                 type="button"
                 onClick={handleToggleSchedule}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
                   scheduleConfig.enabled ? 'bg-emerald-600' : 'bg-slate-300'
                 }`}
                 role="switch"
@@ -1155,7 +1155,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   }`}
                 />
               </button>
-              <span className={`text-xs font-bold ${scheduleConfig.enabled ? 'text-emerald-600' : 'text-slate-400'}`}>
+              <span className={`text-xs font-semibold ${scheduleConfig.enabled ? 'text-emerald-600' : 'text-slate-400'}`}>
                 {scheduleConfig.enabled ? 'On' : 'Off'}
               </span>
             </div>
@@ -1166,7 +1166,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
       {/* ── SCHEDULE MODAL / DRAWER OVERLAY ── */}
       {isScheduleDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setIsScheduleDrawerOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setIsScheduleDrawerOpen(false)}>
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-slate-200 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             
             {/* Modal Header */}
@@ -1176,7 +1176,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Emailing schedule & recruiter queue</h3>
+                  <h3 className="text-base font-semibold text-slate-900">Emailing schedule & recruiter queue</h3>
                   <p className="text-xs text-slate-500">Automate your outreach pipeline to matched recruiters with verified contacts</p>
                 </div>
               </div>
@@ -1193,7 +1193,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
             <div className="flex border-b border-slate-200 px-6 bg-slate-50/60 shrink-0">
               <button
                 onClick={() => setScheduleDrawerTab('queue')}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                className={`py-3 px-4 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
                   scheduleDrawerTab === 'queue'
                     ? 'border-emerald-500 text-emerald-600 bg-white'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -1205,7 +1205,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
               <button
                 onClick={() => setScheduleDrawerTab('settings')}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                className={`py-3 px-4 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
                   scheduleDrawerTab === 'settings'
                     ? 'border-emerald-500 text-emerald-600 bg-white'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -1217,7 +1217,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
               <button
                 onClick={() => setScheduleDrawerTab('logs')}
-                className={`py-3 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                className={`py-3 px-4 text-xs font-semibold border-b-2 transition-all flex items-center gap-2 ${
                   scheduleDrawerTab === 'logs'
                     ? 'border-emerald-500 text-emerald-600 bg-white'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -1237,7 +1237,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div>
                       <p className="text-xs text-slate-600 font-medium">
-                        These <span className="font-bold text-slate-900">{matchedWithContacts.length} recruiters</span> have matched open roles and verified email contacts. During the active window ({scheduleConfig.startTime} – {scheduleConfig.endTime}), they are processed sequentially.
+                        These <span className="font-semibold text-slate-900">{matchedWithContacts.length} recruiters</span> have matched open roles and verified email contacts. During the active window ({scheduleConfig.startTime} – {scheduleConfig.endTime}), they are processed sequentially.
                       </p>
                     </div>
 
@@ -1246,7 +1246,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                       placeholder="Filter recruiters or emails..."
                       value={queueSearchQuery}
                       onChange={e => setQueueSearchQuery(e.target.value)}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none focus:ring-1 focus:ring-primary-500 w-full sm:w-64"
+                      className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 w-full sm:w-64"
                     />
                   </div>
 
@@ -1257,7 +1257,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   ) : (
                     <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 border-b border-slate-200">
+                        <thead className="bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-200">
                           <tr>
                             <th className="py-2.5 px-3">Recruiter / agency</th>
                             <th className="py-2.5 px-3">Contact name</th>
@@ -1305,12 +1305,12 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                                   </td>
                                   <td className="py-2.5 px-3">
                                     {sentToday ? (
-                                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                         <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
  Sent today
                                       </span>
                                     ) : isSendingThis ? (
-                                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse">
+                                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse">
                                         Sending...
                                       </span>
                                     ) : (
@@ -1323,7 +1323,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                                     <button
                                       onClick={() => sendEmailToMatchedRecruiter(g, email)}
                                       disabled={isSendingScheduled || isSendingThis}
-                                      className="px-2.5 py-1 text-xs font-bold rounded-lg border border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors disabled:opacity-50"
+                                      className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors disabled:bg-subtle disabled:text-fg-subtle"
                                       title="Send now to this recruiter"
                                     >
                                       Send now
@@ -1343,13 +1343,13 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
               {scheduleDrawerTab === 'settings' && (
                 <div className="max-w-xl mx-auto space-y-6 py-2">
                   <div className="border-b border-slate-200 pb-4">
-                    <h4 className="font-bold text-sm text-slate-900">Emailing time window & frequency</h4>
+                    <h4 className="font-semibold text-sm text-slate-900">Emailing time window & frequency</h4>
                     <p className="text-xs text-slate-500 mt-0.5">Define during what hours RecruitScout automatically emails matched recruiters</p>
                   </div>
 
                   {/* Preset quick buttons */}
                   <div>
-                    <label className="text-xs font-bold text-slate-500 block mb-2">Window presets</label>
+                    <label className="text-xs font-semibold text-slate-500 block mb-2">Window presets</label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         type="button"
@@ -1392,21 +1392,21 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   {/* Start & End Time Inputs */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-slate-500 block mb-1.5">Start time</label>
+                      <label className="text-xs font-semibold text-slate-500 block mb-1.5">Start time</label>
                       <input
                         type="time"
                         value={tempStartTime}
                         onChange={e => setTempStartTime(e.target.value)}
-                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-semibold"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-500 block mb-1.5">End time</label>
+                      <label className="text-xs font-semibold text-slate-500 block mb-1.5">End time</label>
                       <input
                         type="time"
                         value={tempEndTime}
                         onChange={e => setTempEndTime(e.target.value)}
-                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-semibold"
                       />
                     </div>
                   </div>
@@ -1414,11 +1414,11 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   {/* Interval & Daily Cap */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-slate-500 block mb-1.5">Sending interval</label>
+                      <label className="text-xs font-semibold text-slate-500 block mb-1.5">Sending interval</label>
                       <select
                         value={tempInterval}
                         onChange={e => setTempInterval(Number(e.target.value))}
-                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-medium"
                       >
                         <option value={1}>Every 1 minute</option>
                         <option value={2}>Every 2 minutes (recommended)</option>
@@ -1430,14 +1430,14 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-slate-500 block mb-1.5">Max daily emails limit</label>
+                      <label className="text-xs font-semibold text-slate-500 block mb-1.5">Max daily emails limit</label>
                       <input
                         type="number"
                         min={1}
                         max={500}
                         value={tempMaxEmails}
                         onChange={e => setTempMaxEmails(Number(e.target.value))}
-                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 text-xs text-slate-800 font-semibold"
                       />
                       <p className="text-xs text-slate-400 mt-1">Safety stop once this threshold is met in a single day.</p>
                     </div>
@@ -1445,7 +1445,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
 
                   {/* Days of week */}
                   <div>
-                    <label className="text-xs font-bold text-slate-500 block mb-2">Active schedule days</label>
+                    <label className="text-xs font-semibold text-slate-500 block mb-2">Active schedule days</label>
                     <div className="flex gap-1.5 flex-wrap">
                       {[
                         { day: 1, label: 'Mon' },
@@ -1468,7 +1468,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                                 setTempDaysOfWeek(prev => [...prev, day]);
                               }
                             }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                               active
                                 ? 'bg-accent text-on-accent border-emerald-600 shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
@@ -1486,14 +1486,14 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                     <button
                       type="button"
                       onClick={() => setIsScheduleDrawerOpen(false)}
-                      className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-xl hover:bg-slate-50"
+                      className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50"
                     >
                       Close
                     </button>
                     <button
                       type="button"
                       onClick={handleSaveScheduleConfig}
-                      className="px-5 py-2 bg-accent hover:bg-accent-700 text-on-accent text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                      className="px-5 py-2 bg-accent hover:bg-accent-700 text-on-accent text-xs font-semibold rounded-xl shadow-md transition-all flex items-center gap-1.5"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                       Save configuration
@@ -1526,7 +1526,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   ) : (
                     <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 border-b border-slate-200">
+                        <thead className="bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-200">
                           <tr>
                             <th className="py-2.5 px-3">Time</th>
                             <th className="py-2.5 px-3">Recipient</th>
@@ -1553,12 +1553,12 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                               </td>
                               <td className="py-2 px-3">
                                 {log.status === 'success' ? (
-                                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                     <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
  Sent
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200" title={log.error}>
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200" title={log.error}>
                                     <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
  Failed
                                   </span>
@@ -1594,7 +1594,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
             <button
               onClick={() => setFilterByContact(f => !f)}
               title={filterByContact ? 'Show all recruiters' : 'Show only recruiters with contact email'}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold border transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold border transition-all ${
                 filterByContact
                   ? 'bg-accent text-on-accent border-primary-600 shadow-sm'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-primary-300 hover:text-primary-600'
@@ -1644,7 +1644,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                     )}
                     
                     <div className="flex items-start gap-2.5">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs shrink-0
                         ${isSelected ? 'bg-accent text-on-accent shadow-sm' : 'bg-slate-100 text-slate-600 border border-slate-200/50'}`}>
                         {(group.recruiter['Name'] || group.recruiter['Agency Name'] || '?')[0].toUpperCase()}
                       </div>
@@ -1661,7 +1661,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                     
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                       <div className="flex items-center gap-1.5">
-                        <div className={`flex items-center justify-center text-xs font-bold px-1.5 py-0.5 rounded
+                        <div className={`flex items-center justify-center text-xs font-semibold px-1.5 py-0.5 rounded
                           ${isSelected ? 'bg-primary-100 text-primary-800' : 'bg-slate-100 text-slate-600'}`}>
                           {group.jobs.length} Job{group.jobs.length !== 1 ? 's' : ''}
                         </div>
@@ -1686,7 +1686,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-200 bg-white flex justify-between items-center z-10 transition-colors">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-xl font-semibold text-slate-900">
                   {selectedRecruiter.recruiter['Name'] || selectedRecruiter.recruiter['Agency Name']}
                 </h2>
                 <div className="flex items-center gap-1.5 mt-1">
@@ -1704,14 +1704,14 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
               {/* Left Side: Matched Jobs List (2/5) */}
               <div className="lg:col-span-2 border-r border-slate-200 flex flex-col h-full bg-slate-50 min-h-0">
                 <div className="px-4 py-2.5 border-b border-slate-200 bg-white flex justify-between items-center">
-                  <h4 className="text-xs font-bold text-slate-600 ">Matched jobs</h4>
+                  <h4 className="text-xs font-semibold text-slate-600 ">Matched jobs</h4>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
                   {selectedRecruiter.jobs.map((job) => (
                     <div key={job.id} className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm hover:border-primary-300 transition-colors">
                       <div className="flex justify-between items-start mb-1.5">
-                        <div className="text-xs font-bold text-slate-900 leading-tight pr-4">{job.title}</div>
+                        <div className="text-xs font-semibold text-slate-900 leading-tight pr-4">{job.title}</div>
                         <button 
                           onClick={(e) => handleRejectJob(job.id, e)}
                           className="text-slate-400 hover:text-red-600 transition-colors p-1.5 rounded-md hover:bg-red-50 shrink-0"
@@ -1737,7 +1737,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
               {/* Right Side: Bundled Email Draft (3/5) */}
               <div className="lg:col-span-3 flex flex-col h-full bg-slate-50 min-h-0">
                 <div className="px-4 py-2.5 border-b border-slate-200 bg-white flex justify-between items-center shrink-0">
-                  <h4 className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-slate-600 flex items-center gap-2">
                     Bundled email draft
                     {currentDraft && <span className="badge badge-success"><span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />Ready</span>}
                   </h4>
@@ -1745,7 +1745,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                   {!currentDraft && (
                     <button
                       onClick={handleGenerateBundledDraft}
-                      className="bg-accent hover:bg-accent-700 text-on-accent px-3 py-1 rounded-md text-xs font-bold transition-all shadow-sm flex items-center gap-1 shrink-0"
+                      className="bg-accent hover:bg-accent-700 text-on-accent px-3 py-1 rounded-md text-xs font-semibold transition-all shadow-sm flex items-center gap-1 shrink-0"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                       Generate draft
@@ -1768,13 +1768,13 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                             window.open((target as HTMLAnchorElement).href, '_blank');
                           }
                         }}
-                        className="flex-1 w-full bg-white border border-slate-200 text-slate-900 rounded-xl p-4 text-xs focus:outline-none focus:ring-1 focus:ring-primary-500/40 focus:border-primary-400 shadow-inner overflow-y-auto transition-all"
+                        className="flex-1 w-full bg-white border border-slate-200 text-slate-900 rounded-xl p-4 text-xs focus:border-primary-400 shadow-inner overflow-y-auto transition-all"
                       />
                       <div className="absolute top-2 right-2 flex gap-2">
                         <button 
                           onClick={handleSendEmail}
                           disabled={isSendingEmail}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 shadow text-white rounded-lg transition-all text-xs font-bold ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 shadow text-white rounded-lg transition-all text-xs font-semibold ${
                             isSendingEmail 
                               ? 'bg-slate-400 cursor-not-allowed' 
                               : 'bg-primary-600 hover:bg-primary-700'
@@ -1807,7 +1807,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                       </p>
                       <button 
                         onClick={handleGenerateBundledDraft}
-                        className="mt-4 px-4 py-2 bg-primary-50 text-primary-700 border border-primary-200 text-xs font-bold rounded-lg hover:bg-primary-100 transition-colors shadow-sm"
+                        className="mt-4 px-4 py-2 bg-primary-50 text-primary-700 border border-primary-200 text-xs font-semibold rounded-lg hover:bg-primary-100 transition-colors shadow-sm"
                       >
                         Generate bundled draft
                       </button>
@@ -1826,7 +1826,7 @@ export default function LeadsFlowTab({ sendMessage }: LeadsFlowTabProps) {
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">Select a recruiter</h2>
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Select a recruiter</h2>
             <p className="text-slate-500 font-medium max-w-xs mx-auto text-xs leading-relaxed">
               Select a recruiter on the left to see their matched jobs and draft an outreach email.
             </p>

@@ -14,7 +14,7 @@ import { supabaseClient } from'../shared/supabase';
 import { BlueCcClient } from'../shared/bluecc';
 
 // Icons 
-import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Bot, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon, Cookie, MonitorDown } from 'lucide-react';
+import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Bot, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon, Cookie, MonitorDown, X } from 'lucide-react';
 import IndeedSessionsTab from './IndeedSessionsTab';
 import { setThemeColor, useInstallPrompt } from './pwa';
 
@@ -105,13 +105,13 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
 
  return (
  <div className="relative w-full" ref={dropdownRef}>
- <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ <label className="text-xs text-gray-500 font-semibold mb-1.5 block">
  {label}
  </label>
  <button
  type="button"
  onClick={() => setIsOpen(!isOpen)}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 focus:outline-none focus:border-slate-600/50 flex justify-between items-center text-left min-h-[38px]"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 text-xs text-gray-900 focus:border-slate-600/50 flex justify-between items-center text-left min-h-[38px]"
  >
  <span className="truncate pr-2 font-medium text-gray-800">{displayText}</span>
  <span className="text-gray-500 text-xs">▼</span>
@@ -129,7 +129,7 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
  type="checkbox"
  checked={selectedIds.length === 0 || (selectedIds.length === 1 && selectedIds[0] ==='')}
  onChange={() => onChange([])}
- className="mr-2.5 h-3.5 w-3.5 text-primary-600 rounded border-gray-200 focus:ring-primary-500"
+ className="mr-2.5 h-3.5 w-3.5 text-primary-600 rounded border-gray-200"
  />
  <span className="italic text-gray-500">(No client / general)</span>
  </label>
@@ -145,7 +145,7 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
  type="checkbox"
  checked={isChecked}
  onChange={() => toggleOption(opt.id)}
- className="mr-2.5 h-3.5 w-3.5 text-primary-600 rounded border-gray-200 focus:ring-primary-500"
+ className="mr-2.5 h-3.5 w-3.5 text-primary-600 rounded border-gray-200"
  />
  <span className="truncate">{opt.name}</span>
  </label>
@@ -663,7 +663,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   title={isSidebarCollapsed ? item.label : undefined}
   aria-current={activeTab === item.id ? 'page' : undefined}
   className={getNavButtonClass(item.id)}
-  >
+ >
   <span className="relative shrink-0 flex">
   {item.icon}
   {isSidebarCollapsed && !!item.badge && (
@@ -728,7 +728,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   >
   <Menu size={20} />
   </button>
-  <h1 className="text-2xl font-semibold tracking-[-0.016em] text-fg truncate">
+  <h1 className="text-2xl font-semibold text-fg truncate">
   {tabTitles[activeTab] || activeTab}
   </h1>
 
@@ -772,11 +772,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <div className="bg-white rounded-xl p-1 border border-gray-200 transition-all relative">
  <button 
  onClick={() => setIsBulkLoadOpen(false)}
- className="absolute top-4 right-4 text-gray-500 hover:text-gray-600 transition-colors text-[16px] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 z-10"
+ className="absolute top-4 right-4 text-gray-500 hover:text-gray-600 transition-colors text-base w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 z-10"
  title="Close"
  aria-label="Close"
  >
- ✕
+ <X size={16} />
  </button>
  <div className="bg-white rounded-lg p-6">
  <h3 className="text-base font-medium text-gray-900 mb-2 flex items-center gap-2">
@@ -790,7 +790,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  value={bulkTitles}
  onChange={(e) => setBulkTitles(e.target.value)}
  placeholder={`Software Engineer\nProduct Manager\nData Scientist\n\n(or leave blank and set a Location to scrape all jobs in that area)`}
- className="w-full h-40 bg-white border border-gray-200 rounded-lg p-4 text-xs font-mono text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none"
+ className="w-full h-40 bg-white border border-gray-200 rounded-lg p-4 text-xs font-mono text-gray-900 placeholder-gray-400 focus:border-primary-500 transition-all resize-none"
  />
  
  <div className="mt-4 md:grid md:grid-cols-12 md:gap-4 md:items-end">
@@ -819,13 +819,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  />
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ <label className="text-xs text-gray-500 font-semibold mb-1.5 block">
  Date posted
  </label>
  <select 
  value={dateFilter} 
  onChange={(e) => setDateFilter(e.target.value)} 
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none min-h-[38px]"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 text-xs text-gray-900 focus:border-slate-600/50 appearance-none min-h-[38px]"
  disabled={selectedTargetSites.length === 1 && selectedTargetSites[0] ==='trovolavoro'}
  >
  <option value="">All dates</option>
@@ -837,7 +837,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  </select>
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ <label className="text-xs text-gray-500 font-semibold mb-1.5 block">
  Location filter
  </label>
  <input 
@@ -845,18 +845,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  placeholder="e.g. Remote, New York..."
  value={locationFilter}
  onChange={(e) => setLocationFilter(e.target.value)}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-slate-600/50 transition-all"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 text-xs text-gray-900 placeholder-gray-400 focus:border-slate-600/50 transition-all"
  />
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-xs text-gray-500 font-bold mb-1.5 flex justify-between items-center">
+ <label className="text-xs text-gray-500 font-semibold mb-1.5 flex justify-between items-center">
  <span>Assigned worker</span> 
  <span className="text-primary-600 font-medium">{activeAgents.length} Online</span>
  </label>
  <select 
  value={assignedTo} 
  onChange={(e) => setAssignedTo(e.target.value)} 
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none" 
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 text-xs text-gray-900 focus:border-slate-600/50 appearance-none" 
  >
  <option value="">Leave blank for any available node...</option>
  {activeAgents.map(agent => (
@@ -867,14 +867,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  </select>
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ <label className="text-xs text-gray-500 font-semibold mb-1.5 block">
  Sheets sync
  </label>
  <button
  onClick={() => updateSetting('filterRecruitersEnabled', !settings.filterRecruitersEnabled)}
  className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium border transition-all min-h-[38px] flex items-center justify-between ${
  settings.filterRecruitersEnabled 
- ?'bg-primary-50 text-primary-700 border-primary-200 focus:ring-1 focus:ring-primary-500' 
+ ?'bg-primary-50 text-primary-700 border-primary-200' 
  :'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
  }`}
  title="If enabled, jobs from companies in the recruiters table will not be synced to Google Sheets"
@@ -887,7 +887,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <button 
  onClick={handleUpdateLocations}
  disabled={!locationFilter.trim()}
- className="bg-gray-100 hover:bg-slate-700 text-gray-600 border border-gray-200 px-4 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-xs"
+ className="bg-gray-100 hover:bg-slate-700 text-gray-600 border border-gray-200 px-4 py-2 rounded-md font-medium transition-all disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed whitespace-nowrap text-xs"
  title="Update location for all existing queue tasks"
  >
  Apply location
@@ -895,7 +895,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <button 
  onClick={handleSaveBulkSearch}
  disabled={!bulkTitles.trim() && !locationFilter.trim()}
- className="bg-accent hover:bg-primary-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-on-accent px-6 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-xs text-center min-w-[120px]"
+ className="bg-accent hover:bg-primary-400 text-slate-950 font-semibold shadow-card  text-on-accent px-6 py-2 rounded-md font-medium transition-all disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed whitespace-nowrap text-xs text-center min-w-[120px]"
  >
  {bulkTitles.trim() ?'Enqueue' :'Scrape'}
  </button>
@@ -913,7 +913,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         Select <strong>Load bulk job</strong> to add search tasks to the queue.
         <span className="ml-1 font-medium text-blue-700">Tip: switch between light and dark themes with the button in the top bar.</span>
       </div>
-      <button onClick={() => setShowBulkQueueBanner(false)} className="text-blue-500 hover:text-blue-700 font-bold ml-4 text-sm" aria-label="Dismiss">✕</button>
+      <button onClick={() => setShowBulkQueueBanner(false)} className="text-blue-500 hover:text-blue-700 font-semibold ml-4 text-sm" aria-label="Dismiss"><X size={16} /></button>
     </div>
   )}
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
@@ -999,7 +999,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  bridgeSendMessage<any>({ type:'SUPABASE_GET_QUEUE' as any }).then(r => r?.data && setQueue(r.data));
  });
  }}
- className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-md font-bold text-xs border border-red-200 transition-all"
+ className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-md font-semibold text-xs border border-red-200 transition-all"
  >
  Stop engine
  </button>
@@ -1009,7 +1009,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <div className="overflow-x-auto overflow-y-auto max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] rounded-md border border-gray-200 w-full relative">
  {selectedJobIds.length > 0 && (
  <div className="bg-primary-50 border-b border-primary-100 px-4 py-2 flex items-center justify-between sticky top-0 z-20 shadow-sm">
- <div className="text-xs font-bold text-primary-700">
+ <div className="text-xs font-semibold text-primary-700">
  {selectedJobIds.length} job(s) selected
  </div>
  {isBulkEditing ? (
@@ -1040,28 +1040,28 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  className="bg-white border border-primary-200 rounded px-2 py-1 text-xs text-gray-900 shadow-sm w-[100px]"
  placeholder="Location"
  />
- <button onClick={handleBulkEditSave} className="bg-accent hover:bg-primary-400 text-on-accent font-bold px-3 py-1 rounded text-xs shadow-sm ml-2">Apply edit</button>
- <button onClick={() => { setIsBulkEditing(false); setEditTaskDraft({}); }} className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold px-3 py-1 rounded text-xs shadow-sm">Cancel</button>
+ <button onClick={handleBulkEditSave} className="bg-accent hover:bg-primary-400 text-on-accent font-semibold px-3 py-1 rounded text-xs shadow-sm ml-2">Apply edit</button>
+ <button onClick={() => { setIsBulkEditing(false); setEditTaskDraft({}); }} className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold px-3 py-1 rounded text-xs shadow-sm">Cancel</button>
  </div>
  ) : (
  <div className="flex items-center gap-2">
- <button onClick={() => handleBulkStatusChange('pending')} className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold px-3 py-1 rounded text-xs border border-slate-200 shadow-sm">Mark pending</button>
- <button onClick={() => handleBulkStatusChange('completed')} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-bold px-3 py-1 rounded text-xs border border-primary-200 shadow-sm">Mark complete</button>
- <button onClick={() => setIsBulkEditing(true)} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-bold px-3 py-1 rounded text-xs border border-primary-200 shadow-sm ml-2">Edit</button>
- <button onClick={handleBulkDelete} className="bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1 rounded text-xs border border-red-200 shadow-sm">Delete</button>
+ <button onClick={() => handleBulkStatusChange('pending')} className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold px-3 py-1 rounded text-xs border border-slate-200 shadow-sm">Mark pending</button>
+ <button onClick={() => handleBulkStatusChange('completed')} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-semibold px-3 py-1 rounded text-xs border border-primary-200 shadow-sm">Mark complete</button>
+ <button onClick={() => setIsBulkEditing(true)} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-semibold px-3 py-1 rounded text-xs border border-primary-200 shadow-sm ml-2">Edit</button>
+ <button onClick={handleBulkDelete} className="bg-red-100 text-red-700 hover:bg-red-200 font-semibold px-3 py-1 rounded text-xs border border-red-200 shadow-sm">Delete</button>
  </div>
  )}
  </div>
  )}
  <table className="w-full text-left text-xs text-gray-600 min-w-[800px]">
- <thead className={`text-xs font-bold text-gray-500 bg-white border-b border-gray-200 sticky ${selectedJobIds.length > 0 ?'top-[44px]' :'top-0'} z-10 `}>
+ <thead className={`text-xs font-semibold text-gray-500 bg-white border-b border-gray-200 sticky ${selectedJobIds.length > 0 ?'top-[44px]' :'top-0'} z-10 `}>
  <tr>
  <th className="px-3 py-2 bg-white w-[40px]">
  <input 
  type="checkbox" 
  checked={filteredQueue.length > 0 && selectedJobIds.length === filteredQueue.length}
  onChange={handleSelectAll}
- className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+ className="rounded border-gray-300 text-primary-500"
  />
  </th>
  <th className="px-3 py-2 bg-white">Task</th>
@@ -1087,7 +1087,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  type="checkbox" 
  checked={selectedJobIds.includes(q.id)}
  onChange={() => handleSelectJob(q.id)}
- className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+ className="rounded border-gray-300 text-primary-500"
  />
  </td>
  {isEditing ? (
@@ -1155,7 +1155,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  ) : (
  <>
  <td className="px-3 py-1.5 font-medium text-gray-900 truncate max-w-[150px] lg:max-w-[250px] xl:max-w-[400px]" title={q.job_title}>{q.job_title}</td>
- <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-xs font-bold bg-slate-50 text-slate-700 border-slate-200 whitespace-nowrap">{q.target_site ||'indeed'}</span></td>
+ <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-xs font-semibold bg-slate-50 text-slate-700 border-slate-200 whitespace-nowrap">{q.target_site ||'indeed'}</span></td>
  <td className="px-3 py-1.5 whitespace-nowrap">
  {q.date_filter ? (
  <span className={`px-2 py-0.5 rounded border text-xs font-medium ${q.date_filter ==='last' ?'bg-slate-50 text-slate-700 border-slate-200' :'bg-primary-50 text-primary-700 border border-primary-200 border-primary-200'}`}>
@@ -1235,7 +1235,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  
  {/* General Settings */}
  <div className="bg-white rounded-md p-5 border border-gray-200 space-y-4">
- <h3 className="text-xs font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">General settings</h3>
+ <h3 className="text-xs font-semibold text-gray-500 border-b border-gray-200 pb-2 mb-3">General settings</h3>
  
  <label className="flex items-center justify-between cursor-pointer group">
  <div>
@@ -1273,7 +1273,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  placeholder="e.g. Node-A"
  value={settings.friendName ||''}
  onChange={e => updateSetting('friendName', e.target.value)}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:border-slate-600/50"
  />
  </div>
 
@@ -1283,7 +1283,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  id="indeed-cookie-mode"
  value={settings.indeedCookieMode ?? 'stored'}
  onChange={e => updateSetting('indeedCookieMode', e.target.value)}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900"
  >
  <option value="stored">Stored accounts (cookies from indeed_scraper_sessions)</option>
  <option value="browser">This browser's own Indeed sign-in</option>
@@ -1319,7 +1319,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
  {/* Extraction Settings */}
  <div className="bg-white rounded-md p-5 border border-gray-200 space-y-4">
- <h3 className="text-xs font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">Extraction settings</h3>
+ <h3 className="text-xs font-semibold text-gray-500 border-b border-gray-200 pb-2 mb-3">Extraction settings</h3>
 
  <div className="space-y-1.5">
  <label className="text-xs font-medium text-gray-900">Max jobs per page</label>
@@ -1329,7 +1329,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  max="500"
  value={settings.maxJobsPerPage || 100}
  onChange={e => updateSetting('maxJobsPerPage', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:border-slate-600/50"
  />
  </div>
 
@@ -1341,7 +1341,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  max="100"
  value={settings.paginationLimit || 10}
  onChange={e => updateSetting('paginationLimit', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:border-slate-600/50"
  />
  </div>
 
@@ -1354,7 +1354,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  step="100"
  value={settings.crawlDelay || 1000}
  onChange={e => updateSetting('crawlDelay', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:border-slate-600/50"
  />
  </div>
 

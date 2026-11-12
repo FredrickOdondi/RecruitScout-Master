@@ -134,7 +134,7 @@
   /* Inputs: surface fill, control outline, accessible bottom edge */
   .input {
     @apply w-full h-control px-3 rounded-md border border-stroke-control border-b-stroke-accessible
-      bg-surface text-fg text-sm focus:outline-none focus:border-b-accent
+      bg-surface text-fg text-sm focus:border-b-accent
       disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed;
   }
 

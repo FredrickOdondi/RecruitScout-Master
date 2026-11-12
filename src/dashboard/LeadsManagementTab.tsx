@@ -326,7 +326,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   <UsersIcon />
   </div>
   <div>
-  <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Leads management</h1>
+  <h1 className="text-xl font-semibold text-gray-900">Leads management</h1>
   <p className="text-xs text-gray-500 mt-1 hidden sm:block">Manage recruitment leads and contacts stored in Supabase.</p>
   </div>
   </div>
@@ -337,7 +337,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   <button
   onClick={syncContactEmails}
   disabled={isSyncingContacts || loading}
-  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-xs font-medium transition-all duration-200 shadow-sm"
+  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-subtle disabled:text-fg-subtle text-xs font-medium transition-all duration-200 shadow-sm"
   title="Match emails from RecruiterContact table into associated contacts column"
   >
   {isSyncingContacts ? (
@@ -350,7 +350,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   <button
   onClick={updateAllStatus}
   disabled={isUpdating || loading || recruiters.length === 0}
-  className="flex items-center gap-2 px-4 py-2.5 bg-accent text-on-accent rounded-lg hover:bg-accent-700 disabled:opacity-50 text-xs font-medium transition-all duration-200 shadow-sm"
+  className="flex items-center gap-2 px-4 py-2.5 bg-accent text-on-accent rounded-lg hover:bg-accent-700 disabled:bg-subtle disabled:text-fg-subtle text-xs font-medium transition-all duration-200 shadow-sm"
   >
   {isUpdating ? (
   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -362,7 +362,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   <button
   onClick={() => fetchRecruiters()}
   disabled={loading || isUpdating}
-  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:shadow-sm disabled:opacity-50 text-xs font-medium transition-all duration-200"
+  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:shadow-sm disabled:bg-subtle disabled:text-fg-subtle text-xs font-medium transition-all duration-200"
   >
   <div className={loading ?'animate-spin' :''}>
   <RefreshIcon />
@@ -374,7 +374,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
 
   {/* Bulk Config Bar */}
   <div className="bg-slate-100/70 border-b border-gray-200 px-4 md:px-6 lg:px-8 py-2 md:py-3 flex items-center gap-4 md:gap-6 z-10 overflow-x-auto transition-colors shrink-0">
-  <span className="text-xs md:text-xs font-bold text-gray-500 whitespace-nowrap hidden lg:inline">Bulk update configurations</span>
+  <span className="text-xs md:text-xs font-semibold text-gray-500 whitespace-nowrap hidden lg:inline">Bulk update configurations</span>
   
   <div className="flex items-center bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
   <label className="text-xs font-medium text-gray-700 px-3 whitespace-nowrap">Leads sent (pre-teaser):</label>
@@ -383,12 +383,12 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   min="0"
   value={leadsSentBeforeTeaser}
   onChange={(e) => setLeadsSentBeforeTeaser(Number(e.target.value))}
-  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:border-primary-500"
   />
   <button
   onClick={updateAllLeadsSentValues}
   disabled={isUpdatingLeadsSent || loading || recruiters.length === 0}
-  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:bg-subtle disabled:text-fg-subtle text-xs font-semibold transition-colors"
   >
   {isUpdatingLeadsSent ? (
   <div className="w-3 h-3 border-2 border-primary-700 border-t-transparent rounded-full animate-spin"></div>
@@ -403,12 +403,12 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   min="0"
   value={teaserThreshold}
   onChange={(e) => setTeaserThreshold(Number(e.target.value))}
-  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:border-primary-500"
   />
   <button
   onClick={updateAllTeaserThresholdValues}
   disabled={isUpdatingTeaser || loading || recruiters.length === 0}
-  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:bg-subtle disabled:text-fg-subtle text-xs font-semibold transition-colors"
   >
   {isUpdatingTeaser ? (
   <div className="w-3 h-3 border-2 border-primary-700 border-t-transparent rounded-full animate-spin"></div>
@@ -423,12 +423,12 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   min="0"
   value={minLeads}
   onChange={(e) => setMinLeads(Number(e.target.value))}
-  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:border-primary-500"
   />
   <button
   onClick={updateAllMinLeadsValues}
   disabled={isUpdatingMinLeads || loading || recruiters.length === 0}
-  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:bg-subtle disabled:text-fg-subtle text-xs font-semibold transition-colors"
   >
   {isUpdatingMinLeads ? (
   <div className="w-3 h-3 border-2 border-primary-700 border-t-transparent rounded-full animate-spin"></div>
@@ -443,12 +443,12 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   min="0"
   value={maxLeads}
   onChange={(e) => setMaxLeads(Number(e.target.value))}
-  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+  className="w-16 px-2 py-1 border border-gray-300 bg-white text-gray-900 rounded-md text-xs text-center focus:border-primary-500"
   />
   <button
   onClick={updateAllMaxLeadsValues}
   disabled={isUpdatingMaxLeads || loading || recruiters.length === 0}
-  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:opacity-50 text-xs font-semibold transition-colors"
+  className="ml-2 flex items-center gap-1.5 px-3 py-1 bg-primary-50 text-primary-700 rounded-md hover:bg-primary-100 disabled:bg-subtle disabled:text-fg-subtle text-xs font-semibold transition-colors"
   >
   {isUpdatingMaxLeads ? (
   <div className="w-3 h-3 border-2 border-primary-700 border-t-transparent rounded-full animate-spin"></div>
@@ -465,7 +465,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   </div>
   <input
   type="text"
-  className="block w-full pl-11 pr-4 py-1.5 md:py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 text-xs font-normal text-gray-900 transition-all duration-200 ease-in-out shadow-inner"
+  className="block w-full pl-11 pr-4 py-1.5 md:py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:bg-white focus:border-primary-500 text-xs font-normal text-gray-900 transition-all duration-200 ease-in-out shadow-inner"
   placeholder="Search agencies, domains, locations..."
   value={searchQuery}
   onChange={(e) => {
@@ -486,21 +486,21 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
       placeholder="Filter location..." 
       value={filterLocation} 
       onChange={e => { setFilterLocation(e.target.value); setCurrentPage(1); }}
-      className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
+      className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs text-gray-900 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
     />
     <input 
       type="text" 
       placeholder="Filter specialty..." 
       value={filterSpecialty} 
       onChange={e => { setFilterSpecialty(e.target.value); setCurrentPage(1); }}
-      className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
+      className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs text-gray-900 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
     />
     <input 
       type="text" 
       placeholder="Filter industry..." 
       value={filterIndustry} 
       onChange={e => { setFilterIndustry(e.target.value); setCurrentPage(1); }}
-      className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
+      className="w-full bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs text-gray-900 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
     />
   </div>
   </div>
@@ -524,14 +524,14 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   {selectedRowKeys.length > 0 && (
   <div className="bg-primary-50 border-b border-primary-100 px-4 py-2 flex items-center justify-between sticky top-0 z-20 shadow-sm transition-colors">
   <div className="flex items-center gap-3">
-    <span className="text-xs font-bold text-primary-700">
+    <span className="text-xs font-semibold text-primary-700">
       {selectedRowKeys.length} recruiter(s) selected
     </span>
     {selectedRowKeys.length < totalRecruiters && (
       <button
         onClick={handleSelectAll}
         disabled={isSelectingAll}
-        className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2 disabled:opacity-60 transition-colors"
+        className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-800 underline underline-offset-2 disabled:bg-subtle disabled:text-fg-subtle transition-colors"
       >
         {isSelectingAll ? (
           <><div className="w-3 h-3 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />Selecting...</>
@@ -550,10 +550,10 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
   <button onClick={() => {
     setIsBulkEditing(true);
     setEditFormData({});
-  }} className="bg-accent hover:bg-accent-700 text-on-accent font-bold px-3 py-1.5 rounded-lg text-xs shadow-sm transition-colors">
+  }} className="bg-accent hover:bg-accent-700 text-on-accent font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition-colors">
   Bulk edit selected
   </button>
-  <button onClick={() => setSelectedRowKeys([])} className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold px-3 py-1.5 rounded-lg text-xs shadow-sm transition-colors">
+  <button onClick={() => setSelectedRowKeys([])} className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold px-3 py-1.5 rounded-lg text-xs shadow-sm transition-colors">
   Clear selection
   </button>
   </div>
@@ -578,7 +578,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         setSelectedRowKeys(prev => prev.filter(k => !visibleKeys.includes(k)));
       }
     }}
-    className="rounded border-gray-300 text-primary-500 focus:ring-primary-500 bg-white"
+    className="rounded border-gray-300 text-primary-500 bg-white"
   />
   </th>
   <th className="px-3 py-2.5 text-xs font-semibold text-gray-600 whitespace-nowrap bg-slate-50">Actions</th>
@@ -643,7 +643,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
         setSelectedRowKeys(prev => prev.filter(k => k !== key));
       }
     }}
-    className="rounded border-gray-300 text-primary-500 focus:ring-primary-500 bg-white"
+    className="rounded border-gray-300 text-primary-500 bg-white"
   />
   </td>
   <td className="px-3 py-2 whitespace-nowrap text-xs">
@@ -765,14 +765,14 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
     <button
       onClick={() => setCurrentPage(1)}
       disabled={currentPage === 1}
-      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:bg-subtle disabled:text-fg-subtle transition-colors"
       title="First page"
     >«</button>
     {/* Previous */}
     <button
       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
       disabled={currentPage === 1}
-      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:bg-subtle disabled:text-fg-subtle transition-colors"
     >‹ Prev</button>
     {/* Page numbers */}
     {(() => {
@@ -805,13 +805,13 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
     <button
       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
       disabled={currentPage === totalPages}
-      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:bg-subtle disabled:text-fg-subtle transition-colors"
     >Next ›</button>
     {/* Last */}
     <button
       onClick={() => setCurrentPage(totalPages)}
       disabled={currentPage === totalPages}
-      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+      className="px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:bg-subtle disabled:text-fg-subtle transition-colors"
       title="Last page"
     >»</button>
   </nav>
@@ -829,7 +829,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
  ></div>
  <div className="relative w-[400px] max-w-full bg-white flex flex-col h-full animate-in slide-in-from-right duration-300 border-l border-gray-200 shadow-2xl">
  <div className="flex items-center justify-between px-8 py-5 border-b border-gray-200 bg-slate-50">
- <h2 className="text-base font-bold text-slate-800 truncate pr-4">
+ <h2 className="text-base font-semibold text-slate-800 truncate pr-4">
  {isBulkEditing ? `Bulk Edit ${selectedRowKeys.length} Recruiters` : `Edit ${selectedRecruiter?.['Name'] || selectedRecruiter?.['Agency Name'] || 'Recruiter'}`}
  </h2>
  <button 
@@ -850,7 +850,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
  <select
  value={editFormData[field] !== undefined ? editFormData[field] : ''}
  onChange={(e) => handleInputChange(field, e.target.value)}
- className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all shadow-sm"
+ className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-xs focus:bg-white focus:border-primary-500 transition-all shadow-sm"
  >
  <option value="">{isBulkEditing ? "Leave unchanged" : "Select status..."}</option>
  <option value="Active">Active</option>
@@ -867,7 +867,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
        step={1}
        value={editFormData[field] === null || editFormData[field] === undefined ? '' : editFormData[field]}
        onChange={(e) => handleInputChange(field, e.target.value)}
-       className="w-full px-4 py-2.5 pr-14 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-all shadow-sm"
+       className="w-full px-4 py-2.5 pr-14 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl text-xs focus:bg-white focus:border-violet-500 transition-all shadow-sm"
        placeholder={isBulkEditing ? 'Leave blank to keep unchanged' : 'e.g. 30'}
      />
      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-violet-500 pointer-events-none select-none">days</span>
@@ -879,7 +879,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
  type="text"
  value={editFormData[field] === null || editFormData[field] === undefined ?'' : editFormData[field]}
  onChange={(e) => handleInputChange(field, e.target.value)}
- className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all shadow-sm"
+ className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl text-xs focus:bg-white focus:border-primary-500 transition-all shadow-sm"
  placeholder={isBulkEditing ? `Enter ${field} (leave blank to keep unchanged)` : `Enter ${field}...`}
  />
  )}
@@ -898,7 +898,7 @@ export default function LeadsManagementTab({ sendMessage }: LeadsManagementTabPr
  <button
  onClick={handleSave}
  disabled={isSaving}
- className="flex items-center gap-2 px-5 py-2.5 bg-accent text-on-accent rounded-lg hover:bg-accent-700 transition-all text-xs font-medium disabled:opacity-50 shadow-sm"
+ className="flex items-center gap-2 px-5 py-2.5 bg-accent text-on-accent rounded-lg hover:bg-accent-700 transition-all text-xs font-medium disabled:bg-subtle disabled:text-fg-subtle shadow-sm"
  >
  {isSaving ? (
  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

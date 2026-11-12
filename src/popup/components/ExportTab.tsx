@@ -367,7 +367,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  {/* Extension Node Filter */}
  <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-3">
  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
- <h2 className="text-xs font-bold text-gray-600 flex items-center gap-2">
+ <h2 className="text-xs font-semibold text-gray-600 flex items-center gap-2">
  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
  Filter by extension node
  </h2>
@@ -380,7 +380,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  value={selectedWorker}
  onChange={e => setSelectedWorker(e.target.value)}
  disabled={busy || loadingWorkers}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all appearance-none font-mono"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-gray-400 transition-all appearance-none font-mono"
  >
  <option value="all">All agents</option>
  {workers.length === 0 && !loadingWorkers && (
@@ -404,17 +404,17 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <svg className="w-4 h-4 text-green-600" viewBox="0 0 24 24" fill="currentColor">
  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V7h10v2z"/>
  </svg>
- <h2 className="text-xs font-bold text-gray-600 ">Google Sheets sync</h2>
+ <h2 className="text-xs font-semibold text-gray-600 ">Google Sheets sync</h2>
  </div>
 
  <div className="space-y-3">
  <div className="space-y-1">
- <label className="text-xs text-gray-700 font-bold block">Target client sheet</label>
+ <label className="text-xs text-gray-700 font-semibold block">Target client sheet</label>
  <select
  value={selectedClientSync}
  onChange={e => setSelectedClientSync(e.target.value)}
  disabled={busy}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all appearance-none cursor-pointer"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 transition-all appearance-none cursor-pointer"
  >
  <option value="all">All clients (grouped automatically)</option>
  <option value="custom">Custom sheet settings</option>
@@ -429,18 +429,18 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <input type="text" placeholder="Apps Script web app URL"
  value={sheetsConfig.webAppUrl}
  onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 transition-all"
  />
  <div className="flex gap-2">
  <input type="text" placeholder="Spreadsheet ID (optional)"
  value={sheetsConfig.spreadsheetId}
  onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
- className="flex-1 bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+ className="flex-1 bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 transition-all"
  />
  <input type="text" placeholder="Sheet1"
  value={sheetsConfig.sheetName}
  onChange={e => updateSheetsConfig('sheetName', e.target.value)}
- className="w-1/3 bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+ className="w-1/3 bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 transition-all"
  />
  </div>
  </div>
@@ -510,11 +510,11 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
  {/* Format + Download */}
  <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-4">
- <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2">Download format</h2>
+ <h2 className="text-xs font-semibold text-gray-600 border-b border-gray-200 pb-2">Download format</h2>
  <div className="grid grid-cols-3 gap-2">
  {(['csv','json','xlsx'] as ExportFormat[]).map(fmt => (
  <button key={fmt} onClick={() => setFormat(fmt)}
- className={`px-3 py-2 rounded-md text-xs font-bold transition-all border
+ className={`px-3 py-2 rounded-md text-xs font-semibold transition-all border
  ${format === fmt
  ?'bg-gray-100 text-gray-900 border-gray-300 shadow-sm'
  :'bg-white border-gray-200 text-gray-600 hover:text-gray-700 hover:bg-gray-50'}`}
@@ -566,7 +566,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
  {/* Field selection */}
  <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm flex flex-col h-[380px]">
- <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2 mb-3 flex justify-between">
+ <h2 className="text-xs font-semibold text-gray-600 border-b border-gray-200 pb-2 mb-3 flex justify-between">
  <span>Fields matrix</span>
  <span className="text-gray-600 font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{selectedJobsCount} Included</span>
  </h2>

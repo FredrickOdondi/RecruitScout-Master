@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import React, { useState, useEffect, useCallback, useRef } from'react';
 import { supabaseClient, SupabaseJob } from'../shared/supabase';
 
@@ -516,7 +517,7 @@ export default function SupabaseTab() {
  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all border
  ${syncing
  ?'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-500'
- :'bg-green-600 text-green-400 border-green-500/30 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed'}`}
+ :'bg-green-600 text-green-400 border-green-500/30 hover:bg-green-600 disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed'}`}
  >
  {syncing ? (
  <>
@@ -540,7 +541,7 @@ export default function SupabaseTab() {
  {showSheetsConfig && (
  <div className="px-5 py-4 bg-gray-50 border-b border-gray-200 space-y-3.5">
  <div className="space-y-1">
- <label className="text-xs text-gray-700 font-bold block">Target client sheet</label>
+ <label className="text-xs text-gray-700 font-semibold block">Target client sheet</label>
  <select
  value={selectedClientSync}
  onChange={e => {
@@ -557,7 +558,7 @@ export default function SupabaseTab() {
  }
  }
  }}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all cursor-pointer shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:border-green-500 transition-all cursor-pointer shadow-sm"
  >
  <option value="custom">Custom sheet settings</option>
  {allEnrolledClients.map(c => (
@@ -573,7 +574,7 @@ export default function SupabaseTab() {
  <input type="text" placeholder="https://script.google.com/macros/s/…/exec"
  value={sheetsConfig.webAppUrl}
  onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm" />
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-green-500 transition-all shadow-sm" />
  </div>
  <div className="grid grid-cols-2 gap-3">
  <div>
@@ -581,14 +582,14 @@ export default function SupabaseTab() {
  <input type="text" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
  value={sheetsConfig.spreadsheetId}
  onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm" />
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-green-500 transition-all shadow-sm" />
  </div>
  <div>
  <label className="text-xs text-gray-700 mb-1 block">Sheet name</label>
  <input type="text" placeholder="Sheet1"
  value={sheetsConfig.sheetName}
  onChange={e => updateSheetsConfig('sheetName', e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm" />
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-green-500 transition-all shadow-sm" />
  </div>
  </div>
  </div>
@@ -635,17 +636,17 @@ export default function SupabaseTab() {
  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"><SearchIcon /></span>
  <input type="text" placeholder="Search title, company, location…"
  value={search} onChange={e => handleSearchChange(e.target.value)}
- className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-8 pr-7 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all shadow-sm" />
+ className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-8 pr-7 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-primary-500 transition-all shadow-sm" />
  {search && (
  <button onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }}
- className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 text-xs" aria-label="Clear">✕</button>
+ className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 text-xs" aria-label="Clear"><X size={14} /></button>
  )}
  </div>
 
  {/* Source filter */}
  <div className="relative">
  <select value={sourceFilter} onChange={e => { setSourceFilter(e.target.value); setPage(1); }}
- className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-primary-500 cursor-pointer shadow-sm">
+ className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:border-primary-500 cursor-pointer shadow-sm">
  <option value="all">All sources</option>
  {allSources.map(s => {
  let displaySource = s;
@@ -663,7 +664,7 @@ export default function SupabaseTab() {
  <div className="relative" ref={categoryDropdownRef}>
  <button 
  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
- className="flex items-center justify-between min-w-[160px] max-w-[200px] bg-white border border-gray-300 text-gray-900 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-primary-500 cursor-pointer shadow-sm"
+ className="flex items-center justify-between min-w-[160px] max-w-[200px] bg-white border border-gray-300 text-gray-900 text-xs rounded-lg px-3 py-2 focus:border-primary-500 cursor-pointer shadow-sm"
  >
  <span className="truncate">
  {categoryFilter.length === 0 ?"All Categories" : `${categoryFilter.length} Selected`}
@@ -706,7 +707,7 @@ export default function SupabaseTab() {
  {/* Worker / Extension filter */}
  <div className="relative">
  <select value={workerFilter} onChange={e => { setWorkerFilter(e.target.value); setPage(1); }}
- className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-primary-500 cursor-pointer shadow-sm">
+ className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:border-primary-500 cursor-pointer shadow-sm">
  <option value="all">All agents</option>
  {allWorkers.map(w => <option key={w} value={w}>{w}</option>)}
  </select>
@@ -716,7 +717,7 @@ export default function SupabaseTab() {
  {/* Client filter */}
  <div className="relative">
  <select value={clientFilter} onChange={e => { setClientFilter(e.target.value); setPage(1); }}
- className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-primary-500 cursor-pointer shadow-sm">
+ className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:border-primary-500 cursor-pointer shadow-sm">
  <option value="all">All clients</option>
  {allClients.map(c => <option key={c} value={c}>{c}</option>)}
  </select>
@@ -726,7 +727,7 @@ export default function SupabaseTab() {
  {/* Sort */}
  <div className="relative">
  <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
- className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:outline-none focus:border-primary-500 cursor-pointer shadow-sm">
+ className="appearance-none bg-white border border-gray-300 text-gray-900 text-xs rounded-lg pl-3 pr-7 py-2 focus:border-primary-500 cursor-pointer shadow-sm">
  <option value="newest">Newest first</option>
  <option value="oldest">Oldest first</option>
  <option value="title">title A–Z</option>
@@ -738,13 +739,13 @@ export default function SupabaseTab() {
  <div className="ml-auto flex items-center gap-2">
  {selectedIds.size > 0 && (
  <button onClick={() => handleDelete()} disabled={deleting}
- className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all disabled:opacity-50">
+ className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all disabled:bg-subtle disabled:text-fg-subtle">
  <TrashIcon />
  {deleting ?'Deleting…' : `Delete (${selectedIds.size})`}
  </button>
  )}
  <button onClick={() => fetchPage()} disabled={loading}
- className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100 transition-all disabled:opacity-50">
+ className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs bg-primary-50 text-primary-700 border border-primary-200 hover:bg-primary-100 transition-all disabled:bg-subtle disabled:text-fg-subtle">
  <span className={loading ?'animate-spin' :''}><RefreshIcon /></span>
  Refresh
  </button>
@@ -839,13 +840,13 @@ export default function SupabaseTab() {
  <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-200 text-xs text-gray-700 bg-white">
  <div className="flex items-center gap-3">
  <div className="flex items-center gap-1">
- <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading} className="p-1 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-30"><ChevronLeftIcon /></button>
+ <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading} className="p-1 hover:bg-gray-100 rounded text-gray-600 disabled:bg-subtle disabled:text-fg-subtle"><ChevronLeftIcon /></button>
  <span className="mx-1">Page</span>
- <input type="number" min={1} max={totalPages} value={page} onChange={e => { const v = parseInt(e.target.value); if(!isNaN(v) && v >= 1 && v <= totalPages) setPage(v); }} className="w-12 border border-gray-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:border-gray-400" />
+ <input type="number" min={1} max={totalPages} value={page} onChange={e => { const v = parseInt(e.target.value); if(!isNaN(v) && v >= 1 && v <= totalPages) setPage(v); }} className="w-12 border border-gray-200 rounded px-1.5 py-0.5 text-center focus:border-gray-400" />
  <span className="mx-1">of {totalPages.toLocaleString()}</span>
- <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || loading} className="p-1 hover:bg-gray-100 rounded text-gray-600 disabled:opacity-30"><ChevronRightIcon /></button>
+ <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || loading} className="p-1 hover:bg-gray-100 rounded text-gray-600 disabled:bg-subtle disabled:text-fg-subtle"><ChevronRightIcon /></button>
  </div>
- <select className="border border-gray-200 rounded px-2 py-0.5 focus:outline-none hover:bg-gray-50">
+ <select className="border border-gray-200 rounded px-2 py-0.5 hover:bg-gray-50">
  <option>{PAGE_SIZE} rows</option>
  </select>
  <span>{total.toLocaleString()} records</span>

@@ -210,7 +210,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  onChange={e => setEmail(e.target.value)}
  placeholder="you@example.com"
  className="w-full bg-surface border border-stroke-control rounded-md pl-10 pr-4 h-control text-sm text-fg border-b-stroke-accessible
- focus:outline-none focus:border-b-accent focus:border-b-2 transition-colors
+ focus:border-b-accent focus:border-b-2 transition-colors
  disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed"
  />
  </div>
@@ -247,7 +247,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  onChange={e => setPassword(e.target.value)}
  placeholder="••••••••"
  className="w-full bg-surface border border-stroke-control rounded-md pl-10 pr-11 h-control text-sm text-fg border-b-stroke-accessible
- focus:outline-none focus:border-b-accent focus:border-b-2 transition-colors"
+ focus:border-b-accent focus:border-b-2 transition-colors"
  />
  <button
  type="button"

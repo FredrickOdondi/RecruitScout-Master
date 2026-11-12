@@ -68,7 +68,7 @@ export default function JobsTab({ jobs, onJobsUpdate, sendMessage }: JobsTabProp
  placeholder="Search extracted jobs by title, company, or location..."
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-md p-2.5 pl-10 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all outline-none shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md p-2.5 pl-10 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-400 transition-all shadow-sm"
  />
  <svg
  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-gray-700 transition-colors"
