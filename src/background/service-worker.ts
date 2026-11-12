@@ -959,6 +959,13 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
   }
 }
 
+/** Outcome of one queue check, so the popup can say why nothing ran. */
+type PollResult = {
+  found: boolean;
+  reason?: 'busy' | 'already-polling' | 'polling-off' | 'no-tasks' | 'error';
+  error?: string;
+};
+
 /**
  * Background Service Worker - Main orchestration hub
  */
@@ -969,6 +976,9 @@ class ServiceWorker {
   // Instant abort flag — set synchronously so every await checkpoint sees it immediately
   private abortRequested = false;
   private isPollingQueue = false;
+  // Extractions actually running in this service worker. The saved state can say
+  // "running" after a restart even though nothing is; this tells the two apart.
+  private activeRuns = 0;
 
   constructor() {
     this.initialize().catch(err => {
@@ -1402,8 +1412,9 @@ class ServiceWorker {
     });
 
     messageRouter.on('FORCE_POLL_QUEUE' as any, async () => {
-      const foundTask = await this.pollQueue();
-      return { success: true, foundTask };
+      const result = await this.pollQueue();
+      const counts = result.found ? null : await supabaseClient.getQueueCounts();
+      return { success: true, foundTask: result.found, reason: result.reason, error: result.error, counts };
     });
 
     // Google Sheets Sync
@@ -1519,19 +1530,25 @@ class ServiceWorker {
     return true;
   }
 
-  private async pollQueue(): Promise<boolean> {
-    if (this.isPollingQueue) return false;
+  private async pollQueue(): Promise<PollResult> {
+    if (this.isPollingQueue) return { found: false, reason: 'already-polling' };
     this.isPollingQueue = true;
     let foundTask = false;
+    let lastError: string | undefined;
     try {
       const state = stateManager.getState();
-      if (state.status === 'running') return false; // Busy
+      if (state.status === 'running') {
+        if (this.activeRuns > 0) return { found: false, reason: 'busy' };
+        // Saved as running, but nothing is running here (the worker restarted mid-task)
+        console.log('[RecruitScout] Clearing a stale "running" state left by an interrupted run.');
+        await stateManager.setState({ status: 'idle' });
+      }
 
       const settings = await storage.getSettings();
-      if (!settings.pollingEnabled) return false; // Not enabled
+      if (!settings.pollingEnabled) return { found: false, reason: 'polling-off' };
 
       const workerId = await this.getActiveWorkerId();
-      if (!workerId) return false; // Cannot fetch if unidentified
+      if (!workerId) return { found: false, reason: 'error', error: 'This agent has no worker ID.' };
 
       let hasMoreTasks = true;
       while (hasMoreTasks) {
@@ -1625,6 +1642,7 @@ class ServiceWorker {
           } else {
             if (response?.error) {
               console.warn('[RecruitScout] Remote queue fetch returned error:', response.error);
+              lastError = response.error;
             }
             // Queue is empty — check if it's a new day and reset completed tasks
             const wasReset = await this.checkAndResetDailyQueue();
@@ -1638,6 +1656,7 @@ class ServiceWorker {
           }
         } catch (err) {
           console.error('[RecruitScout] Polling error:', err);
+          lastError = err instanceof Error ? err.message : String(err);
           hasMoreTasks = false;
         }
       }
@@ -1648,7 +1667,8 @@ class ServiceWorker {
       }
       this.isPollingQueue = false;
     }
-    return foundTask;
+    if (foundTask) return { found: true };
+    return lastError ? { found: false, reason: 'error', error: lastError } : { found: false, reason: 'no-tasks' };
   }
 
   private async setupOffscreenDocument(): Promise<void> {
@@ -1739,6 +1759,15 @@ class ServiceWorker {
   }
 
   private async startExtraction(payload: any, sender: chrome.runtime.MessageSender): Promise<any> {
+    this.activeRuns++;
+    try {
+      return await this.runExtraction(payload, sender);
+    } finally {
+      this.activeRuns--;
+    }
+  }
+
+  private async runExtraction(payload: any, _sender: chrome.runtime.MessageSender): Promise<any> {
     this.abortRequested = false;
     await stateManager.setState({ status: 'running' });
     const { mode, url, options, tabId: payloadTabId } = payload;
@@ -1756,6 +1785,15 @@ class ServiceWorker {
   }
 
   private async startBulkExtraction(payload: any, sender?: chrome.runtime.MessageSender): Promise<any> {
+    this.activeRuns++;
+    try {
+      return await this.runBulkExtraction(payload, sender);
+    } finally {
+      this.activeRuns--;
+    }
+  }
+
+  private async runBulkExtraction(payload: any, _sender?: chrome.runtime.MessageSender): Promise<any> {
     this.abortRequested = false;
     await stateManager.setState({ status: 'running' });
     const { titles, options, tabId: payloadTabId } = payload;

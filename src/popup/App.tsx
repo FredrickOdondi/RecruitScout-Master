@@ -109,13 +109,34 @@ export default function App() {
  });
  }
 
+  /** Says why a queue check didn't start a task. */
+  function explainPoll(res: any) {
+    if (!res || res.foundTask) return;
+    const running = res.counts?.running ?? 0;
+    switch (res.reason) {
+      case 'busy':
+        alert('This agent is already running a task. It picks up the next one when it finishes.');
+        break;
+      case 'already-polling':
+        alert('This agent is already checking the queue. Give it a moment.');
+        break;
+      case 'polling-off':
+        alert('Swarm connect is off. Turn it on to pull tasks from the queue.');
+        break;
+      case 'error':
+        alert(`Couldn't read the queue. ${res.error || 'Check your connection and try again.'}`);
+        break;
+      default:
+        alert(running > 0
+          ? `No pending tasks. ${running} task${running === 1 ? ' is' : 's are'} running on other agents. Tasks stuck for over 3 hours are released automatically.`
+          : 'No pending tasks in the queue. The agent keeps listening in the background.');
+    }
+  }
+
   const handleStart = async () => {
     // 1. If remote mode is active, poll remote queue
     if (settings.pollingEnabled) {
-      const res = await sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any });
-      if (res && !res.foundTask) {
-        alert('No pending tasks found in the remote queue. The agent will keep listening in the background.');
-      }
+      explainPoll(await sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any }, 60000));
       return;
     }
 
@@ -142,10 +163,7 @@ export default function App() {
 
     // 3. Fallback: local queue is empty, so automatically switch to Remote Swarm Mode and poll Supabase!
     await updateSetting('pollingEnabled', true);
-    const res = await sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any });
-    if (res && !res.foundTask) {
-      alert('No pending tasks found in the remote queue. The agent will keep listening in the background.');
-    }
+    explainPoll(await sendMessage<any>({ type: 'FORCE_POLL_QUEUE' as any }, 60000));
   };
 
  const handleStop = () => {

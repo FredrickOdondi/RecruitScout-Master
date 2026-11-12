@@ -937,7 +937,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  </button>
  <button
  onClick={async () => {
- if (!confirm('Reset finished tasks to pending?\n\nEvery completed and failed task runs again today.')) return;
+ if (!confirm('Reset finished and stuck tasks to pending?\n\nEvery completed and failed task runs again, and so does any task stuck running for over 3 hours.')) return;
  try {
  const res = await bridgeSendMessage<any>({ type:'SUPABASE_RESET_QUEUE' as any });
  if (res?.error) {

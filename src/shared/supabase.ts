@@ -553,8 +553,63 @@ export class SupabaseClient {
   /**
    * Fetch pending task and lock it atomically
    */
+  /** A task "running" longer than this was abandoned by its agent (closed browser, crash). */
+  static readonly STALE_RUNNING_HOURS = 3;
+
+  /**
+   * Put abandoned tasks back in the queue: anything still "running" after
+   * STALE_RUNNING_HOURS goes back to pending and unassigned, the same way
+   * resetCompletedTasks treats finished tasks. Returns how many were released.
+   */
+  async releaseStaleTasks(): Promise<number> {
+    const cutoff = new Date(Date.now() - SupabaseClient.STALE_RUNNING_HOURS * 3600 * 1000).toISOString();
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/rest/v1/BulkQueue?status=eq.running&or=(started_at.is.null,started_at.lt.${encodeURIComponent(cutoff)})`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal, count=exact',
+          },
+          body: JSON.stringify({ status: 'pending', assigned_to: null, started_at: null }),
+          signal: AbortSignal.timeout(30000),
+        }
+      );
+      if (!res.ok) return 0;
+      const released = parseInt(res.headers.get('content-range')?.split('/').pop() || '0', 10) || 0;
+      if (released > 0) console.log(`[RecruitScout] Released ${released} abandoned queue task(s) back to pending.`);
+      return released;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Number of pending and running tasks, for explaining an empty poll. */
+  async getQueueCounts(): Promise<{ pending: number; running: number }> {
+    const count = async (status: string) => {
+      try {
+        const res = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?select=id&status=eq.${status}&limit=0`, {
+          method: 'HEAD',
+          headers: { 'apikey': this.apiKey, 'Authorization': `Bearer ${this.apiKey}`, 'Prefer': 'count=exact' },
+          signal: AbortSignal.timeout(15000),
+        });
+        return parseInt(res.headers.get('content-range')?.split('/').pop() || '0', 10) || 0;
+      } catch {
+        return 0;
+      }
+    };
+    const [pending, running] = await Promise.all([count('pending'), count('running')]);
+    return { pending, running };
+  }
+
   async fetchNextTaskAndLock(workerId: string): Promise<SupabaseResponse<BulkQueueRecord>> {
     try {
+      // Tasks left "running" by an agent that went away would otherwise block the queue forever
+      await this.releaseStaleTasks();
+
       // Find one pending task that is either unassigned or assigned to this specific worker
       const url = `${this.baseUrl}/rest/v1/BulkQueue?select=*&status=eq.pending&or=(assigned_to.is.null,assigned_to.eq.${encodeURIComponent(workerId)})&order=created_at.asc&limit=1`;
 
@@ -652,6 +707,7 @@ export class SupabaseClient {
    */
   async resetCompletedTasks(): Promise<SupabaseResponse<{ reset: boolean }>> {
     try {
+      await this.releaseStaleTasks();
       const res = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?status=in.(completed,failed)`, {
         method: 'PATCH',
         headers: {
