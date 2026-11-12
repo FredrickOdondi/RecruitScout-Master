@@ -13,7 +13,8 @@
     "check:glacier": "node scripts/check-glacier.mjs",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "test:assistant": "vitest run tests/unit/assistant.test.ts --environment node"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",

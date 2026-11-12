@@ -1,22 +1,42 @@
-import React, { useState, useEffect } from'react';
+import React, { useState, useEffect, lazy, Suspense } from'react';
 import { MessageType, ExtensionMessage } from'../shared/types';
 import JobsTab from'../popup/components/JobsTab';
 import ExportTab from'../popup/components/ExportTab';
-import SupabaseTab from'./SupabaseTab';
-import ClientEnrollmentTab from'./ClientEnrollmentTab';
-import LeadsManagementTab from'./LeadsManagementTab';
-import LeadsFlowTab from'./LeadsFlowTab';
-import BlueApp from'../blue/App';
-import { OverviewTab } from './OverviewTab';
-import { GraphTab } from './GraphTab';
-import AssistantTab from './assistant/AssistantTab';
 import { supabaseClient } from'../shared/supabase';
 import { BlueCcClient } from'../shared/bluecc';
 
 // Icons 
 import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon, Cookie, MonitorDown, X, MessageSquare } from 'lucide-react';
-import IndeedSessionsTab from './IndeedSessionsTab';
 import { setThemeColor, useInstallPrompt } from './pwa';
+
+// Each tab is its own chunk, downloaded the first time it is opened. On a slow
+// link this keeps the first load to the shell plus the tab being viewed.
+const OverviewTab = lazy(() => import('./OverviewTab').then(m => ({ default: m.OverviewTab })));
+const GraphTab = lazy(() => import('./GraphTab').then(m => ({ default: m.GraphTab })));
+const AssistantTab = lazy(() => import('./assistant/AssistantTab'));
+const IndeedSessionsTab = lazy(() => import('./IndeedSessionsTab'));
+const SupabaseTab = lazy(() => import('./SupabaseTab'));
+const ClientEnrollmentTab = lazy(() => import('./ClientEnrollmentTab'));
+const LeadsManagementTab = lazy(() => import('./LeadsManagementTab'));
+const LeadsFlowTab = lazy(() => import('./LeadsFlowTab'));
+const BlueApp = lazy(() => import('../blue/App'));
+
+/** Glacier loading state shown while a tab's code downloads. */
+function TabSkeleton() {
+  return (
+    <div className="space-y-4 p-1 animate-pulse" role="status" aria-label="Loading">
+      <div className="h-6 w-48 rounded-md bg-subtle" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0, 1, 2, 3].map(i => <div key={i} className="h-24 rounded-xl border border-stroke-card bg-surface" />)}
+      </div>
+      <div className="h-64 rounded-xl border border-stroke-card bg-surface" />
+    </div>
+  );
+}
+
+const Lazy: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Suspense fallback={<TabSkeleton />}>{children}</Suspense>
+);
 
 const ServerIcon = () => <Server size={20} />;
 const SettingsIcon = () => <Settings size={20} />;
@@ -159,6 +179,10 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [assistantFocusNonce, setAssistantFocusNonce] = useState(0);
+  // Slide-over Assistant available on every tab (Ctrl/⌘K)
+  const [assistantPanelOpen, setAssistantPanelOpen] = useState(false);
+  const activeTabRef = React.useRef('overview');
+  activeTabRef.current = activeTab;
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -166,9 +190,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setActiveTab('assistant');
-        setAssistantFocusNonce((n) => n + 1);
         setIsMobileMenuOpen(false);
+        if (activeTabRef.current !== 'assistant') setAssistantPanelOpen((open) => !open);
+        setAssistantFocusNonce((n) => n + 1);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -748,12 +772,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   {activeTab !== 'assistant' && (
     <button
       type="button"
-      onClick={() => { setActiveTab('assistant'); setAssistantFocusNonce((n) => n + 1); }}
+      onClick={() => { setAssistantPanelOpen(true); setAssistantFocusNonce((n) => n + 1); }}
       className="hidden md:inline-flex items-center gap-1.5 text-xs text-fg-subtle hover:text-fg px-2 py-1 rounded-md hover:bg-hover"
-      title="Open Assistant (⌘K)"
+      aria-label="Ask the Assistant"
+      title="Ask the Assistant (Ctrl K)"
     >
       <MessageSquare size={12} />
-      <span>⌘K</span>
+      <span className="mono-id">Ctrl K</span>
     </button>
   )}
 
@@ -778,20 +803,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   <div className={`flex-1 min-h-0 ${activeTab === 'assistant' || activeTab === 'graph' || activeTab === 'leads' || activeTab === 'leads-flow' || activeTab === 'supabase' || activeTab === 'blue' ? 'overflow-hidden p-0 flex flex-col' : 'overflow-y-auto p-4 md:p-6 lg:p-8'}`}>
 
  {activeTab === 'assistant' && (
-  <AssistantTab sendMessage={bridgeSendMessage} focusNonce={assistantFocusNonce} />
+  <Lazy><AssistantTab sendMessage={bridgeSendMessage} focusNonce={assistantFocusNonce} onNavigate={(v) => setActiveTab(v)} /></Lazy>
  )}
  
  {/* OVERVIEW MODE */}
  {activeTab ==='overview' && (
- <OverviewTab />
+ <Lazy><OverviewTab /></Lazy>
  )}
 
  {activeTab === 'indeed-sessions' && (
-  <IndeedSessionsTab />
+  <Lazy><IndeedSessionsTab /></Lazy>
  )}
 
  {activeTab === 'graph' && (
-  <GraphTab />
+  <Lazy><GraphTab /></Lazy>
  )}
 
  {/* BULK SEARCH MODE */}
@@ -1424,39 +1449,56 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  {/* SUPABASE VIEWER */}
  {activeTab ==='supabase' && (
  <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto flex-1 flex flex-col min-h-0">
- <SupabaseTab />
+ <Lazy><SupabaseTab /></Lazy>
  </div>
  )}
 
  {/* CLIENT ENROLLMENT */}
  {activeTab ==='clients' && (
  <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto">
- <ClientEnrollmentTab sendMessage={bridgeSendMessage} />
+ <Lazy><ClientEnrollmentTab sendMessage={bridgeSendMessage} /></Lazy>
  </div>
  )}
 
  {/* LEADS MANAGEMENT */}
  {activeTab ==='leads' && (
  <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto flex-1 flex flex-col min-h-0">
- <LeadsManagementTab sendMessage={bridgeSendMessage} />
+ <Lazy><LeadsManagementTab sendMessage={bridgeSendMessage} /></Lazy>
  </div>
  )}
 
  {/* LEADS FLOW */}
  {activeTab ==='leads-flow' && (
  <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto flex-1 flex flex-col min-h-0">
- <LeadsFlowTab sendMessage={bridgeSendMessage} />
+ <Lazy><LeadsFlowTab sendMessage={bridgeSendMessage} /></Lazy>
  </div>
  )}
 
  {/* BLUE.CC WORKSPACES */}
  {activeTab ==='blue' && (
  <div className="w-full max-w-[1600px] 2xl:max-w-[1920px] mx-auto flex-1 flex flex-col min-h-0">
- <BlueApp />
+ <Lazy><BlueApp /></Lazy>
  </div>
  )}
 
  </div>
+
+ {/* Slide-over Assistant: the same Assistant, on top of the current tab */}
+ {assistantPanelOpen && activeTab !== 'assistant' && (
+   <div className="ai-panel-enter absolute inset-y-0 right-0 z-40 w-full sm:w-[440px] flex flex-col border-l border-stroke-card bg-canvas shadow-flyout" role="dialog" aria-label="Assistant">
+     <Lazy>
+       <AssistantTab
+         variant="panel"
+         sendMessage={bridgeSendMessage}
+         focusNonce={assistantFocusNonce}
+         viewContext={tabTitles[activeTab] || activeTab}
+         onNavigate={(v) => setActiveTab(v)}
+         onExpand={() => { setAssistantPanelOpen(false); setActiveTab('assistant'); }}
+         onClose={() => setAssistantPanelOpen(false)}
+       />
+     </Lazy>
+   </div>
+ )}
  </main>
  </div>
  );

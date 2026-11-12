@@ -82,6 +82,22 @@ export async function renameThread(threadId: string, title: string): Promise<voi
   });
 }
 
+export async function deleteThread(threadId: string): Promise<void> {
+  memoryThreads.delete(threadId);
+  memoryMessages.delete(threadId);
+  if (threadId.startsWith('local-') || memoryMode) return;
+  // Messages and tool runs reference the thread; remove them first
+  await fetch(`${SUPABASE_URL}/rest/v1/agent_messages?thread_id=eq.${threadId}`, {
+    method: 'DELETE', headers: authHeaders(), signal: AbortSignal.timeout(15000),
+  }).catch(() => {});
+  await fetch(`${SUPABASE_URL}/rest/v1/agent_tool_runs?thread_id=eq.${threadId}`, {
+    method: 'DELETE', headers: authHeaders(), signal: AbortSignal.timeout(15000),
+  }).catch(() => {});
+  await fetch(`${SUPABASE_URL}/rest/v1/agent_threads?id=eq.${threadId}`, {
+    method: 'DELETE', headers: authHeaders(), signal: AbortSignal.timeout(15000),
+  });
+}
+
 export async function touchThread(threadId: string): Promise<void> {
   const local = memoryThreads.get(threadId);
   if (local || threadId.startsWith('local-')) {

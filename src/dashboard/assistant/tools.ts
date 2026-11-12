@@ -1,463 +1,423 @@
-import type { ToolDefinition } from './types';
+import type { JsonSchema, ToolDefinition, ToolRisk } from './types';
 
-/** OpenAI function-calling schemas. Executors live in executeTool.ts */
+/**
+ * Every task a person does in RecruitScout, as tools the Assistant can call.
+ * Executors live in executeTool.ts.
+ *
+ * There is deliberately no "confirm" argument: only an Approve click in the UI
+ * can authorise a risky call (see APPROVAL_RISKS and executeTool.ts).
+ */
+
+const obj = (properties: Record<string, JsonSchema> = {}, required: string[] = []): JsonSchema => ({
+  type: 'object',
+  properties,
+  required,
+  additionalProperties: false,
+});
+const str = (description?: string, extra: Partial<JsonSchema> = {}): JsonSchema => ({ type: 'string', description, ...extra });
+const num = (description?: string, extra: Partial<JsonSchema> = {}): JsonSchema => ({ type: 'number', description, ...extra });
+const bool = (description?: string): JsonSchema => ({ type: 'boolean', description });
+const strList = (description?: string): JsonSchema => ({ type: 'array', items: { type: 'string' }, description });
+
+const SITES = ['indeed', 'spanish-indeed', 'trovolavoro'];
+const QUEUE_STATUSES = ['pending', 'running', 'completed', 'failed'];
+
 export const ASSISTANT_TOOLS: ToolDefinition[] = [
+  // ── Overview and diagnosis ──────────────────────────────────────────────
   {
-    name: 'get_overview_stats',
-    description: 'Fleet overview: job counts, clients, recruiters, queue/agent health from overview_stats().',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'get_overview_stats', label: 'Read overview stats', risk: 'read',
+    description: 'Exact totals and breakdowns: jobs, clients, recruiters, queue, emails, agents, sources, categories, 14-day volume.',
+    parameters: obj(),
   },
   {
-    name: 'get_queue',
-    description: 'List BulkQueue tasks with status, title, location, client, worker, site.',
-    risk: 'read',
-    parameters: {
-      type: 'object',
-      properties: {
-        status: { type: 'string', description: 'Optional filter: pending|running|completed|failed' },
-        limit: { type: 'number', description: 'Max rows (default 100)' },
-      },
-      additionalProperties: false,
-    },
+    name: 'diagnose_swarm', label: 'Diagnose the swarm', risk: 'read',
+    description: 'One-shot health check: queue counts, online agents, Indeed account health and this browser\'s engine settings.',
+    parameters: obj(),
   },
   {
-    name: 'get_active_agents',
-    description: 'List swarm agents that have heartbeated recently.',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'open_dashboard_view', label: 'Open a dashboard view', risk: 'read',
+    description: 'Switch the dashboard to a tab so the user can see it.',
+    parameters: obj({
+      view: str('Tab to open', { enum: ['overview', 'search', 'indeed-sessions', 'jobs', 'export', 'graph', 'supabase', 'clients', 'leads', 'leads-flow', 'blue', 'settings'] }),
+    }, ['view']),
+  },
+
+  // ── Queue ────────────────────────────────────────────────────────────────
+  {
+    name: 'get_queue_counts', label: 'Count queue tasks', risk: 'read',
+    description: 'Number of pending and running BulkQueue tasks.',
+    parameters: obj(),
   },
   {
-    name: 'enqueue_tasks',
-    description: 'Enqueue scrape tasks. One title per entry, or empty titles with location for location-only scrape.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        titles: { type: 'array', items: { type: 'string' }, description: 'Job titles to search' },
-        location: { type: 'string' },
-        client_id: { type: 'string', description: 'Client UUID, or omit for general' },
-        target_site: {
-          type: 'string',
-          description: 'indeed | trovolavoro | comma-separated sites',
-        },
-        assigned_to: { type: 'string', description: 'Worker ID or blank for any' },
-        date_filter: { type: 'string', description: 'Indeed date filter: last|1|3|7|14' },
-        confirm: { type: 'boolean', description: 'Set true after user confirms if required' },
-      },
-      additionalProperties: false,
-    },
+    name: 'get_queue', label: 'List queue tasks', risk: 'read',
+    description: 'List BulkQueue tasks (newest first) with status, title, location, client, worker and site.',
+    parameters: obj({
+      status: str('Filter by status', { enum: QUEUE_STATUSES }),
+      limit: num('Max rows, default 50', { minimum: 1, maximum: 200 }),
+      offset: num('Rows to skip for paging', { minimum: 0 }),
+    }),
   },
   {
-    name: 'update_queue_task',
-    description: 'Update one queue task fields (status, title, location, assigned_to, target_site, client_id).',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        status: { type: 'string' },
-        job_title: { type: 'string' },
-        location: { type: 'string' },
-        assigned_to: { type: 'string' },
-        target_site: { type: 'string' },
-        client_id: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['id'],
-      additionalProperties: false,
-    },
+    name: 'enqueue_tasks', label: 'Queue scrape tasks', risk: 'write',
+    description: 'Add scrape tasks to the queue: one task per job title, or no titles plus a location for a location-only scrape.',
+    parameters: obj({
+      titles: strList('Job titles to search'),
+      location: str('City or country'),
+      client_id: str('Client UUID, omit for general'),
+      target_site: str('Site to scrape', { enum: SITES }),
+      assigned_to: str('Worker ID, omit for any agent'),
+      date_filter: str('Indeed date filter', { enum: ['last', '1', '3', '7', '14'] }),
+    }),
   },
   {
-    name: 'delete_queue_tasks',
-    description: 'Delete queue tasks by id. Cannot delete running tasks.',
-    risk: 'destructive',
-    parameters: {
-      type: 'object',
-      properties: {
-        ids: { type: 'array', items: { type: 'string' } },
-        confirm: { type: 'boolean' },
-      },
-      required: ['ids'],
-      additionalProperties: false,
-    },
+    name: 'update_queue_task', label: 'Edit a queue task', risk: 'write',
+    description: 'Change fields on one queue task.',
+    parameters: obj({
+      id: str('Task ID'),
+      status: str(undefined, { enum: QUEUE_STATUSES }),
+      job_title: str(), location: str(), assigned_to: str(),
+      target_site: str(undefined, { enum: SITES }),
+      client_id: str(),
+      date_filter: str(undefined, { enum: ['last', '1', '3', '7', '14'] }),
+    }, ['id']),
   },
   {
-    name: 'reset_queue',
-    description: 'Reset all completed/failed BulkQueue tasks back to pending.',
-    risk: 'bulk',
-    parameters: {
-      type: 'object',
-      properties: { confirm: { type: 'boolean' } },
-      additionalProperties: false,
-    },
+    name: 'bulk_update_queue_tasks', label: 'Edit several queue tasks', risk: 'bulk',
+    description: 'Set the same status, site or client on a specific list of queue task IDs the user picked. To reset all finished or failed tasks use reset_queue instead.',
+    parameters: obj({
+      ids: strList('Task IDs'),
+      status: str(undefined, { enum: QUEUE_STATUSES }),
+      target_site: str(undefined, { enum: SITES }),
+      client_id: str(),
+    }, ['ids']),
   },
   {
-    name: 'apply_queue_location',
-    description: 'Set location on all existing queue tasks.',
-    risk: 'bulk',
-    parameters: {
-      type: 'object',
-      properties: {
-        location: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['location'],
-      additionalProperties: false,
-    },
+    name: 'delete_queue_tasks', label: 'Delete queue tasks', risk: 'destructive',
+    description: 'Permanently delete queue tasks by ID.',
+    parameters: obj({ ids: strList('Task IDs') }, ['ids']),
   },
   {
-    name: 'stop_engine',
-    description: 'Emergency stop: stop extraction and disable remote polling on this extension node.',
-    risk: 'extension',
-    parameters: {
-      type: 'object',
-      properties: { confirm: { type: 'boolean' } },
-      additionalProperties: false,
-    },
+    name: 'reset_queue', label: 'Reset the queue', risk: 'bulk',
+    description: 'Reset finished work: sets every completed, failed and stuck (running over 3 hours) queue task back to pending in one step. Use this whenever the user asks to reset, re-run or restart finished or failed tasks; never page through tasks to do it.',
+    parameters: obj(),
   },
   {
-    name: 'force_poll_queue',
-    description: 'Force this extension agent to claim the next pending BulkQueue task now.',
-    risk: 'extension',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'apply_queue_location', label: 'Set location on all tasks', risk: 'bulk',
+    description: 'Overwrite the location on every queue task.',
+    parameters: obj({ location: str() }, ['location']),
+  },
+
+  // ── Engine and agents (this browser\'s extension) ─────────────────────────
+  {
+    name: 'get_active_agents', label: 'List agents', risk: 'read',
+    description: 'Scraping agents that have checked in recently.',
+    parameters: obj(),
   },
   {
-    name: 'get_settings',
-    description: 'Read extension engine settings (polling, worker name, Indeed cookie mode, filters, sheets).',
-    risk: 'extension',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'get_engine_status', label: 'Read engine status', risk: 'read',
+    description: 'This browser\'s scraping engine: running, idle or error, current progress and page.',
+    parameters: obj(),
   },
   {
-    name: 'update_settings',
-    description: 'Update extension settings. Only pass fields to change.',
-    risk: 'extension',
-    parameters: {
-      type: 'object',
-      properties: {
-        pollingEnabled: { type: 'boolean' },
-        friendName: { type: 'string', description: 'Worker display name / ID' },
-        indeedCookieMode: { type: 'string', enum: ['browser', 'stored'] },
-        activeClientName: { type: 'string' },
-        filterRecruitersEnabled: { type: 'boolean' },
-        spanishWhitelistEnabled: { type: 'boolean' },
-        maxJobsPerPage: { type: 'number' },
-        paginationLimit: { type: 'number' },
-        crawlDelay: { type: 'number' },
-        autoExtract: { type: 'boolean' },
-        confirm: { type: 'boolean' },
-      },
-      additionalProperties: false,
-    },
+    name: 'get_settings', label: 'Read engine settings', risk: 'read',
+    description: 'This browser\'s extension settings: polling, worker ID, Indeed sign-in mode, filters, crawl delay.',
+    parameters: obj(),
   },
   {
-    name: 'get_job_count',
+    name: 'start_engine', label: 'Start the engine', risk: 'extension',
+    description: 'Turn on swarm polling in this browser and claim the next pending queue task now.',
+    parameters: obj(),
+  },
+  {
+    name: 'start_bulk_search', label: 'Start a bulk search', risk: 'extension',
+    description: 'Run a bulk Indeed search in this browser right away, without the queue.',
+    parameters: obj({
+      titles: strList('Job titles'),
+      location: str(),
+      target_site: str(undefined, { enum: SITES }),
+      date_filter: str(undefined, { enum: ['last', '1', '3', '7', '14'] }),
+      client_name: str('Client to stamp on the jobs'),
+    }, ['titles']),
+  },
+  {
+    name: 'pause_engine', label: 'Pause the engine', risk: 'extension',
+    description: 'Pause extraction in this browser.',
+    parameters: obj(),
+  },
+  {
+    name: 'stop_engine', label: 'Stop the engine', risk: 'extension',
+    description: 'Stop extraction in this browser and turn swarm polling off.',
+    parameters: obj(),
+  },
+  {
+    name: 'force_poll_queue', label: 'Check the queue now', risk: 'extension',
+    description: 'Make this browser claim the next pending queue task immediately. Returns why nothing ran if it finds no task.',
+    parameters: obj(),
+  },
+  {
+    name: 'update_settings', label: 'Change engine settings', risk: 'extension',
+    description: 'Change this browser\'s extension settings. Pass only the fields to change.',
+    parameters: obj({
+      pollingEnabled: bool(), friendName: str('Worker ID'),
+      indeedCookieMode: str('Indeed sign-in: this browser or stored accounts', { enum: ['browser', 'stored'] }),
+      activeClientName: str(), filterRecruitersEnabled: bool(), spanishWhitelistEnabled: bool(),
+      maxJobsPerPage: num(undefined, { minimum: 1 }), paginationLimit: num(undefined, { minimum: 1 }),
+      crawlDelay: num('Milliseconds', { minimum: 0 }), autoExtract: bool(),
+    }),
+  },
+
+  // ── Jobs ─────────────────────────────────────────────────────────────────
+  {
+    name: 'get_job_count', label: 'Count jobs', risk: 'read',
     description: 'Total jobs in the cloud jobs table.',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    parameters: obj(),
   },
   {
-    name: 'query_jobs',
-    description: 'Search/filter cloud jobs.',
-    risk: 'read',
-    parameters: {
-      type: 'object',
-      properties: {
-        search: { type: 'string' },
-        client: { type: 'string' },
-        source: { type: 'string' },
-        company: { type: 'string' },
-        category: { type: 'string' },
-        worker_id: { type: 'string' },
-        limit: { type: 'number' },
-        offset: { type: 'number' },
-      },
-      additionalProperties: false,
-    },
+    name: 'query_jobs', label: 'Search jobs', risk: 'read',
+    description: 'Search and filter cloud jobs.',
+    parameters: obj({
+      search: str('Matches title, company or location'),
+      client: str(), source: str(), category: str(), worker_id: str(),
+      sort: str(undefined, { enum: ['newest', 'oldest', 'title', 'company'] }),
+      limit: num('Default 25', { minimum: 1, maximum: 100 }),
+      offset: num(undefined, { minimum: 0 }),
+    }),
   },
   {
-    name: 'delete_jobs',
-    description: 'Delete cloud jobs by id.',
-    risk: 'destructive',
-    parameters: {
-      type: 'object',
-      properties: {
-        ids: { type: 'array', items: { type: 'string' } },
-        confirm: { type: 'boolean' },
-      },
-      required: ['ids'],
-      additionalProperties: false,
-    },
+    name: 'get_local_jobs', label: 'List jobs in this browser', risk: 'read',
+    description: 'Jobs stored in this browser\'s extension (not yet or already synced).',
+    parameters: obj({ limit: num('Default 25', { minimum: 1, maximum: 200 }), offset: num(undefined, { minimum: 0 }) }),
   },
   {
-    name: 'get_clients',
-    description: 'List enrolled clients and their sheet configuration.',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'update_job', label: 'Edit a job', risk: 'write',
+    description: 'Change fields on a job stored in this browser.',
+    parameters: obj({
+      id: str('Job ID'),
+      updates: { type: 'object', description: 'Fields to set, e.g. status, client, companyDomain', additionalProperties: true },
+    }, ['id', 'updates']),
   },
   {
-    name: 'enroll_client',
-    description: 'Enroll a client with Apps Script / Sheets config.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        name: { type: 'string' },
-        apps_script_url: { type: 'string' },
-        spreadsheet_id: { type: 'string' },
-        sheet_name: { type: 'string' },
-        set_active: { type: 'boolean', description: 'Also set as active client in settings' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['name', 'apps_script_url'],
-      additionalProperties: false,
-    },
+    name: 'delete_jobs', label: 'Delete jobs', risk: 'destructive',
+    description: 'Permanently delete cloud jobs by ID. Also how a job is rejected from lead matches.',
+    parameters: obj({ ids: strList('Job IDs') }, ['ids']),
   },
   {
-    name: 'delete_client',
-    description: 'Delete an enrolled client by id.',
-    risk: 'destructive',
-    parameters: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['id'],
-      additionalProperties: false,
-    },
+    name: 'sync_local_jobs_to_cloud', label: 'Upload browser jobs', risk: 'bulk',
+    description: 'Upload every job stored in this browser to the cloud jobs table.',
+    parameters: obj(),
   },
   {
-    name: 'list_indeed_sessions',
-    description: 'List Indeed scraper accounts (no cookie values): health, lease, errors.',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'export_jobs', label: 'Export jobs', risk: 'read',
+    description: 'Download matching cloud jobs as a CSV, JSON or Excel file in the user\'s browser.',
+    parameters: obj({
+      format: str(undefined, { enum: ['csv', 'json', 'xlsx'] }),
+      search: str(), client: str(), source: str(), category: str(),
+      limit: num('Default 1000', { minimum: 1, maximum: 5000 }),
+    }, ['format']),
   },
   {
-    name: 'reactivate_indeed_session',
-    description: 'Put a blocked Indeed session back into rotation.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        session_id: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['session_id'],
-      additionalProperties: false,
-    },
+    name: 'resolve_company_domain', label: 'Find a company website', risk: 'read',
+    description: 'Look up a company\'s website domain.',
+    parameters: obj({ company: str() }, ['company']),
+  },
+
+  // ── Clients and Sheets ───────────────────────────────────────────────────
+  {
+    name: 'get_clients', label: 'List clients', risk: 'read',
+    description: 'Enrolled clients with their Google Sheet settings.',
+    parameters: obj(),
   },
   {
-    name: 'force_release_indeed_session',
-    description: 'Force-release an Indeed account lease stuck on a worker.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        session_id: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['session_id'],
-      additionalProperties: false,
-    },
+    name: 'enroll_client', label: 'Enroll a client', risk: 'write',
+    description: 'Add a client and its Google Sheet. apps_script_url may be empty when the sheet uses Google sign-in sync.',
+    parameters: obj({
+      name: str(), apps_script_url: str(), spreadsheet_id: str('Sheet URL or ID'), sheet_name: str('Tab name, default Sheet1'),
+    }, ['name']),
   },
   {
-    name: 'get_recruiters',
-    description: 'Search recruiters / leads directory (paginated summary).',
-    risk: 'read',
-    parameters: {
-      type: 'object',
-      properties: {
-        search: { type: 'string' },
-        page: { type: 'number' },
-        page_size: { type: 'number' },
-        country: { type: 'string' },
-        status: { type: 'string' },
-      },
-      additionalProperties: false,
-    },
+    name: 'update_client_sheet', label: 'Change a client\'s sheet', risk: 'write',
+    description: 'Change the spreadsheet, tab or Apps Script URL for a client.',
+    parameters: obj({ id: str('Client ID'), spreadsheet_id: str(), sheet_name: str(), apps_script_url: str(), name: str('New name') }, ['id']),
   },
   {
-    name: 'update_recruiter',
-    description: 'Update fields on one recruiter row (keyed by agency name).',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        agency_name: { type: 'string' },
-        updates: { type: 'object', additionalProperties: true },
-        confirm: { type: 'boolean' },
-      },
-      required: ['agency_name', 'updates'],
-      additionalProperties: false,
-    },
+    name: 'set_active_client', label: 'Set the default client', risk: 'write',
+    description: 'Make a client the default for jobs scraped from this browser.',
+    parameters: obj({ name: str('Client name') }, ['name']),
   },
   {
-    name: 'bulk_update_recruiters',
-    description: 'Bulk update all recruiters: status, leads_sent, teaser_threshold, min_leads, or max_leads.',
-    risk: 'bulk',
-    parameters: {
-      type: 'object',
-      properties: {
-        field: {
-          type: 'string',
-          enum: ['status', 'leads_sent', 'teaser_threshold', 'min_leads', 'max_leads'],
-        },
-        value: { description: 'string for status, number for others' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['field', 'value'],
-      additionalProperties: false,
-    },
+    name: 'delete_client', label: 'Delete a client', risk: 'destructive',
+    description: 'Delete an enrolled client. Jobs already in its sheet stay.',
+    parameters: obj({ id: str('Client ID') }, ['id']),
   },
   {
-    name: 'sync_recruiter_contacts',
-    description: 'Sync recruiter contact emails from the contacts source into Recruiters.',
-    risk: 'bulk',
-    parameters: {
-      type: 'object',
-      properties: { confirm: { type: 'boolean' } },
-      additionalProperties: false,
-    },
+    name: 'sync_jobs_to_sheets', label: 'Sync jobs to Google Sheets', risk: 'external',
+    description: 'Send a client\'s jobs to their Google Sheet through its Apps Script URL.',
+    parameters: obj({ client_name: str(), limit: num('Default 200', { minimum: 1, maximum: 500 }) }, ['client_name']),
+  },
+
+  // ── Indeed accounts ──────────────────────────────────────────────────────
+  {
+    name: 'list_indeed_sessions', label: 'List Indeed accounts', risk: 'read',
+    description: 'Indeed scraper accounts (never cookie values): status, which agent holds them, errors, sign-in expiry.',
+    parameters: obj(),
   },
   {
-    name: 'match_recruiters_to_jobs',
-    description: 'Match categorized jobs to recruiters by specialty and return groups with contact emails.',
-    risk: 'read',
-    parameters: {
-      type: 'object',
-      properties: {
-        limit_groups: { type: 'number', description: 'Max matched groups to return (default 20)' },
-      },
-      additionalProperties: false,
-    },
+    name: 'reactivate_indeed_session', label: 'Reactivate an Indeed account', risk: 'write',
+    description: 'Put a blocked Indeed account back into rotation.',
+    parameters: obj({ session_id: str() }, ['session_id']),
   },
   {
-    name: 'get_email_schedule',
-    description: 'Read leads-flow email schedule config and state from extension storage (via bridge).',
-    risk: 'extension',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'force_release_indeed_session', label: 'Release an Indeed account', risk: 'write',
+    description: 'Free an Indeed account an agent left leased.',
+    parameters: obj({ session_id: str() }, ['session_id']),
+  },
+
+  // ── Recruiters and leads ─────────────────────────────────────────────────
+  {
+    name: 'get_recruiters', label: 'Search recruiters', risk: 'read',
+    description: 'Search the recruiter directory, paged.',
+    parameters: obj({
+      search: str('Name or domain'), country: str(), location: str(), specialty: str(), industry: str(),
+      page: num(undefined, { minimum: 1 }), page_size: num('Default 20', { minimum: 1, maximum: 100 }),
+    }),
   },
   {
-    name: 'set_email_schedule',
-    description: 'Update leads-flow email schedule config.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        enabled: { type: 'boolean' },
-        startTime: { type: 'string', description: 'HH:MM' },
-        endTime: { type: 'string', description: 'HH:MM' },
-        intervalMinutes: { type: 'number' },
-        maxDailyEmails: { type: 'number' },
-        daysOfWeek: { type: 'array', items: { type: 'number' }, description: '0=Sun … 6=Sat' },
-        confirm: { type: 'boolean' },
-      },
-      additionalProperties: false,
-    },
+    name: 'get_recruiter_countries', label: 'List recruiter countries', risk: 'read',
+    description: 'Countries present in the recruiter directory.',
+    parameters: obj(),
   },
   {
-    name: 'send_lead_email',
-    description: 'Send a lead email via Plunk/extension. Always requires confirm with full draft.',
-    risk: 'external',
-    parameters: {
-      type: 'object',
-      properties: {
-        to: { type: 'string' },
-        subject: { type: 'string' },
-        body_html: { type: 'string' },
-        recruiter_id: { type: 'string' },
-        recruiter_name: { type: 'string' },
-        matched_jobs: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              company: { type: 'string' },
-            },
-          },
-        },
-        confirm: { type: 'boolean' },
-      },
-      required: ['to', 'subject', 'body_html'],
-      additionalProperties: false,
-    },
+    name: 'get_recruiter_email_history', label: 'Read a recruiter\'s emails', risk: 'read',
+    description: 'Lead emails already sent to one recruiter.',
+    parameters: obj({ recruiter_id: str() }, ['recruiter_id']),
   },
   {
-    name: 'sync_jobs_to_sheets',
-    description: 'Sync jobs for a client to their Google Sheet via Apps Script web app URL.',
-    risk: 'external',
-    parameters: {
-      type: 'object',
-      properties: {
-        client_name: { type: 'string' },
-        limit: { type: 'number', description: 'Max jobs to sync (default 200)' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['client_name'],
-      additionalProperties: false,
-    },
+    name: 'update_recruiter', label: 'Edit a recruiter', risk: 'write',
+    description: 'Change fields on one recruiter, found by agency name. Field names match the Recruiters table, e.g. "Primary Specialty", "Daily Sending Limit".',
+    parameters: obj({
+      agency_name: str(),
+      updates: { type: 'object', additionalProperties: true },
+    }, ['agency_name', 'updates']),
   },
   {
-    name: 'get_blue_workspaces',
-    description: 'List Blue.cc workspaces for the signed-in user (requires Blue credentials).',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'set_recruiter_status', label: 'Change a recruiter\'s status', risk: 'write',
+    description: 'Set one recruiter\'s status.',
+    parameters: obj({ agency_name: str(), status: str(undefined, { enum: ['Active', 'Suspended', 'Blacklisted', 'Pending'] }) }, ['agency_name', 'status']),
   },
   {
-    name: 'get_blue_workspace_content',
-    description: 'Fetch lists and todos for a Blue.cc workspace/project id.',
-    risk: 'read',
-    parameters: {
-      type: 'object',
-      properties: { project_id: { type: 'string' } },
-      required: ['project_id'],
-      additionalProperties: false,
-    },
+    name: 'bulk_update_recruiters', label: 'Change all recruiters', risk: 'bulk',
+    description: 'Set one value on every recruiter: status, leads sent before teaser, teaser threshold, min leads or max leads per email.',
+    parameters: obj({
+      field: str(undefined, { enum: ['status', 'leads_sent', 'teaser_threshold', 'min_leads', 'max_leads'] }),
+      value: str('Status text, or a number for the others'),
+    }, ['field', 'value']),
   },
   {
-    name: 'blue_create_comment',
-    description: 'Add a comment on a Blue.cc todo.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        todo_id: { type: 'string' },
-        project_id: { type: 'string' },
-        text: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['todo_id', 'project_id', 'text'],
-      additionalProperties: false,
-    },
+    name: 'sync_recruiter_contacts', label: 'Sync recruiter contacts', risk: 'bulk',
+    description: 'Copy contact emails from the RecruiterContact table into recruiters.',
+    parameters: obj(),
   },
   {
-    name: 'blue_move_todo',
-    description: 'Move a Blue.cc todo to another list.',
-    risk: 'write',
-    parameters: {
-      type: 'object',
-      properties: {
-        todo_id: { type: 'string' },
-        todo_list_id: { type: 'string' },
-        project_id: { type: 'string' },
-        confirm: { type: 'boolean' },
-      },
-      required: ['todo_id', 'todo_list_id', 'project_id'],
-      additionalProperties: false,
-    },
+    name: 'match_recruiters_to_jobs', label: 'Match recruiters to jobs', risk: 'read',
+    description: 'Match categorized jobs to active recruiters by specialty and location, as the Leads flow does.',
+    parameters: obj({ limit_groups: num('Default 20', { minimum: 1, maximum: 50 }) }),
   },
   {
-    name: 'diagnose_swarm',
-    description: 'One-shot diagnosis: agents online, queue counts, Indeed session health, polling setting if bridge available.',
-    risk: 'read',
-    parameters: { type: 'object', properties: {}, additionalProperties: false },
+    name: 'draft_lead_email', label: 'Draft a lead email', risk: 'read',
+    description: 'Build the standard lead email (same templates as Leads flow) for a recruiter and their matched jobs. Returns subject and HTML; does not send.',
+    parameters: obj({ agency_name: str(), to: str('Recipient email, optional') }, ['agency_name']),
+  },
+  {
+    name: 'send_lead_email', label: 'Send a lead email', risk: 'external',
+    description: 'Send a lead email to a recruiter. Use draft_lead_email first.',
+    parameters: obj({
+      to: str(), subject: str(), body_html: str(), recruiter_id: str(), recruiter_name: str(),
+      matched_jobs: { type: 'array', items: { type: 'object', properties: { id: str(), title: str(), company: str() } } },
+    }, ['to', 'subject', 'body_html']),
+  },
+  {
+    name: 'get_email_schedule', label: 'Read the email schedule', risk: 'read',
+    description: 'Leads flow automatic email schedule and today\'s progress.',
+    parameters: obj(),
+  },
+  {
+    name: 'set_email_schedule', label: 'Change the email schedule', risk: 'external',
+    description: 'Change the automatic lead email schedule. Turning it on sends emails to recruiters automatically.',
+    parameters: obj({
+      enabled: bool(), startTime: str('HH:MM'), endTime: str('HH:MM'),
+      intervalMinutes: num(undefined, { minimum: 1 }), maxDailyEmails: num(undefined, { minimum: 1 }),
+      daysOfWeek: { type: 'array', items: { type: 'number' }, description: '0 = Sunday … 6 = Saturday' },
+    }),
+  },
+
+  // ── Blue.cc ──────────────────────────────────────────────────────────────
+  {
+    name: 'get_blue_workspaces', label: 'List Blue.cc workspaces', risk: 'read',
+    description: 'Blue.cc workspaces for the signed-in user.',
+    parameters: obj(),
+  },
+  {
+    name: 'get_blue_workspace_content', label: 'Read a Blue.cc board', risk: 'read',
+    description: 'Lists and cards of one Blue.cc workspace.',
+    parameters: obj({ project_id: str() }, ['project_id']),
+  },
+  {
+    name: 'get_blue_comments', label: 'Read Blue.cc comments', risk: 'read',
+    description: 'Comments and replies on one Blue.cc card.',
+    parameters: obj({ todo_id: str(), project_id: str() }, ['todo_id', 'project_id']),
+  },
+  {
+    name: 'get_blue_mentions', label: 'Read Blue.cc mentions', risk: 'read',
+    description: 'Recent Blue.cc mentions of the user.',
+    parameters: obj(),
+  },
+  {
+    name: 'blue_create_comment', label: 'Comment on Blue.cc', risk: 'write',
+    description: 'Add a comment, or a reply when parent_id is given, on a Blue.cc card.',
+    parameters: obj({ todo_id: str(), project_id: str(), text: str(), parent_id: str() }, ['todo_id', 'project_id', 'text']),
+  },
+  {
+    name: 'blue_move_todo', label: 'Move a Blue.cc card', risk: 'write',
+    description: 'Move a Blue.cc card to another list.',
+    parameters: obj({ todo_id: str(), todo_list_id: str(), project_id: str() }, ['todo_id', 'todo_list_id', 'project_id']),
+  },
+  {
+    name: 'create_blue_workspace', label: 'Create a Blue.cc workspace', risk: 'write',
+    description: 'Create a Blue.cc workspace.',
+    parameters: obj({ name: str(), description: str() }, ['name']),
+  },
+  {
+    name: 'rename_blue_workspace', label: 'Rename a Blue.cc workspace', risk: 'write',
+    description: 'Rename a Blue.cc workspace.',
+    parameters: obj({ project_id: str(), name: str() }, ['project_id', 'name']),
+  },
+  {
+    name: 'archive_blue_workspace', label: 'Archive a Blue.cc workspace', risk: 'destructive',
+    description: 'Archive a Blue.cc workspace.',
+    parameters: obj({ project_id: str() }, ['project_id']),
+  },
+  {
+    name: 'invite_blue_user', label: 'Invite someone to Blue.cc', risk: 'external',
+    description: 'Invite a person by email to a Blue.cc workspace.',
+    parameters: obj({ project_id: str(), email: str() }, ['project_id', 'email']),
+  },
+  {
+    name: 'remove_blue_user', label: 'Remove someone from Blue.cc', risk: 'destructive',
+    description: 'Remove a person from a Blue.cc workspace.',
+    parameters: obj({ project_id: str(), user_id: str() }, ['project_id', 'user_id']),
   },
 ];
 
-/** Tool defs for the OpenAI Responses API (required for gpt-6-astra + function tools). */
+/** Risks that only run after the user clicks Approve. */
+export const APPROVAL_RISKS = new Set<ToolRisk>(['bulk', 'destructive', 'external', 'extension']);
+
+const BY_NAME = new Map(ASSISTANT_TOOLS.map((t) => [t.name, t]));
+
+export function getToolDef(name: string): ToolDefinition | undefined {
+  return BY_NAME.get(name);
+}
+
+/** Tool definitions in the Responses API format. */
 export function toolsForOpenAI() {
   return ASSISTANT_TOOLS.map((t) => ({
     type: 'function' as const,
@@ -466,9 +426,3 @@ export function toolsForOpenAI() {
     parameters: t.parameters,
   }));
 }
-
-export function getToolDef(name: string): ToolDefinition | undefined {
-  return ASSISTANT_TOOLS.find((t) => t.name === name);
-}
-
-export const NEEDS_CONFIRM_RISKS = new Set(['bulk', 'destructive', 'external']);

@@ -165,7 +165,19 @@ export const GraphTab: React.FC = () => {
 
   // Fetch Graph Data
   const fetchGraphData = async () => {
-    setLoading(true);
+    // Show the last graph for this job filter instantly, then rebuild it from fresh data
+    const cacheKey = `rs_graph_cache_v1_${filterJobCount}`;
+    let hydrated = false;
+    if (rawGraphData.nodes.length === 0) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (cached?.nodes?.length) {
+          setRawGraphData(cached);
+          hydrated = true;
+        }
+      } catch { /* no usable cache */ }
+    }
+    setLoading(!hydrated && rawGraphData.nodes.length === 0);
     setError(null);
     try {
       const headers = {
@@ -179,7 +191,10 @@ export const GraphTab: React.FC = () => {
       const clients = await clientsRes.json();
 
       // 2. Fetch Recruiters
-      const recRes = await fetch(`${SUPABASE_URL}/rest/v1/Recruiters`, { headers });
+      // Only the fields the graph draws or lists in its details panel (not the full row)
+      const recSelect = ['id', 'Name', 'Domain', '"LinkedIn URL"', 'Size', '"Primary Specialty"', '"Industry vertical"', 'status', 'Country', 'Location', '"Total leads sent"', '"Date of the most recent lead"']
+        .map(encodeURIComponent).join(',');
+      const recRes = await fetch(`${SUPABASE_URL}/rest/v1/Recruiters?select=${recSelect}&order=id.asc`, { headers });
       if (!recRes.ok) throw new Error('Failed to fetch recruiters');
       const recruiters = await recRes.json();
 
@@ -321,10 +336,10 @@ export const GraphTab: React.FC = () => {
         node.degree = degreeCounts.get(id) || 1;
       });
 
-      setRawGraphData({
-        nodes: Array.from(nodesMap.values()),
-        links
-      });
+      const fresh = { nodes: Array.from(nodesMap.values()), links };
+      // Save before the graph library mutates nodes and links with layout data
+      try { localStorage.setItem(cacheKey, JSON.stringify(fresh)); } catch { /* storage full: skip */ }
+      setRawGraphData(fresh);
 
     } catch (err) {
       console.error('[Graph] Error fetching data:', err);

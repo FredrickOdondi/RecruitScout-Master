@@ -874,7 +874,8 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
 
     // Filter jobs: Recruiters Filter
     if (engineSettings.filterRecruitersEnabled) {
-      const recruitersRes = await supabaseClient.getRecruiters();
+      // Only the name column is needed to recognise recruiter agencies (Recruiters has no 'Agency Name' column)
+      const recruitersRes = await supabaseClient.getRecruiters(undefined, false, ['Name']);
       if (!recruitersRes.error && recruitersRes.data) {
         const recruiterNames = new Set<string>();
         for (const r of recruitersRes.data) {
