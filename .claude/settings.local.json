@@ -1,4 +1,5 @@
 {
+  "provider": "perplexity",
   "permissions": {
     "allow": [
       "Bash(node:*)",
