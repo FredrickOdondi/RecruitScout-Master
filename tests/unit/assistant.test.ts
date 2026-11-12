@@ -135,3 +135,77 @@ describe('tool output for the model', () => {
     expect(JSON.parse(out).truncated).toBe(true);
   });
 });
+
+describe('database tools', () => {
+  const schema = {
+    definitions: {
+      Recruiters: { properties: { id: { type: 'string' }, Name: { type: 'string' }, status: { type: 'string' }, 'Primary Specialty': { type: 'string' } } },
+      email_logs: { properties: { id: { type: 'string' }, sent_at: { type: 'string' } } },
+      user_integrations: { properties: { user_id: { type: 'string' }, bluecc_secret_id: { type: 'string' } } },
+    },
+  };
+  const urls: { url: string; method: string }[] = [];
+  beforeEach(() => {
+    urls.length = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: any = {}) => {
+      urls.push({ url, method: init.method || 'GET' });
+      const body = url.endsWith('/rest/v1/') ? schema : [{ id: 'r1', Name: 'Alfa', status: 'Blacklisted' }];
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'content-range': '0-0/62' } });
+    }));
+  });
+
+  it('reads rows with quoted columns and encoded filters', async () => {
+    const r = await executeTool('query_database', {
+      table: 'Recruiters', columns: ['Name', 'Primary Specialty'], filters: [{ column: 'status', op: 'eq', value: 'Blacklisted' }],
+    }, ctx);
+    expect(r.ok).toBe(true);
+    const q = urls.find((u) => u.url.includes('/Recruiters?'))!.url;
+    expect(q).toContain('select=Name,%22Primary%20Specialty%22');
+    expect(q).toContain('status=eq.Blacklisted');
+    expect((r.data as any).total).toBe(62);
+  });
+
+  it('keeps filter values inside their parameter', async () => {
+    await executeTool('query_database', { table: 'Recruiters', filters: [{ column: 'Name', op: 'eq', value: 'x&status=neq.y' }] }, ctx);
+    const q = urls.find((u) => u.url.includes('/Recruiters?'))!.url;
+    expect(q).toContain('Name=eq.x%26status%3Dneq.y');
+    expect(q).not.toContain('&status=neq');
+  });
+
+  it('rejects unknown columns and hidden tables', async () => {
+    const bad = await executeTool('query_database', { table: 'Recruiters', filters: [{ column: 'id),or=(x', op: 'eq', value: '1' }] }, ctx);
+    expect(bad.ok).toBe(false);
+    const hidden = await executeTool('query_database', { table: 'user_integrations' }, ctx);
+    expect(hidden.ok).toBe(false);
+    expect(urls.some((u) => u.url.includes('user_integrations'))).toBe(false);
+  });
+
+  it('asks for approval before updating, with the real match count', async () => {
+    const args = { table: 'Recruiters', filters: [{ column: 'status', op: 'eq', value: 'Blacklisted' }], updates: { status: 'Active' } };
+    const r = await executeTool('update_records', args, ctx);
+    expect(r.needsApproval).toBe(true);
+    expect(r.preview?.summary).toContain('62 rows');
+    expect(urls.some((u) => u.method === 'PATCH')).toBe(false);
+  });
+
+  it('updates only after approval, and never read-only tables', async () => {
+    const args = { table: 'Recruiters', filters: [{ column: 'status', op: 'eq', value: 'Blacklisted' }], updates: { status: 'Active' } };
+    const checked = validateArgs(getToolDef('update_records')!.parameters, args) as any;
+    const r = await executeTool('update_records', args, { ...ctx, approval: { key: approvalKey('update_records', checked.args) } });
+    expect(r.ok).toBe(true);
+    expect(urls.some((u) => u.method === 'PATCH')).toBe(true);
+
+    const ro = { table: 'email_logs', filters: [{ column: 'id', op: 'eq', value: '1' }], updates: { sent_at: 'x' } };
+    const ck = validateArgs(getToolDef('update_records')!.parameters, ro) as any;
+    const r2 = await executeTool('update_records', ro, { ...ctx, approval: { key: approvalKey('update_records', ck.args) } });
+    expect(r2.ok).toBe(false);
+  });
+
+  it('refuses filterless deletes even when approved', async () => {
+    const args = { table: 'Recruiters', filters: [] };
+    const checked = validateArgs(getToolDef('delete_records')!.parameters, args) as any;
+    const r = await executeTool('delete_records', args, { ...ctx, approval: { key: approvalKey('delete_records', checked.args) } });
+    expect(r.ok).toBe(false);
+    expect(urls.some((u) => u.method === 'DELETE')).toBe(false);
+  });
+});

@@ -8,6 +8,7 @@ import { JSONExporter } from '../../lib/export/json-exporter';
 import { XLSXExporter } from '../../lib/export/xlsx-exporter';
 import { APPROVAL_RISKS, getToolDef } from './tools';
 import { approvalKey, validateArgs } from './validate';
+import { getSchema, queryRows, countBy, updateRows, insertRows, deleteRows, countMatching, describeFilters } from './database';
 import type { ApprovalPreview, ToolContext, ToolResult, ToolView } from './types';
 
 const ok = (data: unknown, summary?: string, view?: ToolView): ToolResult => ({ ok: true, data, summary, view });
@@ -138,6 +139,26 @@ function previewFor(name: string, a: Record<string, any>): ApprovalPreview {
   }
 }
 
+/** Approval previews for filter-based writes show how many rows really match. */
+async function previewWithCounts(name: string, a: Record<string, any>): Promise<ApprovalPreview> {
+  if (name !== 'update_records' && name !== 'delete_records' && name !== 'insert_records') return previewFor(name, a);
+  if (name === 'insert_records') {
+    return {
+      summary: `Add ${plural(a.rows.length, 'row')} to ${a.table}.`,
+      details: a.rows.slice(0, 5).map((r: any) => Object.entries(r).slice(0, 4).map(([k, v]) => `${k}: ${v}`).join(' · ')),
+    };
+  }
+  let matches: number | undefined;
+  try { matches = await countMatching(a.table, a.filters); } catch { matches = undefined; }
+  const n = matches === undefined ? 'the matching rows' : plural(matches, 'row');
+  const where = `Where ${describeFilters(a.filters)}`;
+  if (name === 'delete_records') return { summary: `Delete ${n} from ${a.table}. This can't be undone.`, details: [where] };
+  return {
+    summary: `Change ${n} in ${a.table}.`,
+    details: [where, ...Object.entries(a.updates || {}).map(([k, v]) => `${k} → ${JSON.stringify(v)}`)],
+  };
+}
+
 /**
  * Run one tool. Risky tools (APPROVAL_RISKS) only run when ctx.approval holds
  * the key for these exact arguments; that key is created only by the UI's
@@ -152,7 +173,7 @@ export async function executeTool(name: string, rawArgs: unknown, ctx: ToolConte
   const args = checked.args;
 
   if (APPROVAL_RISKS.has(def.risk) && ctx.approval?.key !== approvalKey(name, args)) {
-    return { ok: false, needsApproval: true, preview: previewFor(name, args) };
+    return { ok: false, needsApproval: true, preview: await previewWithCounts(name, args) };
   }
 
   try {
@@ -214,6 +235,52 @@ export async function executeTool(name: string, rawArgs: unknown, ctx: ToolConte
         if (!ctx.navigate) return fail('Navigation is not available here.');
         ctx.navigate(args.view);
         return ok({ opened: args.view }, `Opened ${args.view}`);
+      }
+
+      // ── Database ─────────────────────────────────────────────────────────
+      case 'describe_database': {
+        const tables = await getSchema();
+        const pick = args.table ? tables.filter((t) => t.name.toLowerCase() === String(args.table).toLowerCase()) : tables;
+        if (!pick.length) return fail(`There is no table "${args.table}". Tables: ${tables.map((t) => t.name).join(', ')}.`);
+        return ok(pick, `${plural(pick.length, 'table')}`, {
+          kind: 'table',
+          columns: ['Table', 'Columns', 'Changeable'],
+          rows: pick.slice(0, 30).map((t) => [t.name, t.columns.length, t.writable ? 'Yes' : 'No']),
+        });
+      }
+
+      case 'query_database': {
+        const r = await queryRows(args as any);
+        if (args.count_only) return ok({ table: r.table, count: r.total }, `${plural(r.total ?? 0, 'row')} in ${r.table}`);
+        const shown = r.columns.slice(0, 5);
+        const cell = (v: any) => (v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v).slice(0, 60) : String(v).slice(0, 80));
+        return ok(
+          { table: r.table, total: r.total, offset: args.offset || 0, returned: r.rows.length, rows: r.rows },
+          `${plural(r.rows.length, 'row')}${r.total !== undefined && r.total > r.rows.length ? ` of ${r.total.toLocaleString()}` : ''} from ${r.table}`,
+          { kind: 'table', columns: shown, rows: r.rows.slice(0, 12).map((row) => shown.map((c) => cell(row[c]))), total: r.total },
+        );
+      }
+
+      case 'count_by': {
+        const r = await countBy(args as any);
+        return ok(r, `${plural(r.distinct_values, 'group')} across ${plural(r.total, 'row')}${r.partial ? ' (first 120,000 rows)' : ''}`, {
+          kind: 'table', columns: [r.column, 'Rows'], rows: r.groups.slice(0, 12).map((g) => [g.value, g.count]), total: r.distinct_values,
+        });
+      }
+
+      case 'update_records': {
+        const r = await updateRows(args as any);
+        return ok(r, `Updated ${plural(r.updated, 'row')} in ${r.table}`);
+      }
+
+      case 'insert_records': {
+        const r = await insertRows(args as any);
+        return ok(r, `Added ${plural(r.inserted, 'row')} to ${r.table}`);
+      }
+
+      case 'delete_records': {
+        const r = await deleteRows(args as any);
+        return ok(r, `Deleted ${plural(r.deleted, 'row')} from ${r.table}`);
       }
 
       // ── Queue ────────────────────────────────────────────────────────────
@@ -535,7 +602,7 @@ export async function executeTool(name: string, rawArgs: unknown, ctx: ToolConte
       case 'get_recruiters': {
         const page = args.page || 1;
         const res = await supabaseClient.getRecruitersPaginated(page, args.page_size || 20, args.search || '', {
-          country: args.country, location: args.location, specialty: args.specialty, industry: args.industry,
+          country: args.country, location: args.location, specialty: args.specialty, industry: args.industry, status: args.status,
         });
         if (res.error) return fail(res.error);
         const rows = res.data || [];
