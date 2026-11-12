@@ -215,7 +215,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  document.body.removeChild(a);
  URL.revokeObjectURL(url);
 
- setExportStatus({ ok: true, msg: `Downloaded ${cloudJobs.length} jobs successfully!` });
+ setExportStatus({ ok: true, msg: `Downloaded ${cloudJobs.length} jobs.` });
  } catch (err) {
  setExportStatus({ ok: false, msg: `Export failed: ${(err as Error).message}` });
  } finally {
@@ -234,7 +234,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
  if (selectedClientSync ==='custom') {
  if (!sheetsConfig.webAppUrl) {
- setSheetsSyncStatus({ ok: false, msg:'Please enter your Apps Script Web App URL first.' });
+ setSheetsSyncStatus({ ok: false, msg:'Please enter your apps Script web app URL first.' });
  return;
  }
  setSheetsProgress('Connecting to Supabase…');
@@ -255,7 +255,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  sheetName: sheetsConfig.sheetName ||'Sheet1',
  });
  }
- setSheetsSyncStatus({ ok: true, msg: `✓ Sent ${cloudJobs.length} jobs to"${sheetsConfig.sheetName ||'Sheet1'}" successfully!` });
+ setSheetsSyncStatus({ ok: true, msg: `Sent ${cloudJobs.length} jobs to "${sheetsConfig.sheetName ||'Sheet1'}".` });
  } else if (selectedClientSync ==='all') {
  if (allEnrolledClients.length === 0) {
  setSheetsSyncStatus({ ok: false, msg:'No enrolled clients found to sync.' });
@@ -282,7 +282,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  totalSynced += clientJobs.length;
  }
  }
- setSheetsSyncStatus({ ok: true, msg: `✓ Successfully synced ${totalSynced} jobs across all enrolled client sheets!` });
+ setSheetsSyncStatus({ ok: true, msg: `Synced ${totalSynced} jobs to every client sheet.` });
  } else {
  const client = allEnrolledClients.find(c => c.name === selectedClientSync);
  if (!client) {
@@ -308,7 +308,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  sheetName: client.sheet_name ||'Sheet1',
  });
  }
- setSheetsSyncStatus({ ok: true, msg: `✓ Sent ${clientJobs.length} jobs to client"${client.name}" Sheet successfully!` });
+ setSheetsSyncStatus({ ok: true, msg: `Sent ${clientJobs.length} jobs to ${client.name}'s sheet.` });
  }
  } catch (err) {
  setSheetsSyncStatus({ ok: false, msg: `Sync failed: ${(err as Error).message}` });
@@ -337,8 +337,8 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  ? <span className="text-gray-500 text-2xl animate-pulse">—</span>
  : workerCount.toLocaleString()}
  </div>
- <div className="text-[11px] font-medium text-gray-600 uppercase tracking-widest mt-1">
- {selectedWorker ==='all' ?'Total Cloud Jobs' : `Jobs by"${selectedWorker}"`}
+ <div className="text-xs font-medium text-gray-600 mt-1">
+ {selectedWorker ==='all' ?'Total Cloud jobs' : `Jobs by"${selectedWorker}"`}
  </div>
  </div>
  <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center border border-gray-200">
@@ -348,14 +348,14 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  </div>
  </div>
  {totalCloudCount !== null && selectedWorker !=='all' && (
- <div className="text-[12px] text-gray-600 font-mono">
+ <div className="text-xs text-gray-600 font-mono">
  {workerCount?.toLocaleString()} / {totalCloudCount.toLocaleString()} total cloud jobs
  </div>
  )}
  <button
  onClick={refreshCount}
  disabled={busy}
- className="mt-3 text-[12px] text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+ className="mt-3 text-xs text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
  >
  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -367,12 +367,12 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  {/* Extension Node Filter */}
  <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-3">
  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
- <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest flex items-center gap-2">
+ <h2 className="text-xs font-bold text-gray-600 flex items-center gap-2">
  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
- Filter by Extension Node
+ Filter by extension node
  </h2>
  {loadingWorkers && (
- <span className="text-[11px] text-gray-500 animate-pulse">Loading…</span>
+ <span className="text-xs text-gray-500 animate-pulse">Loading…</span>
  )}
  </div>
 
@@ -380,19 +380,19 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  value={selectedWorker}
  onChange={e => setSelectedWorker(e.target.value)}
  disabled={busy || loadingWorkers}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all appearance-none font-mono"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all appearance-none font-mono"
  >
- <option value="all">🌐 All Extensions (full cloud)</option>
+ <option value="all">All agents</option>
  {workers.length === 0 && !loadingWorkers && (
  <option disabled>No extension nodes found yet</option>
  )}
  {workers.map(w => (
- <option key={w} value={w}>🖥 {w}</option>
+ <option key={w} value={w}>{w}</option>
  ))}
  </select>
 
  {workers.length === 0 && !loadingWorkers && (
- <p className="text-[11px] text-gray-600 leading-relaxed">
+ <p className="text-xs text-gray-600 leading-relaxed">
  Extension nodes appear here once each laptop scrapes its first job with a <span className="font-mono text-gray-700">friendName</span> configured in Engine Settings.
  </p>
  )}
@@ -404,59 +404,59 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <svg className="w-4 h-4 text-green-600" viewBox="0 0 24 24" fill="currentColor">
  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 14H7v-2h10v2zm0-4H7v-2h10v2zm0-4H7V7h10v2z"/>
  </svg>
- <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">Google Sheets Sync</h2>
+ <h2 className="text-xs font-bold text-gray-600 ">Google Sheets sync</h2>
  </div>
 
  <div className="space-y-3">
  <div className="space-y-1">
- <label className="text-[11px] text-gray-700 font-bold uppercase tracking-wider block">Target Client Sheet</label>
+ <label className="text-xs text-gray-700 font-bold block">Target client sheet</label>
  <select
  value={selectedClientSync}
  onChange={e => setSelectedClientSync(e.target.value)}
  disabled={busy}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all appearance-none cursor-pointer"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all appearance-none cursor-pointer"
  >
- <option value="all">🔁 All Enrolled Clients (Automatic Grouping)</option>
- <option value="custom">✏️ Custom Sheet Settings (Manual)</option>
+ <option value="all">All clients (grouped automatically)</option>
+ <option value="custom">Custom sheet settings</option>
  {allEnrolledClients.map(c => (
- <option key={c.id} value={c.name}>💼 {c.name}</option>
+ <option key={c.id} value={c.name}>{c.name}</option>
  ))}
  </select>
  </div>
 
  {selectedClientSync ==='custom' ? (
  <div className="space-y-2.5 pt-1">
- <input type="text" placeholder="Apps Script Web App URL"
+ <input type="text" placeholder="Apps Script web app URL"
  value={sheetsConfig.webAppUrl}
  onChange={e => updateSheetsConfig('webAppUrl', e.target.value)}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
  />
  <div className="flex gap-2">
  <input type="text" placeholder="Spreadsheet ID (optional)"
  value={sheetsConfig.spreadsheetId}
  onChange={e => updateSheetsConfig('spreadsheetId', e.target.value)}
- className="flex-1 bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+ className="flex-1 bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
  />
  <input type="text" placeholder="Sheet1"
  value={sheetsConfig.sheetName}
  onChange={e => updateSheetsConfig('sheetName', e.target.value)}
- className="w-1/3 bg-gray-50 border border-gray-200 rounded-md p-2 text-[13px] text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+ className="w-1/3 bg-gray-50 border border-gray-200 rounded-md p-2 text-sm text-gray-900 focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
  />
  </div>
  </div>
  ) : selectedClientSync ==='all' ? (
- <div className="bg-green-50 border border-green-100 rounded-md p-3 text-[12px] text-green-800 leading-relaxed">
- 🚀 This will automatically group your jobs by client and sync them to each enrolled client's Google Sheet in parallel.
+ <div className="bg-green-50 border border-green-100 rounded-md p-3 text-xs text-green-800 leading-relaxed">
+ Jobs are grouped by client and synced to each client's Google Sheet.
  </div>
  ) : (
  (() => {
  const client = allEnrolledClients.find(c => c.name === selectedClientSync);
  return client ? (
- <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-[12px] text-gray-700 space-y-1">
- <div><span className="font-semibold text-gray-900">Enrolled Client:</span> {client.name}</div>
+ <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-xs text-gray-700 space-y-1">
+ <div><span className="font-semibold text-gray-900">Enrolled client:</span> {client.name}</div>
  <div className="truncate"><span className="font-semibold text-gray-900">Script URL:</span> {client.apps_script_url ||'—'}</div>
  <div className="truncate"><span className="font-semibold text-gray-900">Spreadsheet ID:</span> {client.spreadsheet_id ||'—'}</div>
- <div><span className="font-semibold text-gray-900">Sheet Name:</span> {client.sheet_name ||'Sheet1'}</div>
+ <div><span className="font-semibold text-gray-900">Sheet name:</span> {client.sheet_name ||'Sheet1'}</div>
  </div>
  ) : null;
  })()
@@ -464,7 +464,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  </div>
 
  {sheetsProgress && (
- <div className="text-[12px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-center gap-2">
+ <div className="text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-center gap-2">
  <svg className="animate-spin w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24">
  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -476,7 +476,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <button
  onClick={handleSyncToSheets}
  disabled={busy || workerCount === 0 || (selectedClientSync ==='custom' && !sheetsConfig.webAppUrl)}
- className="w-full bg-white hover:bg-gray-50 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500 font-medium py-2 rounded-md transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm text-[13px]"
+ className="w-full bg-white hover:bg-gray-50 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500 font-medium py-2 rounded-md transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm text-sm"
  >
  {isSheetsSyncing ? (
  <>
@@ -497,7 +497,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  </button>
 
  {sheetsSyncStatus && !sheetsProgress && (
- <div className={`text-[12px] font-mono p-2 rounded-md text-center font-medium ${sheetsSyncStatus.ok ?'bg-green-50 text-green-700 border border-green-200' :'bg-red-50 text-red-700 border border-red-200'}`}>
+ <div className={`text-xs font-mono p-2 rounded-md text-center font-medium ${sheetsSyncStatus.ok ?'bg-green-50 text-green-700 border border-green-200' :'bg-red-50 text-red-700 border border-red-200'}`}>
  {sheetsSyncStatus.msg}
  </div>
  )}
@@ -510,11 +510,11 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
  {/* Format + Download */}
  <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm space-y-4">
- <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-200 pb-2">Download Format</h2>
+ <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2">Download format</h2>
  <div className="grid grid-cols-3 gap-2">
  {(['csv','json','xlsx'] as ExportFormat[]).map(fmt => (
  <button key={fmt} onClick={() => setFormat(fmt)}
- className={`px-3 py-2 rounded-md text-[12px] font-bold tracking-wider transition-all border
+ className={`px-3 py-2 rounded-md text-xs font-bold transition-all border
  ${format === fmt
  ?'bg-gray-100 text-gray-900 border-gray-300 shadow-sm'
  :'bg-white border-gray-200 text-gray-600 hover:text-gray-700 hover:bg-gray-50'}`}
@@ -525,7 +525,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  </div>
 
  {exportProgress && (
- <div className="text-[12px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-center gap-2">
+ <div className="text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2 flex items-center gap-2">
  <svg className="animate-spin w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24">
  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -537,7 +537,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <button
  onClick={handleExport}
  disabled={busy || workerCount === 0 || selectedJobsCount === 0}
- className="w-full bg-white hover:bg-gray-50 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500 font-medium py-2 rounded-md transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm text-[13px]"
+ className="w-full bg-white hover:bg-gray-50 text-gray-800 disabled:bg-gray-100 disabled:text-gray-500 font-medium py-2 rounded-md transition-all flex items-center justify-center gap-2 border border-gray-200 shadow-sm text-sm"
  >
  {isExporting ? (
  <>
@@ -545,7 +545,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
  </svg>
- Fetching & Compiling…
+ Fetching & compiling…
  </>
  ) : (
  <>
@@ -558,7 +558,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  </button>
 
  {exportStatus && !exportProgress && (
- <div className={`text-[12px] font-mono p-2 rounded-md text-center font-medium ${exportStatus.ok ?'bg-green-50 text-green-700 border border-green-200' :'bg-red-50 text-red-700 border border-red-200'}`}>
+ <div className={`text-xs font-mono p-2 rounded-md text-center font-medium ${exportStatus.ok ?'bg-green-50 text-green-700 border border-green-200' :'bg-red-50 text-red-700 border border-red-200'}`}>
  {exportStatus.msg}
  </div>
  )}
@@ -566,9 +566,9 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
 
  {/* Field selection */}
  <div className="bg-white border border-gray-200 rounded-md p-5 shadow-sm flex flex-col h-[380px]">
- <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3 flex justify-between">
- <span>Fields Matrix</span>
- <span className="text-gray-600 font-mono text-[10px] bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{selectedJobsCount} Included</span>
+ <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2 mb-3 flex justify-between">
+ <span>Fields matrix</span>
+ <span className="text-gray-600 font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{selectedJobsCount} Included</span>
  </h2>
  <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
  {fields.map(field => (
@@ -576,7 +576,7 @@ export default function ExportTab({ settings, sendMessage }: ExportTabProps) {
  <input type="checkbox" checked={field.enabled} onChange={() => toggleField(field.key)}
  className="form-checkbox h-4 w-4 rounded border-gray-300 bg-white cursor-pointer"
  />
- <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{field.label}</span>
+ <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{field.label}</span>
  </label>
  ))}
  </div>

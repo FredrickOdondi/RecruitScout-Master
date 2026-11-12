@@ -21,6 +21,8 @@ export interface JobData {
   industry_vertical?: string;
   /** Name of the enrolled client this job was scraped for (used for Google Sheets auto-sync routing) */
   client?: string | null;
+  /** ID of the enrolled client this job was scraped for */
+  client_id?: string | null;
 }
 
 // Location type
@@ -136,11 +138,18 @@ export interface ExtensionSettings {
   friendName?: string;
   pollingEnabled?: boolean;
   instanceId?: string;
+  /**
+   * How Indeed scraping signs in. 'browser' uses this Chrome profile's own Indeed sign-in;
+   * 'stored' (default) loads one of the accounts saved in indeed_scraper_sessions for queue
+   * and bulk tasks.
+   */
+  indeedCookieMode?: 'browser' | 'stored';
   googleSheetsConfig?: {
     webAppUrl: string;
     spreadsheetId: string;
     sheetName: string;
   };
+  activeClientName?: string;
   /** When false, Spanish Indeed jobs bypass the Spanish_Companies whitelist and all are synced to Google Sheets */
   spanishWhitelistEnabled?: boolean;
   /** When true, extracted jobs whose company matches a record in the Recruiters table will not be synced to Google Sheets */
@@ -157,6 +166,7 @@ export const MessageType = {
   PAUSE_EXTRACTION: 'PAUSE_EXTRACTION',
   GET_JOBS: 'GET_JOBS',
   ADD_JOBS: 'ADD_JOBS',
+  INDEED_SESSION_STATUS: 'INDEED_SESSION_STATUS',
   UPDATE_JOB: 'UPDATE_JOB',
   DELETE_JOBS: 'DELETE_JOBS',
   EXPORT_JOBS: 'EXPORT_JOBS',

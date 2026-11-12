@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from'react';
+import React, { useState, useEffect } from 'react';
 import { SupabaseClientRecord } from '../shared/supabase';
-import { listSharedSpreadsheets } from '../lib/export/google-sheets-api';
+import { storage } from '../shared/storage';
+import { listSharedSpreadsheets, listSpreadsheetSheets, SpreadsheetSheetTab } from '../lib/export/google-sheets-api';
 
 // Icons
 const TrashIcon = () => (
@@ -73,6 +74,13 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
  const [enrolling, setEnrolling] = useState(false);
  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+ // Available sheet tabs state
+ const [availableSheets, setAvailableSheets] = useState<SpreadsheetSheetTab[]>([]);
+ const [loadingTabs, setLoadingTabs] = useState(false);
+ const [tabsError, setTabsError] = useState<string | null>(null);
+ const [manualSheetMode, setManualSheetMode] = useState(false);
+ const [activeClient, setActiveClient] = useState<string>('');
+
  const fetchClients = async (silent = false) => {
  if (!silent) setLoading(true);
  setError(null);
@@ -119,6 +127,8 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
       setIsConnected(true);
       if (sheets.length === 0) {
         setManualMode(true);
+      } else if (sheets.length > 0) {
+        setSpreadsheetId(prev => prev || sheets[0].id);
       }
     } catch (err: any) {
       console.error('Failed to load spreadsheets from Google:', err);
@@ -130,50 +140,115 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
     }
   };
 
+  const fetchAvailableTabs = async (sheetId: string) => {
+    const cleanId = extractSpreadsheetId(sheetId);
+    if (!cleanId || cleanId.length < 10) {
+      setAvailableSheets([]);
+      setTabsError(null);
+      return;
+    }
+
+    setLoadingTabs(true);
+    setTabsError(null);
+    try {
+      const tabs = await listSpreadsheetSheets(cleanId);
+      setAvailableSheets(tabs);
+      if (tabs.length > 0) {
+        setSheetName(prev => {
+          const match = tabs.find(t => t.title.toLowerCase() === prev.trim().toLowerCase());
+          return match ? match.title : tabs[0].title;
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch spreadsheet tabs:', err);
+      setTabsError(err.message || 'Failed to fetch sheets');
+    } finally {
+      setLoadingTabs(false);
+    }
+  };
+
+  useEffect(() => {
+    const cleanId = extractSpreadsheetId(spreadsheetId);
+    if (!cleanId || cleanId.length < 10) {
+      setAvailableSheets([]);
+      setTabsError(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchAvailableTabs(cleanId);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [spreadsheetId]);
+
   useEffect(() => {
     fetchClients();
     fetchSpreadsheets();
+    storage.getSettings().then(s => {
+      if (s?.activeClientName) setActiveClient(s.activeClientName);
+    }).catch(() => {});
   }, []);
 
- const handleEnroll = async (e: React.FormEvent) => {
- e.preventDefault();
- const cleanSheetId = extractSpreadsheetId(spreadsheetId);
- if (!name.trim() || !cleanSheetId) return;
+  const handleSetActiveClient = async (clientName: string, clientSheetId?: string, clientSheetName?: string) => {
+    setActiveClient(clientName);
+    try {
+      const cur = await storage.getSettings();
+      await storage.setSettings({
+        ...cur,
+        activeClientName: clientName,
+        googleSheetsConfig: {
+          webAppUrl: 'https://google.com',
+          spreadsheetId: clientSheetId || cur.googleSheetsConfig?.spreadsheetId || '',
+          sheetName: clientSheetName || cur.googleSheetsConfig?.sheetName || 'Sheet1'
+        }
+      });
+    } catch (e) {
+      console.warn('Could not update active client setting:', e);
+    }
+  };
 
- setEnrolling(true);
- setSuccessMsg(null);
- try {
- const clientData: SupabaseClientRecord = {
- name: name.trim(),
- apps_script_url: 'https://google.com',
- spreadsheet_id: cleanSheetId,
- sheet_name: sheetName.trim() ||'Sheet1'
- };
+  const handleEnroll = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const cleanSheetId = extractSpreadsheetId(spreadsheetId);
+  if (!name.trim() || !cleanSheetId) return;
 
- const res = await sendMessage({
- type:'SUPABASE_ENROLL_CLIENT',
- payload: clientData
- });
+  setEnrolling(true);
+  setSuccessMsg(null);
+  try {
+  const clientData: SupabaseClientRecord = {
+  name: name.trim(),
+  apps_script_url: 'https://google.com',
+  spreadsheet_id: cleanSheetId,
+  sheet_name: sheetName.trim() ||'Sheet1'
+  };
 
- if (res && res.error) {
- setError(res.error);
- } else {
- setSuccessMsg(`✅ Enrolled"${name.trim()}" successfully!`);
- setName('');
- setSpreadsheetId('');
- setSheetName('Sheet1');
- fetchClients(true);
- setTimeout(() => setSuccessMsg(null), 5000);
- }
- } catch (err: any) {
- setError(err.message ||'Error enrolling client');
- } finally {
- setEnrolling(false);
- }
- };
+  const res = await sendMessage({
+  type:'SUPABASE_ENROLL_CLIENT',
+  payload: clientData
+  });
+
+  if (res && res.error) {
+  setError(res.error);
+  } else {
+  setSuccessMsg(`Enrolled "${name.trim()}". New jobs for this client now sync to its sheet.`);
+  handleSetActiveClient(clientData.name, cleanSheetId, clientData.sheet_name);
+  setName('');
+  setSpreadsheetId('');
+  setAvailableSheets([]);
+  setSheetName('Sheet1');
+  fetchClients(true);
+  setTimeout(() => setSuccessMsg(null), 5000);
+  }
+  } catch (err: any) {
+  setError(err.message ||'Error enrolling client');
+  } finally {
+  setEnrolling(false);
+  }
+  };
 
  const handleDelete = async (id: string, clientName: string) => {
- if (!confirm(`Are you sure you want to remove"${clientName}"? This client's configuration will be deleted.`)) return;
+ if (!confirm(`Remove "${clientName}"?\n\nIts sheet settings are deleted. Jobs already synced stay in the sheet.`)) return;
 
  try {
  const res = await sendMessage({
@@ -182,12 +257,12 @@ export default function ClientEnrollmentTab({ sendMessage }: ClientEnrollmentTab
  });
 
  if (res && res.error) {
- alert(`⚠️ Delete failed: ${res.error}`);
+ alert(`Couldn't delete the client. ${res.error}`);
  } else {
  fetchClients(true);
  }
  } catch (err: any) {
- alert(`⚠️ Error deleting client: ${err.message}`);
+ alert(`Couldn't delete the client. ${err.message}`);
  }
  };
 
@@ -221,8 +296,8 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <AlertTriangleIcon />
  </div>
  <div className="flex-1 space-y-3">
- <h4 className="text-sm font-semibold text-gray-900">Database Configuration Required</h4>
- <p className="text-[12px] text-gray-600 leading-relaxed">
+ <h4 className="text-sm font-semibold text-gray-900">Database configuration required</h4>
+ <p className="text-xs text-gray-600 leading-relaxed">
  It looks like the <code className="bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded font-mono text-xs">clients</code> table does not exist in your Supabase database yet. Run the following SQL script in your Supabase project's **SQL Editor** to create it:
  </p>
  
@@ -230,12 +305,12 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <button 
  onClick={copySql}
  className="absolute right-3 top-3 bg-white hover:bg-white active:bg-white text-white rounded p-1.5 transition-all text-xs font-semibold flex items-center gap-1.5"
- title="Copy SQL Schema"
+ title="Copy SQL schema"
  >
  {copiedSql ? (
  <>
  <span className="text-green-400"><CheckIcon /></span>
- <span className="text-green-400">Copied!</span>
+ <span className="text-success-fg">Copied</span>
  </>
  ) : (
  <>
@@ -252,10 +327,10 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <div className="flex items-center gap-3 pt-2">
  <button
  onClick={() => fetchClients()}
- className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-1.5 rounded-lg text-[12px] font-semibold transition-all shadow-sm flex items-center gap-1.5"
+ className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
  >
  <RefreshIcon />
- Verify Table Created
+ Verify table created
  </button>
  </div>
  </div>
@@ -271,7 +346,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <div className="p-6">
  <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
  <span className="text-green-600"><UserPlusIcon /></span>
- Enroll New Client
+ Enroll new client
  </h3>
  <p className="text-xs text-gray-500 mb-6 leading-relaxed">
  Add a client to assign targeted Google Sheets pipelines for their custom scraped datasets.
@@ -279,8 +354,8 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
 
  <form onSubmit={handleEnroll} className="space-y-4">
  <div>
- <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
- Client Name <span className="text-red-500">*</span>
+ <label className="text-xs text-gray-600 font-bold mb-1.5 block">
+ Client name <span className="text-red-500">*</span>
  </label>
  <input
  type="text"
@@ -288,29 +363,29 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  required
  value={name}
  onChange={(e) => setName(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
  />
  </div>
 
  <div>
  <div className="flex items-center justify-between mb-1.5">
-   <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest block">
-     Google Spreadsheet <span className="text-red-500">*</span>
+   <label className="text-xs text-gray-600 font-bold block">
+     Google spreadsheet <span className="text-red-500">*</span>
    </label>
    <button
      type="button"
      onClick={() => setManualMode(!manualMode)}
-     className="text-[10px] text-primary-600 hover:underline font-medium"
+     className="text-xs text-primary-600 hover:underline font-medium"
    >
-     {manualMode ? 'Switch to list from Drive' : 'Paste Sheet URL / ID manually'}
+     {manualMode ? 'Switch to list from Drive' : 'Paste sheet URL / ID manually'}
    </button>
  </div>
 
  {driveError && (
-   <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-800 leading-snug">
-     ⚠️ <strong>Google Drive Error:</strong> {driveError}.
+   <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 leading-snug">
+     <strong>Google Drive didn't respond:</strong> {driveError}.
      <br />
-     <span className="text-gray-600">Make sure the <strong>Google Drive API</strong> is enabled in your Google Cloud Project, or paste the Sheet URL below directly.</span>
+     <span className="text-gray-600">Make sure the <strong>Google Drive API</strong> is enabled in your Google Cloud project, or paste the sheet URL below directly.</span>
    </div>
  )}
 
@@ -319,12 +394,12 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
      <input
        type="text"
        required
-       placeholder="Paste full Google Sheet URL or Spreadsheet ID..."
+       placeholder="Paste full Google Sheet URL or spreadsheet ID..."
        value={spreadsheetId}
        onChange={(e) => setSpreadsheetId(e.target.value)}
-       className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+       className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
      />
-     <p className="text-[10px] text-gray-400 mt-1">
+     <p className="text-xs text-gray-400 mt-1">
        Paste either the full URL (e.g. <code>https://docs.google.com/spreadsheets/d/...</code>) or the ID.
      </p>
    </div>
@@ -332,12 +407,12 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
    <button
      type="button"
      onClick={fetchSpreadsheets}
-     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm transition-all"
+     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 shadow-sm transition-all"
    >
-     Connect Google Account / Fetch Spreadsheets
+     Connect Google account / fetch spreadsheets
    </button>
  ) : loadingSheets ? (
-   <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-500 italic">
+   <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-500 italic">
      Loading spreadsheets...
    </div>
  ) : (
@@ -345,7 +420,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
      required
      value={spreadsheetId}
      onChange={(e) => setSpreadsheetId(e.target.value)}
-     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
    >
      <option value="">Select a Spreadsheet ({spreadsheets.length} found)...</option>
      {spreadsheets.map(sheet => (
@@ -358,21 +433,81 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  </div>
 
  <div>
- <label className="text-[9px] text-gray-600 font-bold uppercase tracking-widest mb-1.5 block">
- Sheet Name
+ <div className="flex items-center justify-between mb-1.5">
+ <label className="text-xs text-gray-600 font-bold block">
+ Sheet name <span className="text-red-500">*</span>
  </label>
+ <div className="flex items-center gap-2">
+ {availableSheets.length > 0 && (
+ <button
+ type="button"
+ onClick={() => setManualSheetMode(!manualSheetMode)}
+ className="text-xs text-primary-600 hover:underline font-medium"
+ >
+ {manualSheetMode ? 'Select from tabs' : 'Enter tab manually'}
+ </button>
+ )}
+ {extractSpreadsheetId(spreadsheetId) && (
+ <button
+ type="button"
+ onClick={() => fetchAvailableTabs(spreadsheetId)}
+ disabled={loadingTabs}
+ className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 transition-colors"
+ title="Refresh sheet tabs"
+ >
+ <span className={loadingTabs ? 'animate-spin' : ''}><RefreshIcon /></span>
+ </button>
+ )}
+ </div>
+ </div>
+
+ {loadingTabs ? (
+ <div className="w-full bg-slate-50 border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-500 italic flex items-center gap-2">
+ <div className="w-3.5 h-3.5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+ Fetching sheet tabs...
+ </div>
+ ) : !manualSheetMode && availableSheets.length > 0 ? (
+ <select
+ required
+ value={sheetName}
+ onChange={(e) => {
+ if (e.target.value === '__custom__') {
+ setManualSheetMode(true);
+ setSheetName('');
+ } else {
+ setSheetName(e.target.value);
+ }
+ }}
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+ >
+ {availableSheets.map(tab => (
+ <option key={tab.id} value={tab.title}>
+ {tab.title}
+ </option>
+ ))}
+ <option value="__custom__">+ Enter custom sheet name...</option>
+ </select>
+ ) : (
  <input
  type="text"
- placeholder="Sheet1"
+ placeholder="e.g. Sheet1"
+ required
  value={sheetName}
  onChange={(e) => setSheetName(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
  />
+ )}
+
+ {tabsError && (
+ <p className="text-xs text-amber-700 mt-1.5 flex items-center gap-1">
+ Sheet tabs didn't load: {tabsError}. Type the sheet name above instead.
+ </p>
+ )}
  </div>
 
  {error && !tableMissing && (
  <div className="text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg p-3">
- ⚠️ {error}
+ {error}
  </div>
  )}
 
@@ -385,9 +520,9 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <button
  type="submit"
  disabled={enrolling || tableMissing}
- className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg font-semibold text-[12px] transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
+ className="w-full bg-accent hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-on-accent py-2.5 rounded-lg font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
  >
- {enrolling ?'Enrolling...' :'Enroll Client'}
+ {enrolling ?'Enrolling...' :'Enroll client'}
  </button>
  </form>
  </div>
@@ -398,7 +533,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <div className="p-6 flex-1 flex flex-col">
  <div className="flex items-center justify-between mb-4">
  <div>
- <h3 className="text-base font-semibold text-gray-900">Enrolled Clients</h3>
+ <h3 className="text-base font-semibold text-gray-900">Enrolled clients</h3>
  <p className="text-xs text-gray-500 mt-0.5">Manage custom syncing profiles and Sheets outputs.</p>
  </div>
  <button 
@@ -418,45 +553,85 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  </div>
  ) : clients.length === 0 ? (
  <div className="flex-1 flex flex-col items-center justify-center py-20 border border-dashed border-gray-200 rounded-lg bg-gray-50">
- <span className="text-3xl mb-2">👥</span>
- <span className="text-[12px] font-medium text-gray-900">No Enrolled Clients</span>
+  <span className="text-sm font-medium text-gray-900">No clients yet</span>
  <span className="text-xs text-gray-500 text-center px-4 mt-1">Enroll your first client on the left to set up sync automation.</span>
  </div>
  ) : (
+ <div className="flex-1 flex flex-col space-y-3">
+ <div className="p-3 bg-accent-subtle border border-stroke-card rounded-xl flex items-start gap-2.5">
+  <div className="text-xs text-blue-900 leading-relaxed">
+ <strong className="font-semibold">Live sync is on for every client.</strong> All clients with a connected Google Sheet have live sync active simultaneously. When tasks are bulk queued across multiple clients in the Command Center, scraped jobs are dynamically routed to each client's specific Google Sheet in real-time.
+ </div>
+ </div>
+
  <div className="overflow-x-auto rounded-lg border border-gray-200 flex-1">
  <table className="w-full text-left text-xs text-gray-700 min-w-[600px]">
- <thead className="text-[9px] font-bold text-gray-600 uppercase tracking-widest bg-gray-50 border-b border-gray-200">
+ <thead className="text-xs font-bold text-gray-600 bg-gray-50 border-b border-gray-200">
  <tr>
  <th className="px-4 py-3">Client</th>
- <th className="px-4 py-3">Sheet Settings</th>
+ <th className="px-4 py-3">Sheet settings</th>
  <th className="px-4 py-3 text-right">Actions</th>
  </tr>
  </thead>
  <tbody className="divide-y divide-gray-200 bg-white">
- {clients.map((client) => (
+ {clients.map((client) => {
+ const hasSheet = Boolean(client.spreadsheet_id && client.spreadsheet_id.trim() !== '');
+ const isDefault = activeClient ? activeClient === client.name : (clients.length === 1);
+ return (
  <tr key={client.id} className="hover:bg-gray-50">
  <td className="px-4 py-3">
+ <div className="flex items-center gap-2 flex-wrap">
  <div className="font-semibold text-gray-900">{client.name}</div>
+ {hasSheet ? (
+ <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+ <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+ Live sync active
+ </span>
+ ) : (
+ <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+ No sheet linked
+ </span>
+ )}
+ {isDefault && (
+ <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 font-medium" title="Default target for manual popup scrapes">
+ Popup default
+ </span>
+ )}
+ </div>
  </td>
  <td className="px-4 py-3 text-gray-600">
  <div><span className="font-medium text-gray-900">Sheet:</span> {client.sheet_name ||'Sheet1'}</div>
- <div className="text-[9px] truncate max-w-[180px]" title={client.spreadsheet_id ||'N/A'}>
+ <div className="text-xs truncate max-w-[180px]" title={client.spreadsheet_id ||'N/A'}>
  ID: {client.spreadsheet_id ||'—'}
  </div>
  </td>
  <td className="px-4 py-3 text-right">
+ <div className="flex items-center justify-end gap-2">
+ {hasSheet && !isDefault && (
+ <button
+ type="button"
+ onClick={() => handleSetActiveClient(client.name, client.spreadsheet_id || undefined, client.sheet_name || undefined)}
+ className="text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2 py-1 rounded transition-colors"
+ title="Make this client the default for manual popup extractions"
+ >
+ Set popup default
+ </button>
+ )}
  <button
  onClick={() => handleDelete(client.id!, client.name)}
  className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 p-2 rounded-lg border border-red-200 transition-all shadow-sm"
- title="Remove Client"
+ title="Remove client"
  >
  <TrashIcon />
  </button>
+ </div>
  </td>
  </tr>
- ))}
+ );
+ })}
  </tbody>
  </table>
+ </div>
  </div>
  )}
  </div>

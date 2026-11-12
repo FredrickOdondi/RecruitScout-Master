@@ -1023,6 +1023,38 @@ export class SupabaseClient {
     }
   }
 
+  /**
+   * Call a Postgres function as the signed-in dashboard user (not the anon key),
+   * so functions that check auth.uid() see who is asking.
+   */
+  async callUserRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<SupabaseResponse<T>> {
+    const session = this.getSession();
+    if (!session?.access_token) {
+      return { data: null, error: 'Your session has ended. Sign in again.' };
+    }
+    try {
+      const res = await fetch(`${this.baseUrl}/rest/v1/rpc/${fn}`, {
+        method: 'POST',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(args),
+        signal: AbortSignal.timeout(15000),
+      });
+      const text = await res.text();
+      const body = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        return { data: null, error: body?.message || body?.hint || `HTTP ${res.status}` };
+      }
+      return { data: body as T, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Request failed' };
+    }
+  }
+
   // ────────────────────────────────────────────────────────────────────────────
 
   /**

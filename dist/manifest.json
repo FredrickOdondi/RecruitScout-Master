@@ -9,8 +9,17 @@
     "tabs",
     "scripting",
     "offscreen",
-    "alarms"
+    "alarms",
+    "identity",
+    "cookies"
   ],
+  "oauth2": {
+    "client_id": "115904503078-uo6086fg23p32frupfkqsgg6432nps2r.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/drive.readonly"
+    ]
+  },
   "host_permissions": [
     "https://www.linkedin.com/*",
     "*://*.indeed.com/*",
@@ -35,10 +44,18 @@
     "https://careers.google.com/*",
     "https://careers.apple.com/*",
     "https://jobs.netflix.com/*",
-    "https://www.amazon.jobs/*",
+    "https://amazon.jobs/*",
     "http://localhost:5173/*",
     "http://72.60.215.34/*",
-    "https://next-api.useplunk.com/*"
+    "http://72.60.215.34:8000/*",
+    "https://next-api.useplunk.com/*",
+    "https://sheets.googleapis.com/*",
+    "https://www.googleapis.com/*",
+    "https://autocomplete.clearbit.com/*",
+    "https://qyceqgttvvairnaxwicm.supabase.co/*",
+    "https://*.supabase.co/*",
+    "https://www.wikidata.org/*",
+    "https://html.duckduckgo.com/*"
   ],
   "background": {
     "service_worker": "service-worker-loader.js",
@@ -47,7 +64,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/index.ts-loader-C5T7fTqN.js"
+        "assets/index.ts-loader-C853U7xR.js"
       ],
       "matches": [
         "https://www.linkedin.com/*",
@@ -137,8 +154,8 @@
       ],
       "resources": [
         "assets/utils-2myCanQr.js",
-        "assets/types-DL2FCqoz.js",
-        "assets/index.ts-C_zahUnA.js"
+        "assets/types-vQi72Nb9.js",
+        "assets/index.ts-9RWEEYjU.js"
       ],
       "use_dynamic_url": false
     }

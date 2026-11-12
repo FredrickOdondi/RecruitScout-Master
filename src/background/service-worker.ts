@@ -7,6 +7,14 @@ import { MESSAGE_TIMEOUT } from '../shared/constants';
 import { parseDomain } from '../shared/utils';
 import { supabaseClient } from '../shared/supabase';
 import { googleSheetsClient } from '../lib/export/google-sheets';
+import { ensureSheetHeaders, appendToGoogleSheet } from '../lib/export/google-sheets-api';
+import {
+  ensureIndeedSession,
+  markIndeedSessionHealthy,
+  rotateIndeedSession,
+  releaseIndeedSession,
+  getIndeedSessionStatus,
+} from './indeed-session';
 
 function extractDomainFromUrl(url: string): string {
   const hostname = parseDomain(url);
@@ -17,6 +25,50 @@ function extractDomainFromUrl(url: string): string {
 const _domainCache = new Map<string, string>();
 
 let activeClientNameForScraping: string | null = null;
+let activeClientIdForScraping: string | null = null;
+
+// Track job IDs already appended to Google Sheets to avoid duplicate rows
+const _syncedJobIdsToSheets = new Set<string>();
+
+// Pre-load already synced IDs from storage
+storage.get<string[]>('synced_job_ids_sheets').then(saved => {
+  if (Array.isArray(saved)) {
+    saved.forEach(id => _syncedJobIdsToSheets.add(id));
+  }
+}).catch(() => {});
+
+/** True when Indeed tasks should load a stored account instead of the browser's own sign-in. */
+async function usesStoredCookies(targetSite?: string): Promise<boolean> {
+  if (targetSite === 'trovolavoro') return false;
+  const settings = await storage.getSettings();
+  return settings.indeedCookieMode !== 'browser';
+}
+
+async function resolveActiveClientName(payloadClientId?: string, payloadClientName?: string): Promise<string | null> {
+  if (payloadClientName && payloadClientName.trim() !== '') {
+    return payloadClientName.trim();
+  }
+
+  const clientsRes = await supabaseClient.getClients();
+  const enrolledClients = (clientsRes.data || []) as any[];
+
+  if (payloadClientId) {
+    const match = enrolledClients.find((c: any) => c.id === payloadClientId);
+    if (match) return match.name;
+  }
+
+  const settings = await storage.getSettings();
+  if (settings.activeClientName) {
+    return settings.activeClientName;
+  }
+
+  const clientWithSheet = enrolledClients.find((c: any) => c.spreadsheet_id && c.spreadsheet_id.trim() !== '');
+  if (clientWithSheet) {
+    return clientWithSheet.name;
+  }
+
+  return enrolledClients.length > 0 ? enrolledClients[0].name : null;
+}
 
 /**
  * Normalize company name by stripping legal suffixes from the end
@@ -205,26 +257,30 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
 
   // Helper: fire a single query against the Dbase table and return domain or ''
   const queryDbase = async (filterValue: string): Promise<string> => {
-    // Table name URL-encoded: "Dbase - 24/6/26" -> "Dbase%20-%2024%2F6%2F26"
-    const url = `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26` +
-      `?select=Company%20Website` +
-      `&Company%20Name=ilike.${filterValue}` +
-      `&limit=1`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) return '';
-    const data = await response.json();
-    if (!Array.isArray(data) || data.length === 0) return '';
-    const website = data[0]['Company Website'] as string | undefined;
-    if (!website) return '';
-    return extractDomainFromUrl(website.startsWith('http') ? website : `https://${website}`);
+    try {
+      // Table name URL-encoded: "Dbase - 24/6/26" -> "Dbase%20-%2024%2F6%2F26"
+      const url = `${SUPABASE_URL}/rest/v1/Dbase%20-%2024%2F6%2F26` +
+        `?select=Company%20Website` +
+        `&Company%20Name=ilike.${filterValue}` +
+        `&limit=1`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!response.ok) return '';
+      const data = await response.json();
+      if (!Array.isArray(data) || data.length === 0) return '';
+      const website = data[0]['Company Website'] as string | undefined;
+      if (!website) return '';
+      return extractDomainFromUrl(website.startsWith('http') ? website : `https://${website}`);
+    } catch {
+      return '';
+    }
   };
 
   try {
@@ -264,8 +320,8 @@ async function fetchDomainFromSupabase(companyName: string): Promise<string> {
     }
 
     console.log(`[RecruitScout Dbase] ${companyName}: no match in any pass`);
-  } catch (e) {
-    console.error(`[RecruitScout Dbase] ${companyName}: error`, e);
+  } catch (e: any) {
+    console.warn(`[RecruitScout Dbase] ${companyName}: lookup skipped (${e?.name || e?.message || 'offline'})`);
   }
 
   _domainCache.set(cacheKey, '');
@@ -319,8 +375,8 @@ async function fetchDomainFromWikidata(companyName: string): Promise<string> {
       }
     }
     console.log(`[RecruitScout Wikidata] ${companyName}: no official website in Wikidata`);
-  } catch (e) {
-    console.error(`[RecruitScout Wikidata] ${companyName}: error`, e);
+  } catch (e: any) {
+    console.warn(`[RecruitScout Wikidata] ${companyName}: lookup skipped`, e?.message || e);
   }
 
   _domainCache.set(cacheKey, '');
@@ -380,8 +436,8 @@ async function fetchDomainFromSearchEngine(companyName: string, location?: strin
       }
     }
     console.log(`[RecruitScout Search Engine] ${companyName}: no valid results`);
-  } catch (e) {
-    console.error(`[RecruitScout Search Engine] ${companyName}: error`, e);
+  } catch (e: any) {
+    console.warn(`[RecruitScout Search Engine] ${companyName}: lookup skipped`, e?.message || e);
   }
 
   _domainCache.set(cacheKey, '');
@@ -516,8 +572,8 @@ async function saveToSupabase(companyName: string, domain: string): Promise<void
     } else {
       console.warn(`[RecruitScout Dbase] save failed for ${companyName}: ${response.status}`);
     }
-  } catch (e) {
-    console.error(`[RecruitScout Dbase] save error for ${companyName}:`, e);
+  } catch (e: any) {
+    console.warn(`[RecruitScout Dbase] save skipped for ${companyName}:`, e?.name || e?.message || 'offline');
   }
 }
 
@@ -569,15 +625,17 @@ function generateJobId(url: string, title: string, company: string): string {
 async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCount: number }> {
   if (!jobs || jobs.length === 0) return { newCount: 0, skippedCount: 0 };
 
-  // Map jobs to inject the active client name
-  const processedJobs = jobs.map(job => ({
-    ...job,
-    client: job.client || activeClientNameForScraping || null
-  }));
-
   const settings = await storage.getSettings();
   const friendName = settings.friendName || '';
   const workerId = friendName || settings.instanceId || 'unknown';
+  const fallbackClient = settings.activeClientName || null;
+
+  // Map jobs to inject the active client name and client_id
+  const processedJobs = jobs.map(job => ({
+    ...job,
+    client: job.client || activeClientNameForScraping || fallbackClient,
+    client_id: job.client_id || activeClientIdForScraping || undefined
+  }));
 
   // ── Step 1: Build ID set from incoming jobs ───────────────────────────────
   const incomingWithIds = processedJobs.map(job => ({
@@ -667,8 +725,8 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
           saveToSupabase(jobWithMeta.company, linkedInDomain);
           return { ...jobWithMeta, companyDomain: linkedInDomain };
         }
-      } catch (e) {
-        console.error(`[RecruitScout] enrichment error for ${jobWithMeta.company}:`, e);
+      } catch (e: any) {
+        console.warn(`[RecruitScout] enrichment skipped for ${jobWithMeta.company}:`, e?.message || e);
       }
       return jobWithMeta;
     }));
@@ -690,6 +748,7 @@ async function enrichAndSave(jobs: any[]): Promise<{ newCount: number; skippedCo
         // set for this scraping session, causing triggerAutomaticGoogleSheetsSync
         // to silently skip the job (it only processes jobs where job.client is truthy).
         client: job.client || existing.client,
+        client_id: job.client_id || existing.client_id,
         description: job.description || existing.description,
         salary: job.salary || existing.salary,
         metadata: { ...existing.metadata, ...job.metadata }
@@ -728,89 +787,92 @@ function sanitizeCell(val: any): string {
 }
 
 async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
+  if (!jobs || jobs.length === 0) return;
+
+  const engineSettings = await storage.getSettings();
+  const clientsRes = await supabaseClient.getClients();
+  const enrolledClients = (clientsRes.data || []) as any[];
+
+  // Find a fallback/default client with a connected spreadsheet
+  let defaultClient = enrolledClients.find((c: any) => c.name === engineSettings.activeClientName);
+  if (!defaultClient && enrolledClients.length > 0) {
+    defaultClient = enrolledClients.find((c: any) => c.spreadsheet_id && c.spreadsheet_id.trim() !== '') || enrolledClients[0];
+  }
+
   const clientJobsMap: Record<string, any[]> = {};
   let noClientCount = 0;
 
   for (const job of jobs) {
-    if (job.client) {
-      if (!clientJobsMap[job.client]) {
-        clientJobsMap[job.client] = [];
+    let clientMatch: any = null;
+    if (job.client_id) {
+      clientMatch = enrolledClients.find((c: any) => c.id === job.client_id);
+    }
+    if (!clientMatch && job.client) {
+      clientMatch = enrolledClients.find((c: any) => c.name?.toLowerCase().trim() === job.client?.toLowerCase().trim() || c.id === job.client);
+    }
+
+    const clientKey = clientMatch ? clientMatch.name : (job.client || defaultClient?.name || (engineSettings.googleSheetsConfig?.spreadsheetId ? '__direct_sheet__' : null));
+    if (clientKey) {
+      if (!clientJobsMap[clientKey]) {
+        clientJobsMap[clientKey] = [];
       }
-      clientJobsMap[job.client].push(job);
+      clientJobsMap[clientKey].push(job);
     } else {
       noClientCount++;
     }
   }
 
   if (noClientCount > 0) {
-    console.log(`[RecruitScout] ℹ️ ${noClientCount} job(s) have no client stamp — they will NOT be auto-synced to any Sheet. Make sure a scraping session is started from the Queue with a client_id set.`);
+    console.log(`[RecruitScout] ℹ️ ${noClientCount} job(s) could not be mapped to any connected Google Spreadsheet. Enroll a client or connect a sheet in the dashboard.`);
   }
 
-  const clientNames = Object.keys(clientJobsMap);
-  if (clientNames.length === 0) {
-    console.log(`[RecruitScout] ℹ️ triggerAutomaticGoogleSheetsSync: no client-stamped jobs in this batch (${jobs.length} total). Nothing to sync.`);
+  const clientKeys = Object.keys(clientJobsMap);
+  if (clientKeys.length === 0) {
     return;
   }
 
-  console.log(`[RecruitScout] 📋 Auto-sync: ${jobs.length} jobs, ${clientNames.length} client(s) identified: ${clientNames.join(', ')}`);
+  for (const clientKey of clientKeys) {
+    let spreadsheetId = '';
+    let sheetName = 'Sheet1';
+    let clientDisplayName = clientKey;
 
-  // Load unique enrolled clients from Supabase
-  const clientsRes = await supabaseClient.getClients();
-  if (clientsRes.error || !clientsRes.data) {
-    console.error('[RecruitScout] Auto-sync failed to load enrolled clients:', clientsRes.error);
-    return;
-  }
-
-  const enrolledClients = clientsRes.data;
-  const engineSettings = await storage.getSettings();
-
-  for (const clientName of clientNames) {
-    const client = enrolledClients.find((c: any) => c.name === clientName);
-    if (!client) {
-      console.warn(`[RecruitScout] Enrolled client details not found for client stamp "${clientName}". Skipping auto sheets sync.`);
-      continue;
+    if (clientKey === '__direct_sheet__') {
+      spreadsheetId = engineSettings.googleSheetsConfig?.spreadsheetId || '';
+      sheetName = engineSettings.googleSheetsConfig?.sheetName || 'Sheet1';
+      clientDisplayName = 'Connected Spreadsheet';
+    } else {
+      const client = enrolledClients.find((c: any) => c.name?.toLowerCase().trim() === clientKey.toLowerCase().trim() || c.id === clientKey);
+      if (!client || !client.spreadsheet_id) {
+        console.warn(`[RecruitScout] Enrolled client "${clientKey}" has no connected spreadsheet_id. Skipping.`);
+        continue;
+      }
+      spreadsheetId = client.spreadsheet_id;
+      sheetName = client.sheet_name || 'Sheet1';
+      clientDisplayName = client.name;
     }
 
-    // No need for apps_script_url anymore, we just need the spreadsheet_id which is checked below
-    let clientJobs = clientJobsMap[clientName].filter((job: any) => job.description && job.description.trim() !== '');
-    if (clientJobs.length === 0) {
-      console.log(`[RecruitScout] No jobs with non-empty descriptions for client "${clientName}". Skipping auto sync.`);
-      continue;
-    }
+    let clientJobs = clientJobsMap[clientKey];
 
-    // ── Spanish Companies Whitelist Filter ───────────────────────────────────
-    // For jobs sourced from es.indeed.com, only allow companies listed in the
-    // Supabase Spanish_Companies table — UNLESS the whitelist is disabled in
-    // Engine Settings, in which case all Spanish Indeed jobs pass through.
+    // Filter jobs: Spanish Companies Whitelist Filter
     const hasSpanishJobs = clientJobs.some((job: any) => job.source === 'es.indeed.com');
     if (hasSpanishJobs) {
-      // spanishWhitelistEnabled defaults to true (filter ON) if never explicitly set
       const whitelistActive = engineSettings.spanishWhitelistEnabled !== false;
-
       if (whitelistActive) {
         const spanishWhitelist = await supabaseClient.getSpanishCompanies();
         const beforeCount = clientJobs.length;
         clientJobs = clientJobs.filter((job: any) => {
-          // Non-Spanish Indeed jobs always pass through
           if (job.source !== 'es.indeed.com') return true;
-          // Empty whitelist = block everything
           if (spanishWhitelist.size === 0) return false;
-          // Case-insensitive company name match
           return spanishWhitelist.has((job.company || '').toLowerCase().trim());
         });
         const dropped = beforeCount - clientJobs.length;
         if (dropped > 0) {
-          console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: filtered out ${dropped} job(s) not in Spanish_Companies — only ${clientJobs.length} job(s) will sync to sheet.`);
-        } else {
-          console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: all ${clientJobs.length} Spanish Indeed job(s) matched — no filtering needed.`);
+          console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: filtered out ${dropped} job(s) not in Spanish_Companies.`);
         }
-      } else {
-        console.log(`[RecruitScout] 🇪🇸 Spanish whitelist: DISABLED — sending all ${clientJobs.filter((j: any) => j.source === 'es.indeed.com').length} Spanish Indeed job(s) to sheet without filtering.`);
       }
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    // ── Recruiters Filter ────────────────────────────────────────────────────
+    // Filter jobs: Recruiters Filter
     if (engineSettings.filterRecruitersEnabled) {
       const recruitersRes = await supabaseClient.getRecruiters();
       if (!recruitersRes.error && recruitersRes.data) {
@@ -819,28 +881,25 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
           if (r.Name) recruiterNames.add(r.Name.toLowerCase().trim());
           if (r['Agency Name']) recruiterNames.add(r['Agency Name'].toLowerCase().trim());
         }
-        
-        const beforeRecruiterCount = clientJobs.length;
         clientJobs = clientJobs.filter((job: any) => {
           const compName = (job.company || '').toLowerCase().trim();
           return !recruiterNames.has(compName);
         });
-        const droppedRecruiters = beforeRecruiterCount - clientJobs.length;
-        if (droppedRecruiters > 0) {
-          console.log(`[RecruitScout] 🕵️‍♂️ Recruiter Filter: Dropped ${droppedRecruiters} job(s) from known recruiters. Syncing remaining ${clientJobs.length} job(s).`);
-        } else {
-          console.log(`[RecruitScout] 🕵️‍♂️ Recruiter Filter: No jobs matched known recruiters.`);
-        }
-      } else {
-        console.warn(`[RecruitScout] Failed to fetch Recruiters table for filtering:`, recruitersRes.error);
       }
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    if (clientJobs.length === 0) {
-      console.log(`[RecruitScout] No jobs remaining after filters for client "${clientName}". Skipping sync.`);
+    // Filter out jobs that have already been appended to THIS client's Google Sheet
+    const unsyncedJobs = clientJobs.filter((job: any) => {
+      const jobId = generateJobId(job.url || '', job.title || '', job.company || '');
+      const syncKey = `${spreadsheetId}:${jobId}`;
+      return !_syncedJobIdsToSheets.has(syncKey);
+    });
+
+    if (unsyncedJobs.length === 0) {
+      console.log(`[RecruitScout] ℹ️ All ${clientJobs.length} job(s) for "${clientDisplayName}" already synced to Google Sheets. Skipping duplicate append.`);
       continue;
     }
+
     const headers = [
       'job_title',
       'company',
@@ -855,10 +914,9 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
       'source'
     ];
 
-    // Ensure all jobs have the absolute correct domain by consulting Supabase's domain DB one last time
-    // This prevents the Google Sheet from receiving raw/wrong domains from local storage cache
-    for (const job of clientJobs) {
-      if (job.company) {
+    // Ensure all jobs have domain
+    for (const job of unsyncedJobs) {
+      if (job.company && !job.companyDomain) {
         const supaDomain = await fetchDomainFromSupabase(job.company);
         if (supaDomain) {
           job.companyDomain = supaDomain;
@@ -866,37 +924,37 @@ async function triggerAutomaticGoogleSheetsSync(jobs: any[]) {
       }
     }
 
-    const rows = [
-      headers,
-      ...clientJobs.map(job => [
-        sanitizeCell(job.title || ''),
-        sanitizeCell(job.company || ''),
-        sanitizeCell(job.companyDomain || job.companydomain || ''),
-        sanitizeCell(job.location || ''),
-        sanitizeCell(job.description || ''),
-        sanitizeCell(job.url || ''),
-        sanitizeCell(job.datePosted || job.dateposted || ''),
-        sanitizeCell(job.employmentType || job.employmenttype || ''),
-        sanitizeCell(job.salary || ''),
-        sanitizeCell(job.status || 'Active'),
-        sanitizeCell(job.source || '')
-      ])
-    ];
-
-    const sheetName = client.sheet_name || 'Sheet1';
-    console.log(`[RecruitScout] 🚀 Syncing ${clientJobs.length} job(s) to "${clientName}" (sheet: "${sheetName}")...`);
+    const rows = unsyncedJobs.map(job => [
+      sanitizeCell(job.title || ''),
+      sanitizeCell(job.company || ''),
+      sanitizeCell(job.companyDomain || job.companydomain || ''),
+      sanitizeCell(job.location || ''),
+      sanitizeCell(job.description || ''),
+      sanitizeCell(job.url || ''),
+      sanitizeCell(job.datePosted || job.dateposted || ''),
+      sanitizeCell(job.employmentType || job.employmenttype || ''),
+      sanitizeCell(job.salary || ''),
+      sanitizeCell(job.status || 'Active'),
+      sanitizeCell(job.source || '')
+    ]);
 
     try {
-      if (!client.spreadsheet_id) {
-        console.warn(`[RecruitScout] ❌ Client "${clientName}" has no spreadsheet_id. Cannot sync using direct API.`);
-        continue;
+      // Ensure row 1 has headers (only writes headers once if empty)
+      await ensureSheetHeaders(spreadsheetId, sheetName, headers);
+
+      console.log(`[RecruitScout] 🚀 Appending ${unsyncedJobs.length} newly scraped job(s) to "${clientDisplayName}" (sheet: "${sheetName}")...`);
+      await appendToGoogleSheet(spreadsheetId, sheetName, rows);
+      console.log(`[RecruitScout] ✅ Successfully synced ${unsyncedJobs.length} job(s) to "${clientDisplayName}" sheet "${sheetName}" via Google Sheets API.`);
+
+      // Mark jobs as synced for this specific spreadsheet
+      for (const job of unsyncedJobs) {
+        const jobId = generateJobId(job.url || '', job.title || '', job.company || '');
+        _syncedJobIdsToSheets.add(`${spreadsheetId}:${jobId}`);
       }
-      
-      const { appendToGoogleSheet } = await import('../lib/export/google-sheets-api');
-      await appendToGoogleSheet(client.spreadsheet_id, sheetName, rows);
-      console.log(`[RecruitScout] ✅ Synced ${clientJobs.length} job(s) to "${clientName}" sheet "${sheetName}" using Google API.`);
+      const idList = Array.from(_syncedJobIdsToSheets).slice(-5000);
+      storage.set('synced_job_ids_sheets', idList).catch(() => {});
     } catch (err) {
-      console.error(`[RecruitScout] ❌ Sync failed for "${clientName}":`, err);
+      console.error(`[RecruitScout] ❌ Live Sheets sync failed for "${clientDisplayName}":`, err);
     }
   }
 }
@@ -954,29 +1012,21 @@ class ServiceWorker {
     messageRouter.on(MessageType.START_EXTRACTION, async (message, sender) => {
       console.log('[RecruitScout] Handling START_EXTRACTION', { payload: message.payload, sender });
 
-      // Resolve client_id → client name if present in the payload
       const payloadClientId: string | undefined = message.payload?.options?.client_id ?? message.payload?.client_id;
-      let resolvedClientName: string | null = null;
-      if (payloadClientId) {
-        try {
-          const clientsRes = await supabaseClient.getClients();
-          if (clientsRes.data) {
-            const match = clientsRes.data.find((c: any) => c.id === payloadClientId);
-            if (match) {
-              resolvedClientName = match.name;
-              console.log(`[RecruitScout] START_EXTRACTION: resolved client_id "${payloadClientId}" → "${resolvedClientName}"`);
-            }
-          }
-        } catch (err) {
-          console.error('[RecruitScout] START_EXTRACTION: failed to resolve client_id:', err);
-        }
+      const payloadClientName: string | undefined = message.payload?.options?.client_name ?? message.payload?.client_name;
+      const resolvedClientName = await resolveActiveClientName(payloadClientId, payloadClientName);
+
+      if (resolvedClientName) {
+        console.log(`[RecruitScout] START_EXTRACTION: assigned to client "${resolvedClientName}" for live Google Sheets sync.`);
       }
 
       try {
         activeClientNameForScraping = resolvedClientName;
+        activeClientIdForScraping = payloadClientId || null;
         return await this.startExtraction(message.payload, sender);
       } finally {
         activeClientNameForScraping = null;
+        activeClientIdForScraping = null;
       }
     });
 
@@ -984,35 +1034,27 @@ class ServiceWorker {
     messageRouter.on(MessageType.START_BULK_EXTRACTION, async (message, sender) => {
       console.log('[RecruitScout] Handling START_BULK_EXTRACTION', { payload: message.payload, sender });
 
-      // If the payload carries a client_id (e.g. launched from Dashboard / Command Center),
-      // resolve the human-readable client name and stamp it on activeClientNameForScraping
-      // so every job enriched during this session gets client: <name> and is auto-synced
-      // to that client's Google Sheet. Without this, activeClientNameForScraping stays null
-      // and triggerAutomaticGoogleSheetsSync skips all the jobs silently.
       const payloadClientId: string | undefined = message.payload?.options?.client_id ?? message.payload?.client_id;
-      let resolvedClientName: string | null = null;
-      if (payloadClientId) {
-        try {
-          const clientsRes = await supabaseClient.getClients();
-          if (clientsRes.data) {
-            const match = clientsRes.data.find((c: any) => c.id === payloadClientId);
-            if (match) {
-              resolvedClientName = match.name;
-              console.log(`[RecruitScout] START_BULK_EXTRACTION: resolved client_id "${payloadClientId}" → "${resolvedClientName}"`);
-            } else {
-              console.warn(`[RecruitScout] START_BULK_EXTRACTION: client_id "${payloadClientId}" not found in enrolled clients.`);
-            }
-          }
-        } catch (err) {
-          console.error('[RecruitScout] START_BULK_EXTRACTION: failed to resolve client_id:', err);
-        }
+      const payloadClientName: string | undefined = message.payload?.options?.client_name ?? message.payload?.client_name;
+      const resolvedClientName = await resolveActiveClientName(payloadClientId, payloadClientName);
+
+      if (resolvedClientName) {
+        console.log(`[RecruitScout] START_BULK_EXTRACTION: assigned to client "${resolvedClientName}" for live Google Sheets sync.`);
+      }
+
+      const useStored = await usesStoredCookies(message.payload?.options?.target_site);
+      if (useStored) {
+        await ensureIndeedSession(await this.getActiveWorkerId());
       }
 
       try {
         activeClientNameForScraping = resolvedClientName;
+        activeClientIdForScraping = payloadClientId || null;
         return await this.startBulkExtraction(message.payload, sender);
       } finally {
         activeClientNameForScraping = null;
+        activeClientIdForScraping = null;
+        if (useStored) await releaseIndeedSession().catch(() => {});
       }
     });
 
@@ -1083,6 +1125,9 @@ class ServiceWorker {
     // Update settings
     messageRouter.on(MessageType.UPDATE_SETTINGS, async (message) => {
       await storage.setSettings(message.payload);
+      if (message.payload?.indeedCookieMode === 'browser') {
+        await releaseIndeedSession().catch(() => {});
+      }
       return await storage.getSettings();
     });
 
@@ -1351,6 +1396,11 @@ class ServiceWorker {
       return await supabaseClient.deleteClient(message.payload);
     });
 
+    // Which Indeed account (cookies) this browser is using, for the popup
+    messageRouter.on(MessageType.INDEED_SESSION_STATUS, async () => {
+      return await getIndeedSessionStatus();
+    });
+
     messageRouter.on('FORCE_POLL_QUEUE' as any, async () => {
       const foundTask = await this.pollQueue();
       return { success: true, foundTask };
@@ -1514,7 +1564,7 @@ class ServiceWorker {
               try {
                 const clientsRes = await supabaseClient.getClients();
                 if (clientsRes.data) {
-                  const match = clientsRes.data.find(c => c.id === queueTask.client_id);
+                  const match = clientsRes.data.find(c => c.id === queueTask.client_id || c.name === queueTask.client_id);
                   if (match) {
                     clientName = match.name;
                   }
@@ -1522,6 +1572,14 @@ class ServiceWorker {
               } catch (err) {
                 console.error('[RecruitScout] Failed to fetch client name:', err);
               }
+            }
+
+            // Stored-cookie mode: load a leased Indeed account before the tab opens Indeed.
+            // Browser mode: make sure no stored account is left loaded.
+            if (await usesStoredCookies(queueTask.target_site)) {
+              await ensureIndeedSession(workerId);
+            } else {
+              await releaseIndeedSession();
             }
 
             let tabId = this.currentTabId;
@@ -1536,15 +1594,28 @@ class ServiceWorker {
 
             try {
               activeClientNameForScraping = clientName;
-              await this.startBulkExtraction({ titles: [queueTask.job_title || ''], options: { location: queueTask.location, target_site: queueTask.target_site, date_filter: queueTask.date_filter }, tabId }, undefined);
+              activeClientIdForScraping = queueTask.client_id || null;
+              await this.startBulkExtraction({ 
+                titles: [queueTask.job_title || ''], 
+                options: { 
+                  location: queueTask.location, 
+                  target_site: queueTask.target_site, 
+                  date_filter: queueTask.date_filter,
+                  client_id: queueTask.client_id,
+                  client_name: clientName
+                }, 
+                tabId 
+              }, undefined);
 
               const wasAborted = this.abortRequested || !(await storage.getSettings()).pollingEnabled;
               await supabaseClient.markTaskComplete(queueTask.id, wasAborted);
+              if (!wasAborted) await markIndeedSessionHealthy();
             } catch (jobError) {
               console.error('[RecruitScout] Remote Job Failed:', jobError);
               await supabaseClient.markTaskComplete(queueTask.id, true);
             } finally {
               activeClientNameForScraping = null;
+              activeClientIdForScraping = null;
             }
 
             if (this.abortRequested) break;
@@ -1571,6 +1642,10 @@ class ServiceWorker {
         }
       }
     } finally {
+      // Queue drained or polling stopped: give the Indeed account back
+      if (foundTask) {
+        await releaseIndeedSession().catch(() => {});
+      }
       this.isPollingQueue = false;
     }
     return foundTask;
@@ -1918,6 +1993,13 @@ class ServiceWorker {
         }
 
         console.log(`[RecruitScout] 🔄 Recovery [Attempt ${consecutiveRetries}/3]: Block/Cloudflare detected on page ${pageCount}. Recreating tab to bypass...`);
+
+        // If this agent is using a leased Indeed account, report the block and
+        // switch to the next free account before the fresh tab loads.
+        if (url.includes('indeed.')) {
+          const rotated = await rotateIndeedSession(`Blocked on page ${pageCount}: ${recoveryUrl}`);
+          if (rotated) console.log('[RecruitScout] 🔄 Recovery: switched to another Indeed account.');
+        }
         console.log(`[RecruitScout] 🔄 Recovery: Closing blocked tab ID ${tabId}...`);
         try {
           await chrome.tabs.remove(tabId);
@@ -2044,6 +2126,8 @@ class ServiceWorker {
       } catch { /* tab may already be closed */ }
       this.currentTabId = null;
     }
+
+    await releaseIndeedSession().catch(() => {});
 
     console.log('[RecruitScout] 🛑 Abort flag set — engine stopped.');
     return { success: true };

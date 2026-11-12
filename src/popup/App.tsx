@@ -6,11 +6,13 @@ export default function App() {
  const [state, setState] = useState<any>({ status:'idle' });
  const [settings, setSettings] = useState<any>({});
  const [isLoading, setIsLoading] = useState(true);
+ const [indeedSession, setIndeedSession] = useState<{ active: boolean; label: string | null }>({ active: false, label: null });
 
  // Load initial data
  useEffect(() => {
  loadData();
  loadSettings();
+ loadIndeedSession();
  }, []);
 
  // Listen for state and setting changes
@@ -21,6 +23,9 @@ export default function App() {
  }
  if (changes.recruitscout_settings?.newValue) {
  setSettings(changes.recruitscout_settings.newValue);
+ }
+ if (changes.recruitscout_indeed_lease) {
+ loadIndeedSession();
  }
  };
 
@@ -37,17 +42,9 @@ export default function App() {
  async function loadData() {
  try {
  setIsLoading(true);
- let stateResponse: any;
- try {
- stateResponse = await Promise.race([
- sendMessage({ type: MessageType.GET_STATE }),
- new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000)),
- ]);
- } catch (e) {
- stateResponse = { status:'idle' };
- }
+ const stateResponse = await sendMessage<any>({ type: MessageType.GET_STATE });
  setState(stateResponse || { status:'idle' });
- } catch (error) {
+ } catch {
  setState({ status:'idle' });
  } finally {
  setIsLoading(false);
@@ -58,9 +55,14 @@ export default function App() {
  try {
  const res = await sendMessage<any>({ type: MessageType.GET_SETTINGS });
  if (res) setSettings(res);
- } catch (e) {
- console.error(e);
+ } catch {
+ // Graceful fallback
  }
+ }
+
+ async function loadIndeedSession() {
+ const res = await sendMessage<any>({ type: MessageType.INDEED_SESSION_STATUS });
+ if (res) setIndeedSession(res);
  }
 
  async function updateSetting(key: string, value: any) {
@@ -72,18 +74,38 @@ export default function App() {
  });
  }
 
- function sendMessage<T>(message: ExtensionMessage): Promise<T> {
- return new Promise((resolve, reject) => {
+ function sendMessage<T>(message: ExtensionMessage, timeoutMs: number = 7000): Promise<T> {
+ return new Promise((resolve) => {
  if (!chrome.runtime || !chrome.runtime.sendMessage) {
- reject(new Error('Chrome runtime not available'));
+ resolve(null as unknown as T);
  return;
  }
- const timeout = setTimeout(() => reject(new Error('Message timeout')), 5000);
+ let completed = false;
+ const timer = setTimeout(() => {
+ if (!completed) {
+ completed = true;
+ resolve(null as unknown as T);
+ }
+ }, timeoutMs);
+
+ try {
  chrome.runtime.sendMessage(message, (response) => {
- clearTimeout(timeout);
- if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
- else resolve(response as T);
+ if (completed) return;
+ completed = true;
+ clearTimeout(timer);
+ if (chrome.runtime.lastError) {
+ resolve(null as unknown as T);
+ } else {
+ resolve(response as T);
+ }
  });
+ } catch {
+ if (!completed) {
+ completed = true;
+ clearTimeout(timer);
+ resolve(null as unknown as T);
+ }
+ }
  });
  }
 
@@ -107,7 +129,12 @@ export default function App() {
     if (localTitles.length > 0) {
       sendMessage({
         type: MessageType.START_BULK_EXTRACTION,
-        payload: { titles: localTitles, options: {} }
+        payload: { 
+          titles: localTitles, 
+          options: { 
+            client_name: settings.activeClientName || undefined 
+          } 
+        }
       });
       setState({ ...state, status: 'running' });
       return;
@@ -128,108 +155,142 @@ export default function App() {
 
  const isRunning = state.status ==='running' || state.status ==='crawling';
 
+ const statusLabel = isRunning ? 'Running' : settings.pollingEnabled ? 'Listening to queue' : state.status === 'error' ? 'Error' : 'Idle';
+ const statusDot = isRunning ? 'bg-accent' : settings.pollingEnabled ? 'bg-success-500' : state.status === 'error' ? 'bg-danger-solid' : 'bg-stroke-accessible';
+
  return (
- <div className="w-[320px] min-h-[440px] bg-[#0B0F19] flex flex-col items-center justify-start text-gray-100 p-6 font-sans relative overflow-hidden">
- {/* Background glow */}
- <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-primary-600 rounded-full blur-[60px]" />
- 
- {/* Header */}
- <div className="mb-6 text-center relative z-10 w-full pt-4">
- <div className="w-16 h-16 mx-auto bg-gray-800 rounded-2xl flex items-center justify-center mb-4 border border-gray-700">
- <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-400">
+ <div className="w-[360px] min-h-[480px] glacier-canvas text-fg font-sans flex flex-col">
+ {/* Header: Glacier app icon, product name, engine status (word + dot) */}
+ <header className="flex items-center gap-3 px-4 h-14 border-b border-stroke-card glacier-chrome">
+ <div className="relative w-8 h-8 rounded-[9px] bg-gradient-to-br from-app-icon-1 to-app-icon-2 flex items-center justify-center shrink-0 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+ <span className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+ <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="relative text-white" aria-hidden="true">
  <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
  <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
  <line x1="6" y1="6" x2="6.01" y2="6" />
  <line x1="6" y1="18" x2="6.01" y2="18" />
  </svg>
  </div>
- <h1 className="text-xl font-bold bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent">RecruitScout Agent</h1>
- <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
- Engine: <span className={isRunning ?'text-primary-400' :'text-gray-400'}>{state.status}</span>
+ <div className="min-w-0 flex-1">
+ <h1 className="text-base font-semibold leading-tight">RecruitScout agent</h1>
+ <p className="text-xs text-fg-muted flex items-center gap-1.5 mt-0.5">
+ <span className={`w-2 h-2 rounded-full ${statusDot}`} aria-hidden="true" />
+ {statusLabel}
  </p>
  </div>
+ </header>
 
- {/* Distributed Worker Card */}
- <div className="w-full bg-gray-800 rounded-xl p-4 border border-gray-700/50 mb-6 relative z-10">
- 
- <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-700/50">
+ <div className="flex-1 p-4 space-y-3">
+ {/* Swarm card */}
+ <section className="card p-4 space-y-4">
+ <div className="flex items-center justify-between gap-3">
  <div>
- <div className="text-sm font-semibold text-gray-200">Swarm Connect</div>
- <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Remote Polling</div>
+ <h2 className="text-sm font-semibold">Swarm connect</h2>
+ <p className="text-xs text-fg-muted mt-0.5">Pull tasks from the command center queue</p>
  </div>
- 
- {/* iOS Style Toggle Switch */}
- <label className="relative inline-flex items-center cursor-pointer group">
- <input 
- type="checkbox" 
- className="sr-only peer" 
- checked={settings.pollingEnabled || false} 
- onChange={e => updateSetting('pollingEnabled', e.target.checked)} 
+ {/* Glacier switch: accessible outline when off, accent when on */}
+ <label className="relative inline-flex items-center cursor-pointer shrink-0">
+ <input
+ type="checkbox"
+ className="sr-only peer"
+ aria-label="Remote polling"
+ checked={settings.pollingEnabled || false}
+ onChange={e => updateSetting('pollingEnabled', e.target.checked)}
  />
- <div className="w-10 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-500 shadow-inner group-hover:bg-gray-600 transition-colors"></div>
+ <span className="w-10 h-5 rounded-full border border-stroke-accessible bg-surface peer-checked:bg-accent peer-checked:border-accent transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-focus-outer peer-focus-visible:outline-offset-1" />
+ <span className="absolute left-[3px] top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-fg-muted peer-checked:bg-on-accent peer-checked:translate-x-5 transition-all" />
  </label>
  </div>
 
- <div>
- <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5 block">Worker ID Definition</label>
+ <div className="space-y-1.5">
+ <label htmlFor="worker-id" className="text-sm font-medium block">Worker ID</label>
  <input
+ id="worker-id"
  type="text"
- className="w-full bg-gray-900 border border-gray-700/70 rounded-lg p-2.5 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 transition-all font-mono shadow-inner"
- placeholder="Assign this agent a name..."
- value={settings.friendName ||''}
+ className="input mono-id"
+ placeholder="Name this agent, for example agent-01"
+ value={settings.friendName || ''}
  onChange={(e) => updateSetting('friendName', e.target.value)}
  />
  </div>
+
+ {/* How Indeed tasks sign in: this browser's own account, or a stored account from the table */}
+ <div className="pt-4 border-t border-stroke-divider space-y-2">
+ <div className="flex items-center justify-between gap-2">
+ <h3 className="text-sm font-medium" id="indeed-mode-label">Indeed sign-in</h3>
+ {settings.indeedCookieMode !== 'browser' && (
+ <span className={`badge ${indeedSession.active ? 'badge-success' : 'bg-neutral-badge text-fg-muted'}`}>
+ <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
+ {indeedSession.active ? (indeedSession.label || 'In use') : 'None loaded'}
+ </span>
+ )}
+ </div>
+ <div role="radiogroup" aria-labelledby="indeed-mode-label" className="grid grid-cols-2 gap-1 p-0.5 rounded-md bg-subtle">
+ {([['browser', 'This browser'], ['stored', 'Stored accounts']] as const).map(([mode, label]) => {
+ const selected = (settings.indeedCookieMode ?? 'stored') === mode;
+ return (
+ <button
+ key={mode}
+ type="button"
+ role="radio"
+ aria-checked={selected}
+ onClick={() => updateSetting('indeedCookieMode', mode)}
+ className={`tab justify-center ${selected ? 'tab-active' : 'tab-inactive'}`}
+ >
+ {label}
+ </button>
+ );
+ })}
+ </div>
+ <p className="text-xs text-fg-subtle">
+ {settings.indeedCookieMode === 'browser'
+ ? 'Indeed tasks use the account signed in to this Chrome profile.'
+ : 'Indeed queue and bulk tasks load one of your saved accounts. While they run, it replaces the Indeed sign-in in this Chrome profile.'}
+ </p>
+ </div>
+ </section>
+
+ {/* Sheets sync card */}
+ <section className="card px-4 py-3 flex items-center gap-3">
+ <div className="w-8 h-8 rounded-lg bg-accent-subtle-2 text-accent-text flex items-center justify-center shrink-0">
+ <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+ <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+ <polyline points="14 2 14 8 20 8"></polyline>
+ <line x1="16" y1="13" x2="8" y2="13"></line>
+ <line x1="16" y1="17" x2="8" y2="17"></line>
+ </svg>
+ </div>
+ <div className="min-w-0 flex-1">
+ <div className="text-xs text-fg-muted">Sheets sync</div>
+ <div className="text-sm font-medium truncate">
+ {settings.activeClientName || (settings.googleSheetsConfig?.spreadsheetId ? 'Connected sheet' : 'Automatic')}
+ </div>
+ </div>
+ <span className="badge badge-success shrink-0">
+ <span className="w-1.5 h-1.5 rounded-full bg-success-fg" aria-hidden="true" />
+ Live
+ </span>
+ </section>
  </div>
 
- {/* Primary Action Button */}
- <div className="flex flex-col w-full gap-4 relative z-10 mt-auto">
+ {/* Primary action */}
+ <footer className="p-4 pt-0 space-y-3">
  {!isRunning ? (
- <button 
- onClick={handleStart}
- className="w-full py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold transition-all shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:-translate-y-0.5 transform active:scale-[0.98]"
- >
- Start Engine
+ <button onClick={handleStart} className="btn-primary w-full h-10">
+ Start engine
  </button>
  ) : (
- <button 
- onClick={handleStop}
- className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-600 text-red-500 border border-red-500/30 font-semibold transition-all shadow-[0_4px_14px_0_rgba(220,38,38,0.1)] hover:-translate-y-0.5 transform active:scale-[0.98]"
- >
- 🛑 Stop Engine
+ <button onClick={handleStop} className="btn-danger w-full h-10">
+ Stop engine
  </button>
  )}
- </div>
-
- {/* Animated Pulse Dot if Running */}
- {isRunning && (
- <div className="absolute top-4 right-4" title="Agent is working...">
- <span className="flex h-3 w-3 relative">
- <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
- <span className="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
- </span>
- </div>
- )}
- 
- {/* Remote Polling Active Indicator Dot */}
- {settings.pollingEnabled && !isRunning && (
- <div className="absolute top-4 right-4" title="Listening to Command Center Queue...">
- <span className="flex h-3 w-3 relative">
- <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></span>
- </span>
- </div>
- )}
-
- {/* Access Native Command Center */}
- <div className="w-full relative z-10 mt-6 pt-4 border-t border-gray-700/50 flex justify-center">
- <button 
+ <button
  onClick={() => chrome.runtime.openOptionsPage()}
- className="text-xs text-primary-400 hover:text-white transition-colors flex items-center gap-2 uppercase tracking-widest font-semibold"
+ className="btn-ghost w-full"
  >
- <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
- Open Command Center
+ Open command center
  </button>
- </div>
+ </footer>
  </div>
  );
 }

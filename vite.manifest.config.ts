@@ -13,10 +13,11 @@ export default defineManifest({
     'scripting',
     'offscreen',
     'alarms',
-    'identity'
+    'identity',
+    'cookies'
   ],
   oauth2: {
-    client_id: '241480604524-pk45mp8ol398cmoaa67886ja4cdfb1ho.apps.googleusercontent.com',
+    client_id: '115904503078-uo6086fg23p32frupfkqsgg6432nps2r.apps.googleusercontent.com',
     scopes: [
       'https://www.googleapis.com/auth/spreadsheets',
       'https://www.googleapis.com/auth/drive.readonly'
@@ -46,10 +47,18 @@ export default defineManifest({
     'https://careers.google.com/*',
     'https://careers.apple.com/*',
     'https://jobs.netflix.com/*',
-    'https://www.amazon.jobs/*',
+    'https://amazon.jobs/*',
     'http://localhost:5173/*',
     'http://72.60.215.34/*',
-    'https://next-api.useplunk.com/*'
+    'http://72.60.215.34:8000/*',
+    'https://next-api.useplunk.com/*',
+    'https://sheets.googleapis.com/*',
+    'https://www.googleapis.com/*',
+    'https://autocomplete.clearbit.com/*',
+    'https://qyceqgttvvairnaxwicm.supabase.co/*',
+    'https://*.supabase.co/*',
+    'https://www.wikidata.org/*',
+    'https://html.duckduckgo.com/*'
   ],
   background: {
     service_worker: 'src/background/service-worker.ts',

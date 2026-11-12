@@ -211,7 +211,7 @@ export const GraphTab: React.FC = () => {
         name: 'All Recruiters',
         group: 'recruiter',
         val: 45,
-        details: { description: 'Global Recruiter Hub' }
+        details: { description: 'Global recruiter hub' }
       });
 
       // Add Recruiter Nodes and Category Nodes
@@ -654,30 +654,26 @@ export const GraphTab: React.FC = () => {
 
   return (
     <div className={`h-full w-full flex flex-col relative overflow-hidden font-sans select-none transition-colors duration-300 ${
-      isDark ? 'bg-[#141416] text-zinc-100' : 'bg-[#f8fafc] text-slate-800'
+      'bg-canvas text-slate-800'
     }`} style={{ minHeight: 'calc(100vh - 65px)' }}>
       
       {/* TOP FLOATING BAR: Brand Pill + Quick Legends */}
       <div className="absolute top-4 left-4 z-10 flex flex-col sm:flex-row items-start sm:items-center gap-3 pointer-events-none">
         {/* Title Badge */}
         <div className={`px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 pointer-events-auto backdrop-blur-xl border transition-all ${
-          isDark 
-            ? 'bg-zinc-900/80 border-zinc-800/80 text-white shadow-black/40' 
-            : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/60'
+          'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/60'
         }`}>
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm tracking-tight">Knowledge Graph</span>
-              <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${
-                isDark 
-                  ? 'bg-zinc-800 text-zinc-400 border-zinc-700/50' 
-                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              <span className="font-semibold text-sm tracking-tight">Knowledge graph</span>
+              <span className={`text-xs font-mono px-1.5 py-0.5 rounded border ${
+                'bg-slate-100 text-slate-600 border-slate-200'
               }`}>
-                Network Map
+                Network map
               </span>
             </div>
-            <p className={`text-[11px] mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            <p className={`text-xs mt-0.5 ${'text-slate-500'}`}>
               {filteredData.nodes.length} nodes · {filteredData.links.length} connections
             </p>
           </div>
@@ -685,9 +681,7 @@ export const GraphTab: React.FC = () => {
 
         {/* Interactive Group Legend Pills (Click to toggle group visibility) */}
         <div className={`px-3 py-1.5 rounded-2xl shadow-xl flex flex-wrap items-center gap-2 pointer-events-auto backdrop-blur-xl border transition-all ${
-          isDark 
-            ? 'bg-zinc-900/70 border-zinc-800/70 shadow-black/30' 
-            : 'bg-white/85 border-slate-200 shadow-slate-200/50'
+          'bg-white/85 border-slate-200 shadow-slate-200/50'
         }`}>
           {(['client', 'recruiter', 'category', 'job', 'source'] as NodeGroup[]).map(group => {
             const isVisible = visibleGroups[group];
@@ -702,12 +696,8 @@ export const GraphTab: React.FC = () => {
                 onClick={() => setVisibleGroups(prev => ({ ...prev, [group]: !prev[group] }))}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium transition-all ${
                   isVisible 
-                    ? (isDark 
-                        ? 'bg-zinc-800/80 text-zinc-200 hover:bg-zinc-700/80 border border-zinc-700/50' 
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200')
-                    : (isDark 
-                        ? 'bg-zinc-900/40 text-zinc-500 opacity-50 line-through border border-transparent' 
-                        : 'bg-slate-50 text-slate-400 opacity-50 line-through border border-transparent')
+                    ? ('bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200')
+                    : ('bg-slate-50 text-slate-400 opacity-50 line-through border border-transparent')
                 }`}
                 title={`Toggle ${label} visibility`}
               >
@@ -716,7 +706,7 @@ export const GraphTab: React.FC = () => {
                   style={{ backgroundColor: isVisible ? color : '#94a3b8', boxShadow: isVisible ? `0 0 8px ${color}88` : 'none' }} 
                 />
                 <span>{label}</span>
-                <span className={`text-[10px] font-mono ${isDark ? 'text-zinc-400' : 'text-slate-400'}`}>({groupCounts[group]})</span>
+                <span className={`text-xs font-mono ${'text-slate-400'}`}>({groupCounts[group]})</span>
               </button>
             );
           })}
@@ -729,11 +719,9 @@ export const GraphTab: React.FC = () => {
         <button
           onClick={toggleTheme}
           className={`p-2 rounded-xl backdrop-blur-xl border transition-all shadow-xl flex items-center justify-center ${
-            isDark 
-              ? 'bg-zinc-900/80 border-zinc-800/80 text-amber-400 hover:bg-zinc-800 hover:text-amber-300' 
-              : 'bg-white/90 border-slate-200 text-indigo-600 hover:bg-slate-100 hover:text-indigo-700'
+            'bg-white/90 border-slate-200 text-indigo-600 hover:bg-slate-100 hover:text-indigo-700'
           }`}
-          title={isDark ? "Switch to Light Theme" : "Switch to Obsidian Dark Theme"}
+          title={isDark ? "Switch to light theme" : "Switch to dark theme"}
         >
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
@@ -743,15 +731,13 @@ export const GraphTab: React.FC = () => {
           value={filterJobCount}
           onChange={(e) => setFilterJobCount(e.target.value === 'all' ? 'all' : Number(e.target.value))}
           className={`backdrop-blur-xl border rounded-xl px-3.5 py-2 text-xs font-medium shadow-xl outline-none cursor-pointer transition-colors ${
-            isDark 
-              ? 'bg-zinc-900/80 border-zinc-800/80 text-zinc-200 focus:border-zinc-500' 
-              : 'bg-white/90 border-slate-200 text-slate-700 focus:border-slate-400'
+            'bg-white/90 border-slate-200 text-slate-700 focus:border-slate-400'
           }`}
         >
-          <option value="all">All Categorized Jobs</option>
-          <option value={100}>Last 100 Jobs</option>
-          <option value={500}>Last 500 Jobs</option>
-          <option value={1000}>Last 1000 Jobs</option>
+          <option value="all">All categorized jobs</option>
+          <option value={100}>Last 100 jobs</option>
+          <option value={500}>Last 500 jobs</option>
+          <option value={1000}>Last 1000 jobs</option>
         </select>
 
         {/* Settings Toggle Button */}
@@ -760,11 +746,9 @@ export const GraphTab: React.FC = () => {
           className={`p-2 rounded-xl backdrop-blur-xl border transition-all shadow-xl ${
             isSettingsOpen 
               ? 'bg-primary-500/20 border-primary-500 text-primary-400' 
-              : (isDark 
-                  ? 'bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800' 
-                  : 'bg-white/90 border-slate-200 text-slate-700 hover:bg-slate-100')
+              : ('bg-white/90 border-slate-200 text-slate-700 hover:bg-slate-100')
           }`}
-          title="Graph Settings"
+          title="Graph settings"
         >
           <SlidersHorizontal className="w-4 h-4" />
         </button>
@@ -772,35 +756,33 @@ export const GraphTab: React.FC = () => {
 
       {/* BOTTOM-RIGHT FLOATING HUD: Zoom & Simulation Tools */}
       <div className={`absolute bottom-6 right-6 z-10 flex items-center gap-1.5 backdrop-blur-xl border p-1.5 rounded-2xl shadow-2xl pointer-events-auto transition-all ${
-        isDark 
-          ? 'bg-zinc-900/80 border-zinc-800/80 shadow-black/40' 
-          : 'bg-white/90 border-slate-200 shadow-slate-300/60'
+        'bg-white/90 border-slate-200 shadow-slate-300/60'
       }`}>
         <button
           onClick={handleZoomIn}
           className={`p-2 rounded-xl transition-colors ${
-            isDark ? 'hover:bg-zinc-800 text-zinc-300 hover:text-white' : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
+            'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
           }`}
-          title="Zoom In"
+          title="Zoom in"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={handleZoomOut}
           className={`p-2 rounded-xl transition-colors ${
-            isDark ? 'hover:bg-zinc-800 text-zinc-300 hover:text-white' : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
+            'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
           }`}
-          title="Zoom Out"
+          title="Zoom out"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
-        <div className={`w-[1px] h-4 mx-0.5 ${isDark ? 'bg-zinc-800' : 'bg-slate-200'}`} />
+        <div className={`w-[1px] h-4 mx-0.5 ${'bg-slate-200'}`} />
         <button
           onClick={handleZoomFit}
           className={`p-2 rounded-xl transition-colors ${
-            isDark ? 'hover:bg-zinc-800 text-zinc-300 hover:text-white' : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
+            'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
           }`}
-          title="Fit Graph to View"
+          title="Fit graph to view"
         >
           <Maximize2 className="w-4 h-4" />
         </button>
@@ -809,7 +791,7 @@ export const GraphTab: React.FC = () => {
           className={`p-2 rounded-xl transition-colors ${
             isPhysicsPaused 
               ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' 
-              : (isDark ? 'text-zinc-300 hover:bg-zinc-800 hover:text-white' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900')
+              : ('text-slate-700 hover:bg-slate-100 hover:text-slate-900')
           }`}
           title={isPhysicsPaused ? "Resume Simulation" : "Freeze / Pause Physics"}
         >
@@ -820,18 +802,16 @@ export const GraphTab: React.FC = () => {
       {/* GRAPH SETTINGS DRAWER */}
       {isSettingsOpen && (
         <div className={`absolute top-16 right-4 z-20 w-80 backdrop-blur-2xl border rounded-2xl shadow-2xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-100px)] overflow-y-auto transition-all ${
-          isDark 
-            ? 'bg-zinc-900/95 border-zinc-800 text-zinc-100 shadow-black/50' 
-            : 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
+          'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${isDark ? 'border-zinc-800' : 'border-slate-200'}`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${'border-slate-200'}`}>
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-primary-500" />
-              <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Graph Settings</span>
+              <span className={`font-semibold text-sm ${'text-slate-900'}`}>Graph settings</span>
             </div>
             <button 
               onClick={() => setIsSettingsOpen(false)}
-              className={`p-1 rounded-lg transition-colors ${isDark ? 'hover:bg-zinc-800 text-zinc-400 hover:text-white' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
+              className={`p-1 rounded-lg transition-colors ${'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
             >
               <X className="w-4 h-4" />
             </button>
@@ -839,69 +819,65 @@ export const GraphTab: React.FC = () => {
 
           {/* Theme Switcher inside Settings */}
           <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>Theme Mode</span>
+            <span className={`text-xs font-semibold ${'text-slate-700'}`}>Theme mode</span>
             <button
               onClick={toggleTheme}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
-                isDark 
-                  ? 'bg-zinc-800 text-amber-400 border-zinc-700 hover:bg-zinc-700' 
-                  : 'bg-slate-100 text-indigo-600 border-slate-200 hover:bg-slate-200'
+                'bg-slate-100 text-indigo-600 border-slate-200 hover:bg-slate-200'
               }`}
             >
               {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              <span>{isDark ? 'Obsidian Dark' : 'Light Theme'}</span>
+              <span>{isDark ? 'Dark theme' : 'Light theme'}</span>
             </button>
           </div>
 
           {/* Search Filter Input */}
           <div className="flex flex-col gap-1.5">
-            <label className={`text-xs font-semibold flex items-center justify-between ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              <span>Search Node / Keyword</span>
+            <label className={`text-xs font-semibold flex items-center justify-between ${'text-slate-500'}`}>
+              <span>Search node / keyword</span>
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className={`text-[10px] ${isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-slate-400 hover:text-slate-600'}`}>
+                <button onClick={() => setSearchQuery('')} className={`text-xs ${'text-slate-400 hover:text-slate-600'}`}>
                   Clear
                 </button>
               )}
             </label>
             <div className="relative">
-              <Search className={`w-3.5 h-3.5 absolute left-3 top-2.5 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
+              <Search className={`w-3.5 h-3.5 absolute left-3 top-2.5 ${'text-slate-400'}`} />
               <input 
                 type="text" 
                 placeholder="Type title, company, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full rounded-xl pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-primary-500 border transition-colors ${
-                  isDark 
-                    ? 'bg-zinc-950/60 border-zinc-800 text-zinc-200 placeholder-zinc-500' 
-                    : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
+                  'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
                 }`}
               />
             </div>
             {searchMatches && (
-              <span className="text-[11px] text-amber-500 font-medium">
+              <span className="text-xs text-amber-500 font-medium">
                 {searchMatches.size} nodes matching "{searchQuery}"
               </span>
             )}
           </div>
 
           {/* Display Controls */}
-          <div className={`flex flex-col gap-3 pt-2 border-t ${isDark ? 'border-zinc-800/80' : 'border-slate-200'}`}>
-            <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Display</span>
+          <div className={`flex flex-col gap-3 pt-2 border-t ${'border-slate-200'}`}>
+            <span className={`text-xs font-semibold ${'text-slate-500'}`}>Display</span>
 
             {/* Label Mode */}
             <div className="flex flex-col gap-1.5">
-              <label className={`text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>Text Labels</label>
+              <label className={`text-xs ${'text-slate-700'}`}>Text labels</label>
               <div className={`grid grid-cols-3 gap-1 p-1 rounded-xl border ${
-                isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-slate-50 border-slate-200'
+                'bg-slate-50 border-slate-200'
               }`}>
                 {(['hover', 'zoom', 'always'] as const).map(mode => (
                   <button
                     key={mode}
                     onClick={() => setLabelMode(mode)}
-                    className={`py-1 text-[11px] font-medium rounded-lg capitalize transition-all ${
+                    className={`py-1 text-xs font-medium rounded-lg capitalize transition-all ${
                       labelMode === mode 
-                        ? (isDark ? 'bg-zinc-800 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm border border-slate-200/60')
-                        : (isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-slate-500 hover:text-slate-700')
+                        ? ('bg-white text-slate-900 shadow-sm border border-slate-200/60')
+                        : ('text-slate-500 hover:text-slate-700')
                     }`}
                   >
                     {mode}
@@ -912,9 +888,9 @@ export const GraphTab: React.FC = () => {
 
             {/* Node Size Slider */}
             <div className="flex flex-col gap-1">
-              <div className={`flex justify-between text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                <span>Node Scale</span>
-                <span className={`font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>{nodeScale.toFixed(1)}x</span>
+              <div className={`flex justify-between text-xs ${'text-slate-700'}`}>
+                <span>Node scale</span>
+                <span className={`font-mono ${'text-slate-400'}`}>{nodeScale.toFixed(1)}x</span>
               </div>
               <input 
                 type="range" 
@@ -929,9 +905,9 @@ export const GraphTab: React.FC = () => {
 
             {/* Link Thickness Slider */}
             <div className="flex flex-col gap-1">
-              <div className={`flex justify-between text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                <span>Link Thickness</span>
-                <span className={`font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>{linkThickness.toFixed(1)}px</span>
+              <div className={`flex justify-between text-xs ${'text-slate-700'}`}>
+                <span>Link thickness</span>
+                <span className={`font-mono ${'text-slate-400'}`}>{linkThickness.toFixed(1)}px</span>
               </div>
               <input 
                 type="range" 
@@ -946,14 +922,14 @@ export const GraphTab: React.FC = () => {
           </div>
 
           {/* Physics Forces Controls */}
-          <div className={`flex flex-col gap-3 pt-2 border-t ${isDark ? 'border-zinc-800/80' : 'border-slate-200'}`}>
-            <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Forces</span>
+          <div className={`flex flex-col gap-3 pt-2 border-t ${'border-slate-200'}`}>
+            <span className={`text-xs font-semibold ${'text-slate-500'}`}>Forces</span>
 
             {/* Repulsion Force */}
             <div className="flex flex-col gap-1">
-              <div className={`flex justify-between text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                <span>Repel Force</span>
-                <span className={`font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>{repulsionStrength}</span>
+              <div className={`flex justify-between text-xs ${'text-slate-700'}`}>
+                <span>Repel force</span>
+                <span className={`font-mono ${'text-slate-400'}`}>{repulsionStrength}</span>
               </div>
               <input 
                 type="range" 
@@ -968,9 +944,9 @@ export const GraphTab: React.FC = () => {
 
             {/* Link Distance */}
             <div className="flex flex-col gap-1">
-              <div className={`flex justify-between text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                <span>Link Distance</span>
-                <span className={`font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>{linkDistance}</span>
+              <div className={`flex justify-between text-xs ${'text-slate-700'}`}>
+                <span>Link distance</span>
+                <span className={`font-mono ${'text-slate-400'}`}>{linkDistance}</span>
               </div>
               <input 
                 type="range" 
@@ -985,9 +961,9 @@ export const GraphTab: React.FC = () => {
 
             {/* Center Gravity */}
             <div className="flex flex-col gap-1">
-              <div className={`flex justify-between text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
-                <span>Center Gravity</span>
-                <span className={`font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>{centerStrength.toFixed(2)}</span>
+              <div className={`flex justify-between text-xs ${'text-slate-700'}`}>
+                <span>Center gravity</span>
+                <span className={`font-mono ${'text-slate-400'}`}>{centerStrength.toFixed(2)}</span>
               </div>
               <input 
                 type="range" 
@@ -1010,13 +986,11 @@ export const GraphTab: React.FC = () => {
                 if (fgRef.current) fgRef.current.d3ReheatSimulation();
               }}
               className={`mt-1 py-1.5 text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition-colors ${
-                isDark 
-                  ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300' 
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Forces</span>
+              <span>Reset forces</span>
             </button>
           </div>
         </div>
@@ -1026,24 +1000,24 @@ export const GraphTab: React.FC = () => {
       <div className="flex-1 w-full relative h-full" ref={containerRef}>
         {loading && (
           <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md transition-colors ${
-            isDark ? 'bg-[#141416]/80' : 'bg-slate-50/80'
+            'bg-slate-50/80'
           }`}>
             <div className={`w-12 h-12 rounded-2xl border shadow-2xl flex items-center justify-center animate-pulse ${
-              isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-slate-200'
+              'bg-white border-slate-200'
             }`}>
               <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
             </div>
-            <p className={`mt-4 text-xs font-medium ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>Loading Network Graph...</p>
+            <p className={`mt-4 text-xs font-medium ${'text-slate-600'}`}>Loading Network Graph...</p>
           </div>
         )}
         
         {error && (
-          <div className={`absolute inset-0 z-20 flex items-center justify-center ${isDark ? 'bg-[#141416]' : 'bg-slate-50'}`}>
+          <div className={`absolute inset-0 z-20 flex items-center justify-center ${'bg-slate-50'}`}>
             <div className={`p-5 rounded-2xl flex items-center gap-3 border max-w-md ${
-              isDark ? 'bg-red-950/40 border-red-800/60' : 'bg-red-50 border-red-200'
+              'bg-red-50 border-red-200'
             }`}>
               <AlertCircle className="text-red-500 w-5 h-5 shrink-0" />
-              <p className={`text-xs ${isDark ? 'text-red-300' : 'text-red-700'}`}>{error}</p>
+              <p className={`text-xs ${'text-red-700'}`}>{error}</p>
             </div>
           </div>
         )}
@@ -1054,7 +1028,7 @@ export const GraphTab: React.FC = () => {
             width={dimensions.width}
             height={dimensions.height}
             graphData={filteredData}
-            backgroundColor={isDark ? '#141416' : '#f8fafc'}
+            backgroundColor={isDark ? '#0B1418' : '#F3F7F8'}
             nodeRelSize={1}
             nodeCanvasObject={paintNode}
             linkColor={getLinkColor}
@@ -1073,31 +1047,29 @@ export const GraphTab: React.FC = () => {
       <div className={`absolute top-0 right-0 bottom-0 w-84 sm:w-96 backdrop-blur-2xl border-l transition-transform duration-300 ease-in-out z-30 shadow-2xl flex flex-col ${
         selectedNode ? 'translate-x-0' : 'translate-x-full'
       } ${
-        isDark 
-          ? 'bg-zinc-900/95 border-zinc-800 text-zinc-100 shadow-black/50' 
-          : 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/50'
+        'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/50'
       }`}>
         {selectedNode && (
           <div className="h-full flex flex-col">
             {/* Header */}
-            <div className={`p-4 border-b flex items-center justify-between ${isDark ? 'border-zinc-800' : 'border-slate-200'}`}>
+            <div className={`p-4 border-b flex items-center justify-between ${'border-slate-200'}`}>
               <div className="flex items-center gap-2">
                 <span 
                   className="w-2.5 h-2.5 rounded-full" 
                   style={{ backgroundColor: activeColors[selectedNode.group] }} 
                 />
-                <span className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                <span className={`text-xs font-mono font-semibold ${'text-slate-500'}`}>
                   {selectedNode.group}
                 </span>
-                <span className={`text-xs ${isDark ? 'text-zinc-600' : 'text-slate-300'}`}>·</span>
-                <span className={`text-xs font-mono ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                <span className={`text-xs ${'text-slate-300'}`}>·</span>
+                <span className={`text-xs font-mono ${'text-slate-500'}`}>
                   {selectedNode.degree || 1} {selectedNode.degree === 1 ? 'connection' : 'connections'}
                 </span>
               </div>
               <button 
                 onClick={() => setSelectedNode(null)} 
                 className={`p-1 rounded-lg transition-colors ${
-                  isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                  'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <X className="w-5 h-5" />
@@ -1107,7 +1079,7 @@ export const GraphTab: React.FC = () => {
             {/* Content Body */}
             <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-6">
               <div>
-                <h3 className={`text-lg font-bold tracking-tight leading-snug ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <h3 className={`text-lg font-bold tracking-tight leading-snug ${'text-slate-900'}`}>
                   {selectedNode.name}
                 </h3>
                 
@@ -1118,7 +1090,7 @@ export const GraphTab: React.FC = () => {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 mt-2 text-xs text-primary-500 hover:text-primary-600 hover:underline"
                   >
-                    <span>View Listing / Source URL</span>
+                    <span>View listing / source URL</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
@@ -1127,10 +1099,10 @@ export const GraphTab: React.FC = () => {
               {/* Connected Neighbors (Obsidian Links) */}
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                    Connected Nodes
+                  <span className={`text-xs font-semibold ${'text-slate-500'}`}>
+                    Connected nodes
                   </span>
-                  <span className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                  <span className={`text-xs font-mono ${'text-slate-400'}`}>
                     {getConnectedNeighbors(selectedNode.id).length}
                   </span>
                 </div>
@@ -1141,9 +1113,7 @@ export const GraphTab: React.FC = () => {
                       key={neighbor.id}
                       onClick={() => focusOnNode(neighbor)}
                       className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between group ${
-                        isDark 
-                          ? 'bg-zinc-950/50 hover:bg-zinc-800/80 border-zinc-800/60 hover:border-zinc-700' 
-                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 hover:border-slate-300'
+                        'bg-slate-50 hover:bg-slate-100 border-slate-200/80 hover:border-slate-300'
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0 pr-2">
@@ -1152,40 +1122,40 @@ export const GraphTab: React.FC = () => {
                           style={{ backgroundColor: activeColors[neighbor.group] }} 
                         />
                         <span className={`text-xs font-medium truncate ${
-                          isDark ? 'text-zinc-200 group-hover:text-white' : 'text-slate-700 group-hover:text-slate-900'
+                          'text-slate-700 group-hover:text-slate-900'
                         }`}>
                           {neighbor.name}
                         </span>
                       </div>
                       <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 ${
-                        isDark ? 'text-zinc-600 group-hover:text-zinc-300' : 'text-slate-400 group-hover:text-slate-600'
+                        'text-slate-400 group-hover:text-slate-600'
                       }`} />
                     </button>
                   ))}
                   {getConnectedNeighbors(selectedNode.id).length === 0 && (
-                    <p className={`text-xs italic py-2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>No active connections found for this node.</p>
+                    <p className={`text-xs italic py-2 ${'text-slate-400'}`}>No active connections found for this node.</p>
                   )}
                 </div>
               </div>
 
               {/* Node Metadata Badges */}
-              <div className={`flex flex-col gap-3 pt-4 border-t ${isDark ? 'border-zinc-800/80' : 'border-slate-200'}`}>
-                <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Properties</span>
+              <div className={`flex flex-col gap-3 pt-4 border-t ${'border-slate-200'}`}>
+                <span className={`text-xs font-semibold ${'text-slate-500'}`}>Properties</span>
                 
                 <div className="flex flex-col gap-2">
                   {Object.entries(selectedNode.details || {}).map(([key, value]) => {
                     if (!value || typeof value === 'object' || key === 'url' || key === 'description') return null;
                     return (
                       <div key={key} className={`p-2.5 rounded-xl border ${
-                        isDark ? 'bg-zinc-950/40 border-zinc-800/50' : 'bg-slate-50 border-slate-200/60'
+                        'bg-slate-50 border-slate-200/60'
                       }`}>
-                        <p className={`text-[10px] uppercase font-mono tracking-wider font-semibold mb-0.5 ${
-                          isDark ? 'text-zinc-500' : 'text-slate-400'
+                        <p className={`text-xs font-mono font-semibold mb-0.5 ${
+                          'text-slate-400'
                         }`}>
                           {key.replace(/_/g, ' ')}
                         </p>
                         <p className={`text-xs font-medium break-words ${
-                          isDark ? 'text-zinc-200' : 'text-slate-700'
+                          'text-slate-700'
                         }`}>
                           {String(value)}
                         </p>

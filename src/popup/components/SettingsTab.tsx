@@ -23,7 +23,7 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  }
 
  async function clearAllData() {
- if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+ if (!confirm('Clear all data?\n\nJobs, settings and progress on this device are deleted. This can\'t be undone.')) {
  return;
  }
 
@@ -40,12 +40,12 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  <div className="space-y-4">
  {/* General settings */}
  <div className="bg-white border border-gray-200 rounded-md shadow-sm p-5 space-y-4">
- <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3">General Settings</h2>
+ <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2 mb-3">General settings</h2>
 
  <label className="flex items-center justify-between cursor-pointer">
  <div>
- <div className="text-[13px] font-medium text-gray-900">Auto Extract</div>
- <div className="text-[12px] text-gray-600 mt-0.5">Automatically extract jobs when visiting job boards</div>
+ <div className="text-sm font-medium text-gray-900">Auto extract</div>
+ <div className="text-xs text-gray-600 mt-0.5">Automatically extract jobs when visiting job boards</div>
  </div>
  <input
  type="checkbox"
@@ -57,8 +57,8 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
 
  <label className="flex items-center justify-between cursor-pointer">
  <div>
- <div className="text-[13px] font-medium text-gray-900">Notifications</div>
- <div className="text-[12px] text-gray-600 mt-0.5">Show notifications when extraction completes</div>
+ <div className="text-sm font-medium text-gray-900">Notifications</div>
+ <div className="text-xs text-gray-600 mt-0.5">Show notifications when extraction completes</div>
  </div>
  <input
  type="checkbox"
@@ -70,8 +70,8 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
 
  <label className="flex items-center justify-between cursor-pointer">
  <div>
- <div className="text-[13px] font-medium text-gray-900">Dark Mode</div>
- <div className="text-[12px] text-gray-600 mt-0.5">Use dark theme for the popup</div>
+ <div className="text-sm font-medium text-gray-900">Dark mode</div>
+ <div className="text-xs text-gray-600 mt-0.5">Use dark theme for the popup</div>
  </div>
  <input
  type="checkbox"
@@ -82,14 +82,14 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  </label>
 
  <div className="space-y-3 pt-4 mt-2 border-t border-gray-200">
- <h3 className="text-[12px] font-semibold text-gray-700 mb-2 flex items-center gap-2">
- <span>📡</span> Distributed Worker Mode
+ <h3 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
+ Distributed worker mode
  </h3>
 
  <label className="flex items-center justify-between cursor-pointer mb-3">
  <div>
- <div className="text-[13px] font-medium text-gray-900">Enable Remote Queue Polling</div>
- <div className="text-[12px] text-gray-600 mt-0.5">Pull tasks from Supabase Command Center</div>
+ <div className="text-sm font-medium text-gray-900">Enable remote queue polling</div>
+ <div className="text-xs text-gray-600 mt-0.5">Pull tasks from Supabase command center</div>
  </div>
  <input
  type="checkbox"
@@ -99,47 +99,47 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  />
  </label>
 
- <label className="text-[13px] font-medium text-gray-900 block">Worker ID / Agent Name (assigned_to)</label>
+ <label className="text-sm font-medium text-gray-900 block">Worker ID / agent name (assigned_to)</label>
  <input
  type="text"
  placeholder="e.g. Node-A"
  value={settings.friendName ||''}
  onChange={(e) => updateSetting('friendName', e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 mt-1 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 mt-1 shadow-sm"
  />
  </div>
  </div>
 
  {/* Extraction settings */}
  <div className="bg-white border border-gray-200 rounded-md shadow-sm p-5 space-y-4">
- <h2 className="text-[11px] font-bold text-gray-600 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3">Extraction Settings</h2>
+ <h2 className="text-xs font-bold text-gray-600 border-b border-gray-200 pb-2 mb-3">Extraction settings</h2>
 
  <div className="space-y-1.5">
- <label className="text-[13px] font-medium text-gray-900">Max Jobs per Page</label>
+ <label className="text-sm font-medium text-gray-900">Max jobs per page</label>
  <input
  type="number"
  min="10"
  max="500"
  value={settings.maxJobsPerPage || 100}
  onChange={(e) => updateSetting('maxJobsPerPage', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
  />
  </div>
 
  <div className="space-y-1.5">
- <label className="text-[13px] font-medium text-gray-900">Pagination Limit</label>
+ <label className="text-sm font-medium text-gray-900">Pagination limit</label>
  <input
  type="number"
  min="1"
  max="100"
  value={settings.paginationLimit || 10}
  onChange={(e) => updateSetting('paginationLimit', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
  />
  </div>
 
  <div className="space-y-1.5">
- <label className="text-[13px] font-medium text-gray-900">Crawl Delay (ms)</label>
+ <label className="text-sm font-medium text-gray-900">Crawl delay (ms)</label>
  <input
  type="number"
  min="100"
@@ -147,14 +147,14 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
  step="100"
  value={settings.crawlDelay || 1000}
  onChange={(e) => updateSetting('crawlDelay', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-[13px] text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-gray-400 shadow-sm"
  />
  </div>
 
  <label className="flex items-center justify-between cursor-pointer">
  <div>
- <div className="text-[13px] font-medium text-gray-900">Respect robots.txt</div>
- <div className="text-[12px] text-gray-600 mt-0.5">Follow robots.txt rules when crawling</div>
+ <div className="text-sm font-medium text-gray-900">Respect robots.txt</div>
+ <div className="text-xs text-gray-600 mt-0.5">Follow robots.txt rules when crawling</div>
  </div>
  <input
  type="checkbox"
@@ -167,13 +167,13 @@ export default function SettingsTab({ settings, onSettingsUpdate, sendMessage }:
 
  {/* Danger zone */}
  <div className="bg-red-50 border border-red-100 rounded-md p-5 space-y-4 shadow-sm">
- <h2 className="text-[11px] font-bold text-red-600 uppercase tracking-widest border-b border-red-100 pb-2 mb-3">Danger Zone</h2>
+ <h2 className="text-xs font-bold text-red-600 border-b border-red-100 pb-2 mb-3">Danger zone</h2>
 
  <button
  onClick={clearAllData}
- className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 rounded-md text-[13px] font-medium hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm"
+ className="w-full px-4 py-2 bg-white border border-red-200 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm"
  >
- Clear All Data
+ Clear all data
  </button>
 
  <div className="text-xs text-gray-600">

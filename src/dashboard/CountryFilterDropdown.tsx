@@ -112,7 +112,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
     return (
       <span className="truncate">
         {before}
-        <span className="font-bold text-cyan-600 dark:text-cyan-400 underline decoration-cyan-500/50 decoration-2 underline-offset-2">
+        <span className="font-bold text-cyan-600 underline decoration-cyan-500/50 decoration-2 underline-offset-2">
           {match}
         </span>
         {after}
@@ -138,7 +138,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
           onFocus={() => setIsOpen(true)}
           onClick={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-md pl-3 pr-14 py-1.5 text-[11px] text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all placeholder-gray-400 dark:placeholder-zinc-500 shadow-sm"
+          className="w-full bg-gray-50 border border-gray-200 rounded-md pl-3 pr-14 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500 transition-all placeholder-gray-400 shadow-sm"
         />
 
         <div className="absolute right-2 flex items-center gap-1">
@@ -146,7 +146,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-0.5 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 rounded transition-colors"
+              className="p-0.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
               title="Clear country filter"
               aria-label="Clear filter"
             >
@@ -160,7 +160,7 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
               inputRef.current?.focus();
             }}
             tabIndex={-1}
-            className="p-0.5 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-transform duration-200"
+            className="p-0.5 text-gray-400 hover:text-gray-600 transition-transform duration-200"
             aria-label="Toggle country list"
           >
             <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -172,17 +172,17 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
         <div
           ref={listRef}
           role="listbox"
-          className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-xl py-1 text-xs backdrop-blur-md transition-all animate-in fade-in zoom-in-95 duration-100"
+          className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-xl py-1 text-xs backdrop-blur-md transition-all animate-in fade-in zoom-in-95 duration-100"
         >
           {filteredCountries.length === 0 ? (
-            <div className="px-3 py-2 text-[11px] text-gray-500 dark:text-zinc-400 italic text-center">
+            <div className="px-3 py-2 text-xs text-gray-500 italic text-center">
               No matching countries
             </div>
           ) : (
             <>
-              <div className="px-2.5 py-1 text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 mb-1">
-                <span>{value ? 'Suggestions' : 'All Countries'}</span>
-                <span className="font-normal text-[9px] text-gray-400 dark:text-zinc-500">
+              <div className="px-2.5 py-1 text-xs font-semibold text-gray-400 flex justify-between items-center border-b border-gray-100 mb-1">
+                <span>{value ? 'Suggestions' : 'All countries'}</span>
+                <span className="font-normal text-xs text-gray-400">
                   {filteredCountries.length} {filteredCountries.length === 1 ? 'country' : 'countries'}
                 </span>
               </div>
@@ -199,12 +199,12 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
                     aria-selected={isSelected}
                     onClick={() => handleSelect(country.name)}
                     onMouseEnter={() => setHighlightedIndex(index)}
-                    className={`w-full px-2.5 py-1.5 text-left flex items-center justify-between text-[11px] transition-colors ${
+                    className={`w-full px-2.5 py-1.5 text-left flex items-center justify-between text-xs transition-colors ${
                       isHighlighted
-                        ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300'
+                        ? 'bg-primary-50 text-primary-700'
                         : isSelected
-                        ? 'bg-gray-100 dark:bg-zinc-800 font-medium text-gray-900 dark:text-zinc-100'
-                        : 'text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/60'
+                        ? 'bg-gray-100 font-medium text-gray-900'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
@@ -218,12 +218,12 @@ export const CountryFilterDropdown: React.FC<CountryFilterDropdownProps> = ({
 
                     <div className="flex items-center gap-1.5 ml-2 shrink-0">
                       {country.code && (
-                        <span className="text-[9px] px-1 py-0.2 rounded font-mono font-medium text-gray-400 dark:text-zinc-500 bg-gray-100 dark:bg-zinc-800 border border-gray-200/50 dark:border-zinc-700/50">
+                        <span className="text-xs px-1 py-0.2 rounded font-mono font-medium text-gray-400 bg-gray-100 border border-gray-200/50">
                           {country.code}
                         </span>
                       )}
                       {isSelected && (
-                        <span className="text-primary-600 dark:text-primary-400 text-xs">✓</span>
+                        <span className="text-primary-600 text-xs">✓</span>
                       )}
                     </div>
                   </button>

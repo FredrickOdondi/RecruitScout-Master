@@ -59,20 +59,20 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  // Chart Data
  // 1. Leads Progression (Fake timeline based on 7d, 30d, Total)
  const progressionData = [
- { name:'Last 7 Days', leads: leads7d },
- { name:'Last 30 Days', leads: leads30d },
- { name:'Total All Time', leads: leadsTotal }
+ { name:'Last 7 days', leads: leads7d },
+ { name:'Last 30 days', leads: leads30d },
+ { name:'Total all time', leads: leadsTotal }
  ];
 
  // 2. Capacity vs Limit
  const dailyData = [
- { name:'Current Output', sent: Math.round(leads30d / 30), minLimit: minLeads, maxLimit: maxLeads }
+ { name:'Current output', sent: Math.round(leads30d / 30), minLimit: minLeads, maxLimit: maxLeads }
  ];
 
  // 3. Teaser Status
  const teaserData = [
- { name:'Leads Sent', value: leadsBeforeTeaser, color:'#0284c7' }, // sky-600
- { name:'Remaining to Teaser', value: Math.max(0, teaserThreshold - leadsBeforeTeaser), color:'#e0f2fe' } // sky-100
+ { name:'Leads sent', value: leadsBeforeTeaser, color:'#0284c7' }, // sky-600
+ { name:'Remaining to teaser', value: Math.max(0, teaserThreshold - leadsBeforeTeaser), color:'#e0f2fe' } // sky-100
  ];
 
  return (
@@ -82,7 +82,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <button 
  onClick={onBack}
  className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
- title="Back to Leads Management"
+ title="Back to leads management"
  >
  <ArrowLeft />
  </button>
@@ -90,7 +90,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <h1 className="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
  {name}
  {recruiter.status && (
- <span className={`text-[9px] font-medium px-2 py-0.5 rounded-full border ${
+ <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
  recruiter.status.toLowerCase() ==='active' ?'bg-primary-50 text-primary-700 border-primary-200' :
  recruiter.status.toLowerCase() ==='pending' ?'bg-slate-50 text-slate-700 border-slate-200' :
 'bg-slate-50 text-slate-700 border-slate-200'
@@ -110,15 +110,15 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-start gap-4 overflow-hidden">
  <div className="bg-primary-50 text-primary-700 p-2.5 rounded-lg flex-shrink-0"><Building /></div>
  <div className="min-w-0">
- <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Industry</p>
- <p className="text-[12px] font-semibold text-gray-900 mt-1 truncate" title={industry}>{industry}</p>
+ <p className="text-xs font-medium text-gray-500 truncate">Industry</p>
+ <p className="text-xs font-semibold text-gray-900 mt-1 truncate" title={industry}>{industry}</p>
  </div>
  </div>
  <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-start gap-4 overflow-hidden">
  <div className="bg-primary-50 text-primary-700 p-2.5 rounded-lg flex-shrink-0"><Globe /></div>
  <div className="min-w-0">
- <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Domain</p>
- <a href={domain.startsWith('http') ? domain :`https://${domain}`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-primary-600 hover:underline mt-1 block truncate" title={domain}>
+ <p className="text-xs font-medium text-gray-500 truncate">Domain</p>
+ <a href={domain.startsWith('http') ? domain :`https://${domain}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary-600 hover:underline mt-1 block truncate" title={domain}>
  {domain}
  </a>
  </div>
@@ -126,19 +126,19 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-start gap-4 overflow-hidden">
  <div className="bg-primary-50 text-primary-700 p-2.5 rounded-lg flex-shrink-0"><MapPin /></div>
  <div className="min-w-0">
- <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Location</p>
- <p className="text-[12px] font-semibold text-gray-900 mt-1 truncate" title={location}>{location}</p>
+ <p className="text-xs font-medium text-gray-500 truncate">Location</p>
+ <p className="text-xs font-semibold text-gray-900 mt-1 truncate" title={location}>{location}</p>
  </div>
  </div>
  <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col justify-center gap-1 overflow-hidden">
  <div className="flex items-center gap-2 mb-1">
  <div className="bg-slate-50 text-slate-700 p-1.5 rounded-md flex-shrink-0"><Users /></div>
- <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Contacts</p>
+ <p className="text-xs font-medium text-gray-500 truncate">Contacts</p>
  </div>
  <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate" title={String(associatedContacts)}>{associatedContacts}</p>
  </div>
  <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col justify-center gap-1 overflow-hidden">
- <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate">Total Leads Sent</p>
+ <p className="text-xs font-medium text-gray-500 truncate">Total Leads Sent</p>
  <p className="text-3xl font-bold font-mono tracking-tight text-gray-900 truncate">{leadsTotal}</p>
  </div>
  </div>
@@ -148,7 +148,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  
  {/* Main Trend Chart */}
  <div className="bg-white rounded-xl border border-gray-200 p-6 lg:col-span-2">
- <h3 className="text-[12px] font-semibold text-gray-800 mb-6">Leads Output Progression</h3>
+ <h3 className="text-xs font-semibold text-gray-800 mb-6">Leads output progression</h3>
  <div className="h-72 w-full">
  <ResponsiveContainer width="100%" height="100%">
  <BarChart data={progressionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -167,7 +167,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
 
  {/* Teaser Threshold Donut */}
  <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col items-center">
- <h3 className="text-[12px] font-semibold text-gray-800 self-start mb-2">Teaser Threshold Progress</h3>
+ <h3 className="text-xs font-semibold text-gray-800 self-start mb-2">Teaser threshold progress</h3>
  <p className="text-xs text-gray-500 self-start mb-4">Leads sent towards teaser mode activation</p>
  <div className="h-48 w-full relative">
  <ResponsiveContainer width="100%" height="100%">
@@ -189,7 +189,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  </ResponsiveContainer>
  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
  <span className="text-2xl font-bold text-gray-900">{leadsBeforeTeaser}</span>
- <span className="text-[9px] font-medium text-gray-500 uppercase tracking-widest">/ {teaserThreshold}</span>
+ <span className="text-xs font-medium text-gray-500 ">/ {teaserThreshold}</span>
  </div>
  </div>
  <div className="mt-4 flex gap-4 text-xs font-medium text-gray-500">
@@ -200,7 +200,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
 
  {/* Daily Limit Utilization */}
  <div className="bg-white rounded-xl border border-gray-200 p-6 lg:col-span-3">
- <h3 className="text-[12px] font-semibold text-gray-800 mb-6">Daily Capacity vs Limit (Est. 30d Avg)</h3>
+ <h3 className="text-xs font-semibold text-gray-800 mb-6">Daily capacity vs limit (est. 30d avg)</h3>
  <div className="h-40 w-full">
  <ResponsiveContainer width="100%" height="100%">
  <BarChart data={dailyData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
@@ -221,44 +221,44 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
 
  {/* Email Logs Section */}
  <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
- <h3 className="text-[12px] font-semibold text-gray-800 mb-4">Email Logs</h3>
+ <h3 className="text-xs font-semibold text-gray-800 mb-4">Email logs</h3>
  {loadingLogs ? (
- <div className="text-[12px] text-gray-500 py-4">Loading logs...</div>
+ <div className="text-xs text-gray-500 py-4">Loading logs...</div>
  ) : emailLogs.length === 0 ? (
- <div className="text-[12px] text-gray-500 py-4">No email logs found for this recruiter.</div>
+ <div className="text-xs text-gray-500 py-4">No email logs found for this recruiter.</div>
  ) : (
  <div className="overflow-x-auto">
  <table className="min-w-full divide-y divide-gray-200">
  <thead>
  <tr>
- <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Sent</th>
- <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
- <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jobs Included</th>
- <th className="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+ <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 ">Date sent</th>
+ <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 ">Recipient</th>
+ <th className="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 ">Jobs included</th>
+ <th className="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 ">Action</th>
  </tr>
  </thead>
  <tbody className="bg-white divide-y divide-gray-200">
  {emailLogs.map((log) => (
  <tr key={log.id}>
- <td className="px-4 py-3 whitespace-nowrap text-[12px] text-gray-900">
+ <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
  {log.sent_at ? new Date(log.sent_at).toLocaleString() :'N/A'}
  </td>
- <td className="px-4 py-3 whitespace-nowrap text-[12px] text-gray-600">
+ <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
  {log.email_address}
  </td>
- <td className="px-4 py-3 text-[12px] text-gray-600">
+ <td className="px-4 py-3 text-xs text-gray-600">
  <ul className="list-disc pl-4">
  {log.matched_jobs && log.matched_jobs.map((j: any) => (
  <li key={j.id} className="truncate max-w-md" title={j.title}>{j.title} at {j.company}</li>
  ))}
  </ul>
  </td>
- <td className="px-4 py-3 whitespace-nowrap text-right text-[12px] font-medium">
+ <td className="px-4 py-3 whitespace-nowrap text-right text-xs font-medium">
  <button 
  onClick={() => setSelectedEmailLog(log)}
  className="text-primary-600 hover:text-primary-900 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-md transition-colors"
  >
- View Email
+ View email
  </button>
  </td>
  </tr>
@@ -281,7 +281,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <div className="relative bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-slate-50 rounded-t-xl">
  <h2 className="text-base font-bold text-slate-800">
- Email Content
+ Email content
  </h2>
  <button 
  onClick={() => setSelectedEmailLog(null)}
@@ -290,7 +290,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <CloseIcon />
  </button>
  </div>
- <div className="flex-1 overflow-y-auto p-6 bg-white rounded-b-xl text-[12px] text-gray-800">
+ <div className="flex-1 overflow-y-auto p-6 bg-white rounded-b-xl text-xs text-gray-800">
  <div 
  dangerouslySetInnerHTML={{ __html: selectedEmailLog.email_content }}
  className="prose prose-sm max-w-none prose-a:text-primary-600 hover:prose-a:text-primary-800"

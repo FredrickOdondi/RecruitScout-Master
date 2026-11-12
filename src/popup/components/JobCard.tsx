@@ -46,8 +46,8 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  </div>
 
  <div className="mt-1 space-y-1">
- <p className="text-[13px] text-gray-700">{job.company}</p>
- <p className="text-[12px] text-gray-600 flex items-center gap-1.5">
+ <p className="text-sm text-gray-700">{job.company}</p>
+ <p className="text-xs text-gray-600 flex items-center gap-1.5">
  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -59,12 +59,12 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  {/* Badges */}
  <div className="mt-2.5 flex flex-wrap gap-2">
  {job.employmentType && (
- <span className="px-2 py-0.5 text-[11px] uppercase text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
+ <span className="px-2 py-0.5 text-xs text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
  {job.employmentType}
  </span>
  )}
  {job.salary && (
- <span className="px-2 py-0.5 text-[11px] uppercase text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
+ <span className="px-2 py-0.5 text-xs text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
  {job.salary.min && job.salary.max
  ?`$${job.salary.min.toLocaleString()} - $${job.salary.max.toLocaleString()}`
  : job.salary.min
@@ -74,7 +74,7 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  </span>
  )}
  {job.postedAgo && (
- <span className="px-2 py-0.5 text-[11px] uppercase text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
+ <span className="px-2 py-0.5 text-xs text-gray-700 bg-gray-100 border border-gray-200 rounded-md">
  {job.postedAgo}
  </span>
  )}
@@ -84,7 +84,7 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  <div className="mt-2.5 flex gap-2">
  <button
  onClick={openJob}
- className="text-[12px] text-green-600 hover:text-green-700 font-medium group flex items-center gap-1"
+ className="text-xs text-green-600 hover:text-green-700 font-medium group flex items-center gap-1"
  >
  Open Original Job <span className="transition-transform group-hover:translate-x-1">→</span>
  </button>
@@ -95,10 +95,10 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  {/* Expanded description */}
  {isExpanded && job.description && (
  <div className="mt-3 pt-3 border-t border-gray-200">
- <div className="text-[12px] text-gray-700 leading-relaxed max-h-64 overflow-y-auto custom-scrollbar font-mono bg-gray-50 border border-gray-200 p-3 rounded-md">
+ <div className="text-xs text-gray-700 leading-relaxed max-h-64 overflow-y-auto custom-scrollbar font-mono bg-gray-50 border border-gray-200 p-3 rounded-md">
  {job.description}
  </div>
- <div className="mt-2 flex items-center justify-between text-[11px] text-gray-600">
+ <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
  <span>Source: {job.source}</span>
  <span>Extracted: {new Date(job.extractedAt).toLocaleDateString()}</span>
  </div>
