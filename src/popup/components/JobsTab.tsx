@@ -68,7 +68,7 @@ export default function JobsTab({ jobs, onJobsUpdate, sendMessage }: JobsTabProp
  placeholder="Search extracted jobs by title, company, or location..."
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-md p-2.5 pl-10 text-[13px] text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all outline-none shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-md p-2.5 pl-10 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all outline-none shadow-sm"
  />
  <svg
  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-gray-700 transition-colors"
@@ -83,7 +83,7 @@ export default function JobsTab({ jobs, onJobsUpdate, sendMessage }: JobsTabProp
  <div className="flex items-center justify-between px-2">
  {/* Select all */}
  {filteredJobs.length > 0 && (
- <label className="flex items-center gap-2.5 text-[13px] text-gray-700 cursor-pointer group hover:text-gray-900 transition-colors">
+ <label className="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer group hover:text-gray-900 transition-colors">
  <input
  type="checkbox"
  checked={selectedJobs.size === filteredJobs.length && filteredJobs.length > 0}
@@ -97,19 +97,19 @@ export default function JobsTab({ jobs, onJobsUpdate, sendMessage }: JobsTabProp
  {/* Bulk actions */}
  {selectedJobs.size > 0 && (
  <div className="flex items-center gap-4">
- <span className="text-[13px] font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-md border border-gray-200">
+ <span className="text-sm font-medium text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-md border border-gray-200">
  {selectedJobs.size} selected
  </span>
  <div className="flex gap-2">
  <button
  onClick={deleteSelected}
- className="px-3 py-1.5 text-[13px] font-medium text-red-600 bg-white hover:bg-red-50 rounded-md transition-colors border border-red-200 shadow-sm"
+ className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white hover:bg-red-50 rounded-md transition-colors border border-red-200 shadow-sm"
  >
- Delete Selected
+ Delete selected
  </button>
  <button
  onClick={() => setSelectedJobs(new Set())}
- className="px-3 py-1.5 text-[13px] font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 rounded-md transition-colors border border-gray-200 shadow-sm"
+ className="px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 rounded-md transition-colors border border-gray-200 shadow-sm"
  >
  Clear
  </button>
@@ -125,8 +125,8 @@ export default function JobsTab({ jobs, onJobsUpdate, sendMessage }: JobsTabProp
  <svg className="w-12 h-12 mx-auto mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
  </svg>
- <p className="text-gray-700 text-[13px] font-medium">No jobs found</p>
- <p className="text-[12px] text-gray-600 mt-1">Start your agents or change your search query.</p>
+ <p className="text-gray-700 text-sm font-medium">No jobs found</p>
+ <p className="text-xs text-gray-600 mt-1">Start your agents or change your search query.</p>
  </div>
  ) : (
  <div className="grid grid-cols-1 gap-2">

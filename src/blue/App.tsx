@@ -294,7 +294,7 @@ export default function App() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
@@ -306,7 +306,7 @@ export default function App() {
                   <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-800">Mentions</span>
                     {unreadCount > 0 && (
-                      <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
                         {unreadCount} unread
                       </span>
                     )}
@@ -336,7 +336,7 @@ export default function App() {
                             {' '}mentioned you in{' '}
                             <span className="font-semibold text-blue-600">{m.targetWorkspace?.name}</span>
                           </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{timeAgo(m.createdAt)}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{timeAgo(m.createdAt)}</p>
                         </div>
                         {!m.isRead && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"/>
@@ -361,7 +361,7 @@ export default function App() {
           {/* Settings gear */}
           <button
             onClick={() => setShowSettings(v => !v)}
-            title="API Settings"
+            title="API settings"
             className={`p-1.5 rounded-md transition-colors ${showSettings ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
           >
             <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -376,20 +376,20 @@ export default function App() {
         <div className="border-b border-gray-200 bg-white px-5 py-4 shadow-sm flex-shrink-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Token ID</label>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Token ID</label>
               <input type="text" value={tokenId} onChange={e => setTokenId(e.target.value)} placeholder="Token ID" className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500"/>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Secret ID</label>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Secret ID</label>
               <input type="password" value={secretId} onChange={e => setSecretId(e.target.value)} placeholder="••••••••" className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500"/>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Company ID <span className="font-normal normal-case text-gray-400">(optional)</span></label>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Company ID <span className="font-normal normal-case text-gray-400">(optional)</span></label>
               <input type="text" value={companyId} onChange={e => setCompanyId(e.target.value)} placeholder="Auto-detected" className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500"/>
             </div>
           </div>
           <button onClick={handleSaveCredentials} disabled={saving} className="mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1.5 rounded transition-colors disabled:opacity-50">
-            {saving ? 'Saving…' : 'Save & Connect'}
+            {saving ? 'Saving…' : 'Save & connect'}
           </button>
         </div>
       )}
@@ -404,7 +404,7 @@ export default function App() {
         >
           <div className="flex items-center justify-between px-2.5 py-2.5 border-b border-gray-100">
             {sidebarOpen && (
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Workspaces</span>
+              <span className="text-xs font-bold text-gray-400 pl-1">Workspaces</span>
             )}
             <button
               onClick={() => setSidebarOpen(v => !v)}
@@ -420,10 +420,10 @@ export default function App() {
 
           <div className="flex-1 overflow-y-auto py-1.5">
             {workspaces.length === 0 && client && (
-              <p className="px-3 py-4 text-[11px] text-gray-400 text-center">No workspaces</p>
+              <p className="px-3 py-4 text-xs text-gray-400 text-center">No workspaces</p>
             )}
             {!client && (
-              <p className="px-3 py-4 text-[11px] text-gray-400 text-center">Not connected</p>
+              <p className="px-3 py-4 text-xs text-gray-400 text-center">Not connected</p>
             )}
             {workspaces.map((ws, i) => {
               const color = COLUMN_COLORS[i % COLUMN_COLORS.length];
@@ -455,7 +455,7 @@ export default function App() {
               <button
                 onClick={() => { fetchWorkspaces(client); fetchMentions(client); }}
                 title="Refresh"
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors"
               >
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
@@ -478,7 +478,7 @@ export default function App() {
                 </svg>
                 <p className="text-gray-500 text-sm mb-3">Connect your Blue.cc account to get started.</p>
                 <button onClick={() => setShowSettings(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors">
-                  Add API Credentials
+                  Add API credentials
                 </button>
               </div>
             </div>
@@ -567,8 +567,8 @@ export default function App() {
                           {/* Column header */}
                           <div className="px-4 py-3 flex items-center gap-2 flex-shrink-0 bg-white/40 backdrop-blur-sm" style={{ borderBottom: `1px solid ${color.border}` }}>
                             <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: color.dot }}/>
-                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider truncate flex-1">{list.title}</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 shadow-sm"
+                            <span className="text-xs font-bold text-slate-700 truncate flex-1">{list.title}</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 shadow-sm"
                               style={{ background: color.border, color: color.dot }}>
                               {todos.length}
                             </span>
@@ -577,7 +577,7 @@ export default function App() {
                           {/* Cards */}
                           <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 custom-scrollbar">
                             {todos.length === 0 && (
-                              <div className="flex items-center justify-center py-6 text-slate-300 text-[11px] uppercase tracking-widest font-semibold">Empty</div>
+                              <div className="flex items-center justify-center py-6 text-slate-300 text-xs font-semibold">Empty</div>
                             )}
                             {todos.map((todo: any) => (
                               <div
@@ -601,7 +601,7 @@ export default function App() {
                                     {todo.tags.map((tag: any) => (
                                       <span
                                         key={tag.id}
-                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                                        className="text-xs font-bold px-1.5 py-0.5 rounded-full "
                                         style={{ backgroundColor: tag.color ? `${tag.color}22` : '#f3f4f6', color: tag.color || '#6b7280' }}
                                       >
                                         {tag.title}
@@ -609,7 +609,7 @@ export default function App() {
                                     ))}
                                   </div>
                                 )}
-                                <p className={`text-[12px] font-medium leading-relaxed mt-0.5 ${todo.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                                <p className={`text-xs font-medium leading-relaxed mt-0.5 ${todo.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                                   {todo.title}
                                 </p>
                                 {/* Bottom meta row */}
@@ -620,7 +620,7 @@ export default function App() {
                                       <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 16c0 1.1-.9 2-2 2H7l-4 4V6c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z"/>
                                       </svg>
-                                      <span className="text-[9px] font-semibold">{todo.commentCount}</span>
+                                      <span className="text-xs font-semibold">{todo.commentCount}</span>
                                     </div>
                                   )}
                                 </div>
@@ -678,7 +678,7 @@ export default function App() {
                     {selectedTodo.tags.map((tag: any) => (
                       <span
                         key={tag.id}
-                        className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                        className="text-xs font-bold px-2 py-0.5 rounded-full "
                         style={{ backgroundColor: tag.color ? `${tag.color}22` : '#f3f4f6', color: tag.color || '#6b7280' }}
                       >
                         {tag.title}
@@ -703,23 +703,23 @@ export default function App() {
               {/* Description */}
               {todoDetail?.text && (
                 <div className="px-6 py-5 border-b border-slate-100/50">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-1.5">
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
                     Description
                   </p>
-                  <p className="text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed">{todoDetail.text}</p>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{todoDetail.text}</p>
                 </div>
               )}
 
               {/* Comments */}
               <div className="px-6 py-5">
                 <div className="flex items-center gap-2 mb-5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 16c0 1.1-.9 2-2 2H7l-4 4V6c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10z"/></svg>
                     Comments
                   </p>
                   {!loadingDetail && todoDetail && (
-                    <span className="text-[9px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full shadow-sm">
+                    <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full shadow-sm">
                       {todoDetail.comments.length}
                     </span>
                   )}
@@ -742,7 +742,7 @@ export default function App() {
                     {todoDetail.comments.length === 0 && (
                       <div className="flex flex-col items-center justify-center py-10 bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
                         <svg className="w-8 h-8 text-slate-300 mb-2" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                        <p className="text-[12px] font-medium text-slate-400">No comments yet</p>
+                        <p className="text-xs font-medium text-slate-400">No comments yet</p>
                       </div>
                     )}
                     {todoDetail.comments.map((comment: any) => {
@@ -755,14 +755,14 @@ export default function App() {
                       return (
                         <div key={comment.id} className="flex gap-3.5 group">
                           {/* Avatar */}
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-[11px] font-bold text-blue-700 flex-shrink-0 shadow-sm border border-white">
+                          <div className="w-8 h-8 rounded-full bg-accent-subtle-2 flex items-center justify-center text-xs font-bold text-accent-subtle-fg flex-shrink-0 shadow-sm border border-white">
                             {initials}
                           </div>
                           <div className="flex-1 min-w-0">
                             {/* Author + timestamp */}
                             <div className="flex items-baseline gap-2 mb-1.5">
-                              <span className="text-[13px] font-bold text-slate-800">{name}</span>
-                              <span className="text-[10px] font-medium text-slate-400">{timeAgo(comment.createdAt)}</span>
+                              <span className="text-sm font-bold text-slate-800">{name}</span>
+                              <span className="text-xs font-medium text-slate-400">{timeAgo(comment.createdAt)}</span>
                             </div>
                             {/* Comment body */}
                             <div className="bg-slate-50/70 border border-slate-100 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm inline-block max-w-[95%]">
@@ -773,7 +773,7 @@ export default function App() {
                             <div className="mt-1">
                               <button
                                 onClick={() => setReplyingToComment({ id: comment.id, name })}
-                                className="text-[11px] font-bold text-slate-400 hover:text-blue-500 transition-colors uppercase tracking-wide opacity-0 group-hover:opacity-100"
+                                className="text-xs font-bold text-slate-400 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100"
                               >
                                 Reply
                               </button>
@@ -790,16 +790,16 @@ export default function App() {
                                   });
                                   return (
                                     <div key={reply.id} className="flex gap-2.5 relative">
-                                      <div className="w-6 h-6 rounded-full bg-slate-100 border border-white flex items-center justify-center text-[9px] font-bold text-slate-500 flex-shrink-0 mt-1 shadow-sm">
+                                      <div className="w-6 h-6 rounded-full bg-slate-100 border border-white flex items-center justify-center text-xs font-bold text-slate-500 flex-shrink-0 mt-1 shadow-sm">
                                         {rInitials}
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-baseline gap-2 mb-1">
-                                          <span className="text-[12px] font-bold text-slate-700">{rName}</span>
+                                          <span className="text-xs font-bold text-slate-700">{rName}</span>
                                           <span className="text-[9.5px] font-medium text-slate-400">{timeAgo(reply.createdAt)}</span>
                                         </div>
                                         <div className="bg-white border border-slate-100 rounded-2xl rounded-tl-none px-3.5 py-2.5 shadow-sm inline-block max-w-[95%]">
-                                          <p className="text-[12px] text-slate-600 leading-relaxed whitespace-pre-wrap break-words">{reply.text}</p>
+                                          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap break-words">{reply.text}</p>
                                         </div>
                                       </div>
                                     </div>
@@ -820,7 +820,7 @@ export default function App() {
             <div className="border-t border-slate-200 bg-slate-50/80 backdrop-blur-md p-5 flex-shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] relative z-10">
               {replyingToComment && (
                 <div className="flex items-center justify-between bg-blue-100/50 px-3 py-2 rounded-lg mb-3 border border-blue-200 shadow-sm animate-fade-in">
-                  <span className="text-[11px] font-bold text-blue-800 flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
                     <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                     Replying to {replyingToComment.name}
                   </span>
@@ -848,7 +848,7 @@ export default function App() {
                           onClick={() => insertMention(u)}
                           className="w-full text-left px-3 py-1.5 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors flex items-center gap-2"
                         >
-                          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[9px] font-bold text-blue-700 flex-shrink-0">
+                          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 flex-shrink-0">
                             {u.firstName?.[0]}{u.lastName?.[0]}
                           </div>
                           <span className="text-xs text-gray-800 font-medium">
@@ -857,7 +857,7 @@ export default function App() {
                         </button>
                       ))}
                     {workspaceUsers.filter(u => `${u.firstName} ${u.lastName || ''}`.toLowerCase().includes(mentionSearch.query)).length === 0 && (
-                      <div className="px-3 py-2 text-[10px] text-gray-400">No users found</div>
+                      <div className="px-3 py-2 text-xs text-gray-400">No users found</div>
                     )}
                   </div>
                 )}
@@ -872,17 +872,17 @@ export default function App() {
                     }
                   }}
                   placeholder={replyingToComment ? "Write your reply..." : "Add a comment..."}
-                  className="w-full text-[13px] border border-slate-300 rounded-xl p-3.5 min-h-[90px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none shadow-sm pb-12 transition-all bg-white"
+                  className="w-full text-sm border border-slate-300 rounded-xl p-3.5 min-h-[90px] focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none shadow-sm pb-12 transition-all bg-white"
                   disabled={isSubmittingComment}
                 />
                 <div className="absolute bottom-2.5 right-2.5 flex items-center gap-3">
-                  <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline-block">
+                  <span className="text-xs text-slate-400 font-semibold hidden sm:inline-block">
                     Cmd + Enter to post
                   </span>
                   <button
                     onClick={handleSubmitComment}
                     disabled={isSubmittingComment || !newCommentText.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                   >
                     {isSubmittingComment ? (
                       <span className="flex items-center gap-1.5">

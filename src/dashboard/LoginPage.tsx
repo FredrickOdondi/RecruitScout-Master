@@ -1,25 +1,6 @@
 import React, { useState, useEffect, useRef } from'react';
 import { supabaseClient } from'../shared/supabase';
 
-// ── Animated Background ──────────────────────────────────────────────────
-function SubtleGrid() {
- return (
- <div className="absolute inset-0 overflow-hidden pointer-events-none bg-gray-50">
- {/* Subtle grid lines */}
- <div
- className="absolute inset-0 opacity-50"
- style={{
- backgroundImage:`
- linear-gradient(to right, #e5e7eb 1px, transparent 1px),
- linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
- `,
- backgroundSize:'48px 48px',
- }}
- />
- </div>
- );
-}
-
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const LockIcon = () => (
  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
@@ -147,7 +128,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  setShake(true);
  setTimeout(() => setShake(false), 600);
  } else {
- setSuccess('Password reset link sent! Please check your email.');
+ setSuccess('We sent a reset link. Check your email.');
  }
  }
  else if (view ==='update-password' || view ==='invite') {
@@ -159,7 +140,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  setShake(true);
  setTimeout(() => setShake(false), 600);
  } else {
- setSuccess(view ==='invite' ?'Account created! You can now sign in.' :'Password updated successfully! You can now sign in.');
+ setSuccess(view ==='invite' ?'Your account is ready. You can sign in now.' :'Your password is updated. You can sign in now.');
  setView('login');
  setPassword('');
  setAccessToken(null);
@@ -168,40 +149,39 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  };
 
  return (
- <div className="relative flex items-center justify-center min-h-screen bg-gray-50 overflow-hidden font-sans">
- <SubtleGrid />
+ <div className="relative flex items-center justify-center min-h-screen glacier-canvas overflow-hidden font-sans">
 
  {/* Card */}
  <div
  className={`relative z-10 w-full max-w-md mx-4 transition-transform ${shake ?'animate-[shake_0.5s_ease]' :''}`}
  style={{ animation: shake ?'shake 0.5s ease' : undefined }}
  >
- <div className="relative rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
+ <div className="relative rounded-xl border border-stroke-card overflow-hidden bg-surface shadow-dialog">
 
  <div className="px-8 py-10">
  {/* Logo */}
  <div className="flex flex-col items-center mb-8">
- <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-3 border border-gray-200 bg-gray-50 shadow-sm">
- <span className="text-gray-700">
+ <div className="relative w-12 h-12 rounded-[14px] flex items-center justify-center mb-3 overflow-hidden bg-gradient-to-br from-app-icon-1 to-app-icon-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+ <span className="relative text-white">
  <ServerIcon />
  </span>
  </div>
- <h1 className="text-xl font-medium text-gray-900 tracking-tight">RecruitScout</h1>
- <p className="text-[9px] text-gray-500 mt-1 uppercase tracking-widest font-bold text-center">
- {view ==='login' ?'Command Center' : view ==='forgot-password' ?'Password Recovery' : view ==='invite' ?'Accept Invitation' :'Set New Password'}
+ <h1 className="text-xl font-semibold text-fg">RecruitScout</h1>
+ <p className="text-sm text-fg-muted mt-1 text-center">
+ {view ==='login' ?'Sign in to the command center' : view ==='forgot-password' ?'Reset your password' : view ==='invite' ?'Accept your invitation' :'Set a new password'}
  </p>
  </div>
 
  {error && (
- <div className="mb-5 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-[9px] rounded-md px-4 py-3">
- <span className="mt-0.5 shrink-0">⚠</span>
+ <div className="mb-5 flex items-start gap-2.5 bg-danger-bg text-danger-fg text-sm rounded-md px-3 py-2.5">
+ 
  <span>{error}</span>
  </div>
  )}
  
  {success && (
- <div className="mb-5 flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-700 text-[9px] rounded-md px-4 py-3">
- <span className="mt-0.5 shrink-0">✓</span>
+ <div className="mb-5 flex items-start gap-2.5 bg-success-bg text-success-fg text-sm rounded-md px-3 py-2.5">
+ 
  <span>{success}</span>
  </div>
  )}
@@ -212,11 +192,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  {/* Email (Login, Forgot Password & Invite) */}
  {(view ==='login' || view ==='forgot-password' || view ==='invite') && (
  <div className="space-y-1.5">
- <label className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
+ <label className="text-sm font-medium text-fg">
  Email address
  </label>
  <div className="relative">
- <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">
+ <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle">
  <MailIcon />
  </span>
  <input
@@ -229,9 +209,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  value={email}
  onChange={e => setEmail(e.target.value)}
  placeholder="you@example.com"
- className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-4 py-2.5 text-[9px] text-gray-900 placeholder-gray-400
- focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm
- disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+ className="w-full bg-surface border border-stroke-control rounded-md pl-10 pr-4 h-control text-sm text-fg border-b-stroke-accessible
+ focus:outline-none focus:border-b-accent focus:border-b-2 transition-colors
+ disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed"
  />
  </div>
  </div>
@@ -241,21 +221,21 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  {(view ==='login' || view ==='update-password' || view ==='invite') && (
  <div className="space-y-1.5">
  <div className="flex justify-between items-center">
- <label className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
- {view ==='update-password' || view ==='invite' ?'Create Password' :'Password'}
+ <label className="text-sm font-medium text-fg">
+ {view ==='update-password' || view ==='invite' ?'Create a password' :'Password'}
  </label>
  {view ==='login' && (
  <button
  type="button"
  onClick={() => { setView('forgot-password'); setError(null); setSuccess(null); }}
- className="text-[9px] font-medium text-blue-600 hover:text-blue-800 transition-colors"
+ className="text-sm font-medium text-accent-text hover:underline"
  >
- Forgot Password?
+ Forgot password?
  </button>
  )}
  </div>
  <div className="relative">
- <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">
+ <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-fg-subtle">
  <LockIcon />
  </span>
  <input
@@ -266,13 +246,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  value={password}
  onChange={e => setPassword(e.target.value)}
  placeholder="••••••••"
- className="w-full bg-white border border-gray-300 rounded-md pl-10 pr-11 py-2.5 text-[9px] text-gray-900 placeholder-gray-400
- focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
+ className="w-full bg-surface border border-stroke-control rounded-md pl-10 pr-11 h-control text-sm text-fg border-b-stroke-accessible
+ focus:outline-none focus:border-b-accent focus:border-b-2 transition-colors"
  />
  <button
  type="button"
  onClick={() => setShowPass(v => !v)}
- className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600 transition-colors"
+ className="absolute right-3.5 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg transition-colors"
  tabIndex={-1}
  >
  <EyeIcon show={showPass} />
@@ -285,13 +265,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  id="login-submit"
  type="submit"
  disabled={loading || (view ==='login' && (!email.trim() || !password)) || (view ==='forgot-password' && !email.trim()) || ((view ==='update-password' || view ==='invite') && !password)}
- className="w-full relative flex items-center justify-center gap-2 py-2.5 rounded-md font-medium text-[9px] transition-all
- disabled:opacity-50 disabled:cursor-not-allowed
- bg-gray-900 text-white hover:bg-gray-800 shadow-sm border border-transparent"
+ className="w-full relative flex items-center justify-center gap-2 h-control rounded-md font-medium text-sm transition-colors
+ disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed
+ bg-accent text-on-accent hover:bg-accent-700 border border-transparent"
  >
  {loading ? (
  <>
- <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+ <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
  </svg>
@@ -299,7 +279,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  </>
  ) : (
  <span>
- {view ==='login' ?'Sign In' : view ==='forgot-password' ?'Send Reset Link' : view ==='invite' ?'Accept Invitation' :'Update Password'}
+ {view ==='login' ?'Sign in' : view ==='forgot-password' ?'Send reset link' : view ==='invite' ?'Accept invitation' :'Update password'}
  </span>
  )}
  </button>
@@ -310,15 +290,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
  <button
  type="button"
  onClick={() => { setView('login'); setError(null); setSuccess(null); }}
- className="text-[9px] font-medium text-gray-500 hover:text-gray-900 transition-colors"
+ className="text-sm font-medium text-fg-muted hover:text-fg"
  >
- &larr; Back to Login
+ Back to sign in
  </button>
  </div>
  )}
 
  {view ==='login' && (
- <p className="mt-5 text-center text-[9px] text-gray-500">
+ <p className="mt-5 text-center text-xs text-fg-subtle">
  Access is restricted to authorised users.
  </p>
  )}

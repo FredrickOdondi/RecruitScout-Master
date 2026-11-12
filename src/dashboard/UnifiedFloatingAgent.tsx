@@ -15,7 +15,7 @@ type Message = { id: string; role: Role; content: string; };
 // ==========================================
 function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any, threadId: string, initialMessages: Message[] }) {
  const [messages, setMessages] = useState<Message[]>(initialMessages.length > 0 ? initialMessages : [
- { id:'1', role:'assistant', content:'Hello! I am your LangGraph Agent. I can manage the dashboard, check jobs, and manage tasks for you. How can I help?' },
+ { id:'1', role:'assistant', content:'I can manage the dashboard, check jobs and manage tasks for you. How can I help?' },
  ]);
  const [input, setInput] = useState('');
  const [isLoading, setIsLoading] = useState(false);
@@ -55,10 +55,10 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  ]);
  } catch (error: any) {
  if (error.name ==='AbortError') {
- setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'🛑 *Agent execution stopped.*' }]);
+ setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'*Stopped.*' }]);
  } else {
  console.error('LangGraph error:', error);
- setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'⚠️ An error occurred while executing tools. Please check your API keys.' }]);
+ setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'A tool didn\'t finish. Check your API keys.' }]);
  }
  } finally {
  setIsLoading(false);
@@ -67,7 +67,7 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
 
  return (
  <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
- <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 text-[12px]">
+ <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 text-xs">
  {messages.map((m) => (
  <div key={m.id} className={`flex gap-3 ${m.role ==='user' ?'flex-row-reverse' :'flex-row'}`}>
  <div className={`w-8 h-8 rounded-full flex shrink-0 items-center justify-center shadow-sm ${
@@ -85,11 +85,11 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  :'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.03)]'
  }`}>
  {m.role ==='assistant' ? (
- <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-[9px]">
+ <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-xs">
  <ReactMarkdown>{m.content}</ReactMarkdown>
  </div>
  ) : (
- <p className="text-[9px] whitespace-pre-wrap">{m.content}</p>
+ <p className="text-xs whitespace-pre-wrap">{m.content}</p>
  )}
  </div>
  </div>
@@ -115,8 +115,8 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  value={input}
  onChange={(e) => { setInput(e.target.value); e.target.style.height ='auto'; e.target.style.height =`${Math.min(e.target.scrollHeight, 150)}px`; }}
  onKeyDown={(e) => { if (e.key ==='Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
- placeholder="Ask the Agent..."
- className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-[9px] text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
+ placeholder="Ask the agent..."
+ className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
  style={{ minHeight:'44px', maxHeight:'150px' }}
  disabled={isLoading || !agentApp}
  rows={1}
@@ -141,7 +141,7 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
 // ==========================================
 function StandardRAGChat({ clients }: { clients: { gemini: GoogleGenAI, openai: OpenAI, pineconeIndex: any } | null }) {
  const [messages, setMessages] = useState<Message[]>([
- { id:'1', role:'assistant', content:'Hello! I am the Standard RAG Assistant. I can search the knowledge base for you.' },
+ { id:'1', role:'assistant', content:'I can search the knowledge base for you. What do you need?' },
  ]);
  const [input, setInput] = useState('');
  const [isLoading, setIsLoading] = useState(false);
@@ -207,9 +207,9 @@ ${contextChunks}
  setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content: aiResponse }]);
  } catch (error: any) {
  if (error.name ==='AbortError') {
- setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'🛑 *Agent execution stopped.*' }]);
+ setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'*Stopped.*' }]);
  } else {
- setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'⚠️ An error occurred while fetching the response.' }]);
+ setMessages((prev) => [...prev, { id: Date.now().toString(), role:'assistant', content:'The response didn\'t load. Try again.' }]);
  }
  } finally {
  setIsLoading(false);
@@ -218,7 +218,7 @@ ${contextChunks}
 
  return (
  <div className="flex-1 flex flex-col overflow-hidden bg-transparent">
- <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 text-[12px]">
+ <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 text-xs">
  {messages.map((m) => (
  <div key={m.id} className={`flex gap-3 ${m.role ==='user' ?'flex-row-reverse' :'flex-row'}`}>
  <div className={`w-8 h-8 rounded-full flex shrink-0 items-center justify-center shadow-sm ${
@@ -236,11 +236,11 @@ ${contextChunks}
  :'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.03)]'
  }`}>
  {m.role ==='assistant' ? (
- <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-[9px]">
+ <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-xs">
  <ReactMarkdown>{m.content}</ReactMarkdown>
  </div>
  ) : (
- <p className="text-[9px] whitespace-pre-wrap">{m.content}</p>
+ <p className="text-xs whitespace-pre-wrap">{m.content}</p>
  )}
  </div>
  </div>
@@ -266,8 +266,8 @@ ${contextChunks}
  value={input}
  onChange={(e) => { setInput(e.target.value); e.target.style.height ='auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`; }}
  onKeyDown={(e) => { if (e.key ==='Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
- placeholder="Ask Standard RAG..."
- className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-[9px] text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
+ placeholder="Ask standard RAG..."
+ className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
  style={{ minHeight:'44px', maxHeight:'150px' }}
  disabled={isLoading || !clients}
  rows={1}
@@ -385,7 +385,7 @@ export default function UnifiedFloatingAgent() {
 
  if (mappedMessages.length > 0) {
  setInitialLangGraphMessages([
- { id:'0', role:'assistant', content:'Welcome back! I loaded our previous conversation from memory.' },
+ { id:'0', role:'assistant', content:'Your previous conversation is loaded.' },
  ...mappedMessages
  ]);
  }
@@ -499,13 +499,13 @@ export default function UnifiedFloatingAgent() {
  />
  <button
  onClick={() => setActiveMode('langgraph')}
- className={`px-4 py-1.5 text-[9px] font-semibold rounded-lg transition-colors relative z-10 w-32 ${activeMode ==='langgraph' ?'text-gray-900' :'text-gray-500 hover:text-gray-700'}`}
+ className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors relative z-10 w-32 ${activeMode ==='langgraph' ?'text-gray-900' :'text-gray-500 hover:text-gray-700'}`}
  >
  LangGraph
  </button>
  <button
  onClick={() => setActiveMode('rag')}
- className={`px-4 py-1.5 text-[9px] font-semibold rounded-lg transition-colors relative z-10 w-32 ${activeMode ==='rag' ?'text-gray-900' :'text-gray-500 hover:text-gray-700'}`}
+ className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors relative z-10 w-32 ${activeMode ==='rag' ?'text-gray-900' :'text-gray-500 hover:text-gray-700'}`}
  >
  Knowledge
  </button>
@@ -533,24 +533,24 @@ export default function UnifiedFloatingAgent() {
  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
  </div>
  <div>
- <h2 className="text-base font-bold text-gray-900">Agent Configuration</h2>
- <p className="text-[12px] text-gray-500">Settings apply to both AI modes.</p>
+ <h2 className="text-base font-bold text-gray-900">Agent configuration</h2>
+ <p className="text-xs text-gray-500">Settings apply to both AI modes.</p>
  </div>
  </div>
  <form onSubmit={handleSaveCredentials} className="space-y-5">
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">Gemini API Key</label><input type="password" required value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">OpenAI API Key (For Pinecone Embeddings)</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">Pinecone API Key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">Pinecone Index Name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Gemini API key</label><input type="password" required value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">OpenAI API key (for Pinecone embeddings)</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Pinecone API key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Pinecone index name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
  
- <div className="pt-4 border-t border-gray-200/60 mt-4"><h3 className="text-[12px] font-bold text-gray-800 mb-3">Blue.cc Integration (Optional)</h3></div>
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">Token ID</label><input type="text" value={blueccTokenId} onChange={(e) => setBlueccTokenId(e.target.value)} placeholder="e.g. 5x..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">Secret ID</label><input type="password" value={blueccSecretId} onChange={(e) => setBlueccSecretId(e.target.value)} placeholder="secret..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-[12px] font-medium text-gray-700 mb-1.5">Company ID</label><input type="text" value={blueccCompanyId} onChange={(e) => setBlueccCompanyId(e.target.value)} placeholder="(Optional)" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-[12px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div className="pt-4 border-t border-gray-200/60 mt-4"><h3 className="text-xs font-bold text-gray-800 mb-3">Blue.cc integration (optional)</h3></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Token ID</label><input type="text" value={blueccTokenId} onChange={(e) => setBlueccTokenId(e.target.value)} placeholder="e.g. 5x..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Secret ID</label><input type="password" value={blueccSecretId} onChange={(e) => setBlueccSecretId(e.target.value)} placeholder="secret..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Company ID</label><input type="text" value={blueccCompanyId} onChange={(e) => setBlueccCompanyId(e.target.value)} placeholder="(Optional)" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
 
  <div className="pt-4">
- <button type="submit" disabled={savingConfig} className="w-full bg-gray-900 text-white font-medium rounded-xl px-4 py-3 hover:bg-black disabled:opacity-70 flex justify-center items-center gap-2 transition-colors text-[12px]">
- {savingConfig ? (<><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>Saving...</>) :'Save Configuration'}
+ <button type="submit" disabled={savingConfig} className="w-full bg-gray-900 text-white font-medium rounded-xl px-4 py-3 hover:bg-black disabled:opacity-70 flex justify-center items-center gap-2 transition-colors text-xs">
+ {savingConfig ? (<><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>Saving...</>) :'Save configuration'}
  </button>
  </div>
  </form>

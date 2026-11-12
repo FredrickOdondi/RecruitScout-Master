@@ -14,7 +14,9 @@ import { supabaseClient } from'../shared/supabase';
 import { BlueCcClient } from'../shared/bluecc';
 
 // Icons 
-import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Bot, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon } from 'lucide-react';
+import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Bot, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon, Cookie, MonitorDown } from 'lucide-react';
+import IndeedSessionsTab from './IndeedSessionsTab';
+import { setThemeColor, useInstallPrompt } from './pwa';
 
 const ServerIcon = () => <Server size={20} />;
 const SettingsIcon = () => <Settings size={20} />;
@@ -103,33 +105,33 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
 
  return (
  <div className="relative w-full" ref={dropdownRef}>
- <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
+ <label className="text-xs text-gray-500 font-bold mb-1.5 block">
  {label}
  </label>
  <button
  type="button"
  onClick={() => setIsOpen(!isOpen)}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50 flex justify-between items-center text-left min-h-[38px]"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 focus:outline-none focus:border-slate-600/50 flex justify-between items-center text-left min-h-[38px]"
  >
  <span className="truncate pr-2 font-medium text-gray-800">{displayText}</span>
- <span className="text-gray-500 text-[9px]">▼</span>
+ <span className="text-gray-500 text-xs">▼</span>
  </button>
 
  {isOpen && (
  <div className="absolute z-50 mt-1 w-64 bg-white border border-gray-200 rounded-md py-1 max-h-64 overflow-y-auto left-0">
- <div className="px-2 py-1.5 border-b border-gray-200 flex justify-between text-[9px] font-semibold text-primary-600">
- <button type="button" onClick={handleSelectAll} className="hover:underline">Select All</button>
+ <div className="px-2 py-1.5 border-b border-gray-200 flex justify-between text-xs font-semibold text-primary-600">
+ <button type="button" onClick={handleSelectAll} className="hover:underline">Select all</button>
  <button type="button" onClick={handleClear} className="hover:underline text-gray-500">{allowEmpty ?"Clear" :"Reset"}</button>
  </div>
  {allowEmpty && (
- <label className="flex items-center px-3 py-1.5 hover:bg-white cursor-pointer text-[9px] text-gray-600 border-b border-gray-200">
+ <label className="flex items-center px-3 py-1.5 hover:bg-white cursor-pointer text-xs text-gray-600 border-b border-gray-200">
  <input
  type="checkbox"
  checked={selectedIds.length === 0 || (selectedIds.length === 1 && selectedIds[0] ==='')}
  onChange={() => onChange([])}
  className="mr-2.5 h-3.5 w-3.5 text-primary-600 rounded border-gray-200 focus:ring-primary-500"
  />
- <span className="italic text-gray-500">(No Client / General)</span>
+ <span className="italic text-gray-500">(No client / general)</span>
  </label>
  )}
  {options.map((opt) => {
@@ -137,7 +139,7 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
  return (
  <label
  key={opt.id}
- className="flex items-center px-3 py-1.5 hover:bg-white cursor-pointer text-[9px] text-gray-800"
+ className="flex items-center px-3 py-1.5 hover:bg-white cursor-pointer text-xs text-gray-800"
  >
  <input
  type="checkbox"
@@ -160,7 +162,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Global Dashboard Theme: 'dark' (Obsidian Dark) or 'light'
+  // Global dashboard theme: 'dark' or 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('rs_dashboard_theme') as 'dark' | 'light') || 'dark';
   });
@@ -172,29 +174,53 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       document.documentElement.classList.remove('dark');
     }
     localStorage.setItem('rs_dashboard_theme', theme);
+    setThemeColor(theme === 'dark');
   }, [theme]);
+
+  const { canInstall, install } = useInstallPrompt();
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  // Glacier web nav: selected item is a surface pill with a card-stroke inset and an accent-text icon
   const getNavButtonClass = (tab: string) => {
     const isActive = activeTab === tab;
-    const base = `w-full flex items-center gap-3 py-2 rounded-md transition-all ${
+    const base = `w-full flex items-center gap-3 h-9 rounded-md text-sm transition-colors ${
       isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'
     }`;
-    if (theme === 'dark') {
-      return `${base} ${
-        isActive
-          ? 'bg-emerald-500/15 text-emerald-400 font-medium relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-emerald-400 before:rounded-r-md'
-          : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 group'
-      }`;
-    }
     return `${base} ${
       isActive
-        ? 'bg-primary-800/50 text-white font-medium relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-white before:rounded-r-md'
-        : 'text-primary-100 hover:text-white hover:bg-primary-600/30 group'
+        ? 'bg-surface text-fg font-medium shadow-[inset_0_0_0_1px_rgb(var(--g-stroke-card))] [&_svg]:text-accent-text'
+        : 'text-fg-muted hover:text-fg hover:bg-hover'
     }`;
+  };
+
+  // Built at render time because it reads the jobs count declared further down
+  const getNavItems = (): { group: string; items: { id: string; label: string; icon: React.ReactNode; badge?: number }[] }[] => [
+    { group: 'Agent control', items: [
+      { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={20} /> },
+      { id: 'search', label: 'Queue', icon: <Search size={20} /> },
+      { id: 'indeed-sessions', label: 'Indeed accounts', icon: <Cookie size={20} /> },
+    ]},
+    { group: 'Data', items: [
+      { id: 'jobs', label: 'Jobs', icon: <Database size={20} />, badge: jobs.length },
+      { id: 'export', label: 'Export and sync', icon: <Download size={20} /> },
+      { id: 'graph', label: 'Knowledge graph', icon: <Network size={20} /> },
+      { id: 'supabase', label: 'Database', icon: <Cloud size={20} /> },
+    ]},
+    { group: 'Clients', items: [
+      { id: 'clients', label: 'Clients', icon: <Briefcase size={20} /> },
+      { id: 'leads', label: 'Leads', icon: <Users size={20} /> },
+      { id: 'leads-flow', label: 'Leads flow', icon: <Activity size={20} /> },
+      { id: 'blue', label: 'Blue.cc workspaces', icon: <Hexagon size={20} /> },
+    ]},
+  ];
+
+  const tabTitles: Record<string, string> = {
+    overview: 'Overview', search: 'Queue', 'indeed-sessions': 'Indeed accounts', settings: 'Settings', jobs: 'Jobs', export: 'Export and sync',
+    graph: 'Knowledge graph', supabase: 'Database', clients: 'Clients', leads: 'Leads',
+    'leads-flow': 'Leads flow', blue: 'Blue.cc workspaces',
   };
  
  // Inputs matching old extension
@@ -385,22 +411,22 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  const res = await bridgeSendMessage<any>({ type:'SUPABASE_ENQUEUE_TASKS' as any, payload });
  if (res && !res.error) {
  const modeLabel = titles.length > 0 ? `${titles.length} title(s)` : `location-only (${location})`;
- alert(`✅ Enqueued ${modeLabel} across ${selectedClients.length || 1} client(s) and ${selectedTargetSites.length} site(s) to the remote queue!`);
+ alert(`Queued ${modeLabel} for ${selectedClients.length || 1} client(s) on ${selectedTargetSites.length} site(s).`);
  setBulkTitles('');
  setSelectedClients([]);
  // Refresh queue
  bridgeSendMessage<any>({ type:'SUPABASE_GET_QUEUE' as any }).then(r => r?.data && setQueue(r.data));
  } else {
- alert("⚠️ DB Write failed:" + res?.error);
+ alert("Couldn't save the tasks. " + res?.error);
  }
  } catch (err) {
- alert("⚠️ CRITICAL ERROR:\n" + (err as Error).message);
+ alert("Something went wrong. Try again.\n" + (err as Error).message);
  }
  };
 
  const handleUpdateLocations = async () => {
  if (!locationFilter.trim()) return;
- if (!confirm(`Are you sure you want to update the location of ALL tasks in the queue to"${locationFilter.trim()}"?`)) return;
+ if (!confirm(`Change the location of every queued task to "${locationFilter.trim()}"?\n\nThis replaces the location on all tasks.`)) return;
 
  try {
  const res = await bridgeSendMessage<any>({ 
@@ -408,16 +434,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  payload: { location: locationFilter.trim() } 
  });
  if (res && !res.error) {
- alert('✅ Successfully updated locations!');
+ alert('Locations updated.');
  bridgeSendMessage<any>({ type:'SUPABASE_GET_QUEUE' as any }).then(r => {
  if (Array.isArray(r)) setQueue(r);
  else if (r?.data) setQueue(r.data);
  });
  } else {
- alert("⚠️ Update failed:" + res?.error);
+ alert("Couldn't save the change. " + res?.error);
  }
  } catch (err) {
- alert("⚠️ CRITICAL ERROR:\n" + (err as Error).message);
+ alert("Something went wrong. Try again.\n" + (err as Error).message);
  }
  };
 
@@ -427,7 +453,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  };
 
  const handleDeleteTask = async (id: string) => {
- if (!confirm('Are you sure you want to delete this queued task?')) return;
+ if (!confirm('Delete 1 queued task?\n\nThis can\'t be undone.')) return;
  try {
  const res = await bridgeSendMessage<any>({ type:'SUPABASE_DELETE_QUEUE_TASK', id } as any);
  if (res?.error) alert('Error deleting task:' + res.error);
@@ -471,16 +497,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  else if (r?.data) setQueue(r.data);
  });
  } else {
- alert("⚠️ Update failed:" + res?.error);
+ alert("Couldn't save the change. " + res?.error);
  }
  } catch (err) {
- alert("⚠️ CRITICAL ERROR:\n" + (err as Error).message);
+ alert("Something went wrong. Try again.\n" + (err as Error).message);
  }
  };
 
  const handleBulkStatusChange = async (newStatus: string) => {
  if (selectedJobIds.length === 0) return;
- if (!confirm(`Are you sure you want to mark ${selectedJobIds.length} tasks as ${newStatus}?`)) return;
+ if (!confirm(`Mark ${selectedJobIds.length} tasks as ${newStatus}?`)) return;
  try {
  await Promise.all(selectedJobIds.map(id => {
  const payload = { id, updates: { status: newStatus } };
@@ -491,13 +517,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  else if (r?.data) setQueue(r.data);
  });
  } catch (err) {
- alert("⚠️ Error updating tasks:" + (err as Error).message);
+ alert("Couldn't update the tasks. " + (err as Error).message);
  }
  };
 
  const handleBulkDelete = async () => {
  if (selectedJobIds.length === 0) return;
- if (!confirm(`Are you sure you want to delete ${selectedJobIds.length} tasks?`)) return;
+ if (!confirm(`Delete ${selectedJobIds.length} tasks?\n\nThis can't be undone.`)) return;
  try {
  await Promise.all(selectedJobIds.map(id => 
  bridgeSendMessage<any>({ type:'SUPABASE_DELETE_QUEUE_TASK', id } as any)
@@ -508,7 +534,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  else if (r?.data) setQueue(r.data);
  });
  } catch (err) {
- alert("⚠️ Error deleting tasks:" + (err as Error).message);
+ alert("Couldn't delete the tasks. " + (err as Error).message);
  }
  };
 
@@ -539,7 +565,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  else if (r?.data) setQueue(r.data);
  });
  } catch (err) {
- alert("⚠️ Error updating tasks:" + (err as Error).message);
+ alert("Couldn't update the tasks. " + (err as Error).message);
  }
  };
   const filteredQueue = queue.filter(q => {
@@ -581,271 +607,145 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  else if (r?.data) setQueue(r.data);
  });
  } else {
- alert("⚠️ Status update failed:" + res?.error);
+ alert("Couldn't change the status. " + res?.error);
  }
  } catch (err) {
- alert("⚠️ CRITICAL ERROR:\n" + (err as Error).message);
+ alert("Something went wrong. Try again.\n" + (err as Error).message);
  }
  };
 
  return (
-  <div className={`flex h-screen overflow-hidden font-sans min-w-0 transition-colors duration-200 ${
-    theme === 'dark' ? 'bg-[#141416] text-zinc-100' : 'bg-gray-50 text-gray-900'
-  }`}>
-  
+  <div className="flex h-screen overflow-hidden font-sans min-w-0 glacier-canvas text-fg">
+
   {/* Mobile overlay backdrop */}
   {isMobileMenuOpen && (
-  <div 
-  className="fixed inset-0 bg-gray-900/80 z-40 md:hidden backdrop-blur-sm"
+  <div
+  className="fixed inset-0 bg-black/40 z-40 md:hidden"
   onClick={() => setIsMobileMenuOpen(false)}
   />
   )}
 
-  {/* Sidebar */}
-  <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ?'translate-x-0' :'-translate-x-full'} md:relative md:translate-x-0 transition-all duration-300 z-50 border-r flex flex-col flex-shrink-0 ${
-    theme === 'dark' 
-      ? 'border-[#26262a] bg-[#161618] text-zinc-100 shadow-2xl shadow-black/50' 
-      : 'border-primary-600 bg-primary-700 text-white'
-  } ${isSidebarCollapsed ?'md:w-20 w-64' :'w-64 xl:w-72'}`}>
-  <button 
+  {/* Sidebar: 240px Glacier chrome over the canvas wash */}
+  <aside className={`fixed inset-y-0 left-0 transform ${isMobileMenuOpen ? 'translate-x-0 bg-surface' : '-translate-x-full'} md:relative md:translate-x-0 md:bg-transparent transition-[width,transform] duration-200 z-50 flex flex-col flex-shrink-0 border-r border-stroke-card glacier-chrome ${isSidebarCollapsed ? 'md:w-[72px] w-sidebar' : 'w-sidebar'}`}>
+  <button
   onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-  className={`hidden md:flex absolute -right-3 top-8 rounded-full p-1 border z-30 transition-colors ${
-    theme === 'dark' 
-      ? 'bg-[#222226] border-[#333338] text-zinc-400 hover:text-white hover:bg-[#2c2c32]' 
-      : 'bg-primary-600 border-primary-600 text-primary-200 hover:text-white'
-  }`}
+  aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+  className="hidden md:flex absolute -right-3 top-6 w-6 h-6 items-center justify-center rounded-full border border-stroke-control bg-surface text-fg-muted hover:text-fg shadow-raised z-30"
   >
-  <ChevronLeft size={14} className={`transition-transform duration-300 ${isSidebarCollapsed ?'rotate-180' :''}`} />
+  <ChevronLeft size={14} className={`transition-transform duration-200 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
   </button>
 
-  <div className={`p-6 flex items-center ${isSidebarCollapsed ?'justify-center px-0' :''}`}>
-  <div className={`flex flex-col ${isSidebarCollapsed ?'items-center' :''}`}>
-  <h1 className="text-xl font-medium flex items-center gap-3 overflow-hidden whitespace-nowrap group cursor-pointer">
-             <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-500 group-hover:rotate-180 ${
-               theme === 'dark' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60' : 'bg-white/10 text-white'
-             }`}>
-               <ServerIcon />
-             </div>
-             {!isSidebarCollapsed && <span className={`tracking-tight font-bold ${theme === 'dark' ? 'text-white' : 'text-white'}`}>RecruitScout</span>}
-           </h1>
-  {!isSidebarCollapsed && <p className={`text-xs mt-1 uppercase tracking-wider font-semibold whitespace-nowrap ${
-    theme === 'dark' ? 'text-zinc-500 font-mono' : 'text-primary-200'
-  }`}>Command Center</p>}
+  {/* App identity: Glacier app icon + product name in Onest 600 */}
+  <div className={`h-16 flex items-center gap-3 shrink-0 ${isSidebarCollapsed ? 'md:justify-center px-4 md:px-0' : 'px-4'}`}>
+  <div className="relative w-8 h-8 rounded-[9px] bg-gradient-to-br from-app-icon-1 to-app-icon-2 flex items-center justify-center shrink-0 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+  <span className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.35),transparent_55%)]" />
+  <Server size={16} strokeWidth={1.75} className="relative text-white" />
   </div>
+  {!isSidebarCollapsed && (
+  <div className="min-w-0">
+  <div className="text-base font-semibold text-fg leading-tight truncate">RecruitScout</div>
+  <div className="text-xs text-fg-subtle truncate">Command center</div>
   </div>
-  
-   <nav className="flex-1 px-4 py-4 space-y-2 relative overflow-x-hidden">
-  
-  <div className={`text-xs font-bold uppercase tracking-widest mb-2 mt-4 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-    isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'
-  } ${theme === 'dark' ? 'text-zinc-500' : 'text-primary-100'}`}>
-  Agent Control
-  </div>
-  
-  <button 
-  onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }}
-  title="Overview Analytics"
-  className={getNavButtonClass('overview')}
-  >
-  <div className="shrink-0"><LayoutDashboardIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Overview Analytics</span>}
-  </button>
-
-  <button 
-  onClick={() => { setActiveTab('search'); setIsMobileMenuOpen(false); }}
-  title="Bulk Priority Queue"
-  className={getNavButtonClass('search')}
-  >
-  <div className="shrink-0"><SearchIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Bulk Priority Queue</span>}
-  </button>
-  
-  <button 
-  onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
-  title="Engine Settings"
-  className={getNavButtonClass('settings')}
-  >
-  <div className="shrink-0"><SettingsIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Engine Settings</span>}
-  </button>
-
-  <div className={`text-xs font-bold uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-    isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'
-  } ${theme === 'dark' ? 'text-zinc-500' : 'text-primary-100'}`}>
-  Database
-  </div>
-  
-  <button 
-  onClick={() => { setActiveTab('jobs'); setIsMobileMenuOpen(false); }}
-  title="Extracted Jobs"
-  className={getNavButtonClass('jobs')}
-  >
-  <div className="flex items-center gap-3 shrink-0">
-  <div className="shrink-0 relative">
-  <DatabaseIcon />
-  {isSidebarCollapsed && jobs.length > 0 && (
-  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white shadow-sm text-[9px] font-bold px-1 rounded-full">{jobs.length}</span>
   )}
   </div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Extracted Jobs</span>}
-  </div>
-  {!isSidebarCollapsed && jobs.length > 0 && (
-  <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${theme === 'dark' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700' : 'bg-primary-900 text-white'}`}>{jobs.length}</span>
+
+  <nav className="flex-1 px-3 pb-4 overflow-y-auto overflow-x-hidden custom-scrollbar" aria-label="Main">
+  {getNavItems().map(section => (
+  <div key={section.group} className="mt-4 first:mt-1">
+  {!isSidebarCollapsed && (
+  <div className="px-3 mb-1 text-xs font-medium text-fg-subtle">{section.group}</div>
+  )}
+  <div className="space-y-0.5">
+  {section.items.map(item => (
+  <button
+  key={item.id}
+  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+  title={isSidebarCollapsed ? item.label : undefined}
+  aria-current={activeTab === item.id ? 'page' : undefined}
+  className={getNavButtonClass(item.id)}
+  >
+  <span className="relative shrink-0 flex">
+  {item.icon}
+  {isSidebarCollapsed && !!item.badge && (
+  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-accent" aria-hidden="true" />
+  )}
+  </span>
+  {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
+  {!isSidebarCollapsed && !!item.badge && (
+  <span className="ml-auto text-xs font-medium tabular px-1.5 rounded-full bg-neutral-badge text-fg-muted">{item.badge.toLocaleString()}</span>
   )}
   </button>
-
-  <button 
-  onClick={() => { setActiveTab('export'); setIsMobileMenuOpen(false); }}
-  title="Export & Sync"
-  className={getNavButtonClass('export')}
-  >
-  <div className="shrink-0"><DownloadIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Export & Sync</span>}
-  </button>
-
-  <button 
-  onClick={() => { setActiveTab('graph'); setIsMobileMenuOpen(false); }}
-  title="Knowledge Graph"
-  className={getNavButtonClass('graph')}
-  >
-  <div className="shrink-0"><NetworkIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Knowledge Graph</span>}
-  </button>
-
-  <div className={`text-xs font-bold uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-    isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'
-  } ${theme === 'dark' ? 'text-zinc-500' : 'text-primary-100'}`}>
-  Cloud
+  ))}
   </div>
-  
-  <button 
-  onClick={() => { setActiveTab('supabase'); setIsMobileMenuOpen(false); }}
-  title="Supabase Viewer"
-  className={getNavButtonClass('supabase')}
-  >
-  <div className="shrink-0"><CloudDbIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Supabase Viewer</span>}
-  </button>
-
-  <button 
-  onClick={() => { setActiveTab('blue'); setIsMobileMenuOpen(false); }}
-  title="Blue.cc Integration"
-  className={getNavButtonClass('blue')}
-  >
-  <div className="shrink-0">
-  <Hexagon size={18} className="text-blue-500" />
   </div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Blue.cc Workspaces</span>}
-  </button>
-
-  <div className={`text-xs font-bold uppercase tracking-widest mb-2 mt-8 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-    isSidebarCollapsed ? 'text-center opacity-0 h-0 my-0' : 'pl-4 opacity-100'
-  } ${theme === 'dark' ? 'text-zinc-500' : 'text-primary-100'}`}>
-  Clients
-  </div>
-  
-  <button 
-  onClick={() => { setActiveTab('clients'); setIsMobileMenuOpen(false); }}
-  title="Client Enrollment"
-  className={getNavButtonClass('clients')}
-  >
-  <div className="shrink-0"><BriefcasePlusIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Client Enrollment</span>}
-  </button>
-
-  <button 
-  onClick={() => { setActiveTab('leads'); setIsMobileMenuOpen(false); }}
-  title="Leads Management"
-  className={getNavButtonClass('leads')}
-  >
-  <div className="shrink-0"><UsersIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Leads Management</span>}
-  </button>
-
-  <button 
-  onClick={() => { setActiveTab('leads-flow'); setIsMobileMenuOpen(false); }}
-  title="Leads Flow"
-  className={getNavButtonClass('leads-flow')}
-  >
-  <div className="shrink-0"><ActivityIcon /></div>
-  {!isSidebarCollapsed && <span className="font-medium text-[12px] whitespace-nowrap transition-transform duration-200 group-hover:translate-x-1">Leads Flow</span>}
-  </button>
-
+  ))}
   </nav>
 
-  {/* Logout */}
-  <div className={`p-4 border-t flex flex-col gap-2 transition-colors ${
-    theme === 'dark' ? 'border-[#26262a] bg-[#121214]' : 'border-primary-600/30 bg-primary-800/30'
-  }`}>
+  {/* Settings last and separated, then the signed-in user */}
+  <div className="px-3 pt-2 pb-3 border-t border-stroke-divider space-y-0.5">
+  <button
+  onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }}
+  title={isSidebarCollapsed ? 'Settings' : undefined}
+  aria-current={activeTab === 'settings' ? 'page' : undefined}
+  className={getNavButtonClass('settings')}
+  >
+  <Settings size={20} className="shrink-0" />
+  {!isSidebarCollapsed && <span>Settings</span>}
+  </button>
+
   {userEmail && (
-  <div className={`flex items-center ${isSidebarCollapsed ?'justify-center mb-2' :'gap-2.5 px-2 mb-1.5'} overflow-hidden`}>
+  <div className={`flex items-center gap-2.5 h-10 ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'}`}>
   {userAvatar ? (
-  <img src={userAvatar} alt="Profile" className={`w-7 h-7 rounded-full flex-shrink-0 object-cover border ${theme === 'dark' ? 'border-zinc-700' : 'border-primary-600'}`} title={isSidebarCollapsed ? userEmail : undefined} />
+  <img src={userAvatar} alt="" className="w-6 h-6 rounded-full shrink-0 object-cover" title={isSidebarCollapsed ? userEmail : undefined} />
   ) : (
-  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 shadow-sm ${
-    theme === 'dark' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700' : 'bg-white text-primary-700'
-  }`} title={isSidebarCollapsed ? userEmail : undefined}>
+  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 bg-accent-subtle-2 text-accent-subtle-fg" title={isSidebarCollapsed ? userEmail : undefined}>
   {userEmail[0].toUpperCase()}
   </div>
   )}
   {!isSidebarCollapsed && (
-  <div className={`text-xs font-medium truncate flex-1 leading-snug ${theme === 'dark' ? 'text-zinc-300' : 'text-primary-200'}`} title={userEmail}>
-  {userEmail}
-  </div>
+  <div className="text-sm text-fg-muted truncate flex-1" title={userEmail}>{userEmail}</div>
   )}
   </div>
   )}
   <button
   onClick={onLogout}
-  title="Sign Out"
-  className={`flex items-center justify-center gap-3 py-2 rounded-md transition-all text-[12px] font-medium group ${
-    isSidebarCollapsed ?'md:w-10 md:h-10 md:px-0 w-full px-4 mx-auto' :'w-full px-4'
-  } ${
-    theme === 'dark' 
-      ? 'text-zinc-400 hover:text-white hover:bg-zinc-800/80' 
-      : 'text-primary-200 hover:text-white hover:bg-primary-600'
-  }`}
+  title={isSidebarCollapsed ? 'Sign out' : undefined}
+  className={`w-full flex items-center gap-3 h-9 rounded-md text-sm text-fg-muted hover:text-fg hover:bg-hover transition-colors ${isSidebarCollapsed ? 'md:justify-center px-3 md:px-0' : 'px-3'}`}
   >
-  <LogOut size={17} className="transition-colors group-hover:text-white shrink-0" />
-  {!isSidebarCollapsed && <span className="whitespace-nowrap">Sign Out</span>}
+  <LogOut size={20} className="shrink-0" />
+  {!isSidebarCollapsed && <span>Sign out</span>}
   </button>
   </div>
   </aside>
 
-  {/* Main Content */}
-  <main className={`flex-1 flex flex-col relative overflow-hidden min-w-0 transition-colors ${
-    theme === 'dark' ? 'bg-[#141416] text-zinc-100' : 'bg-white text-gray-900'
-  }`}>
-  <header className={`h-16 border-b flex items-center px-4 md:px-8 sticky top-0 z-10 transition-colors gap-3 w-full shrink-0 ${
-    theme === 'dark' ? 'bg-[#161618] border-[#27272a] text-zinc-100' : 'bg-white border-gray-200 text-gray-900'
-  }`}>
-  <button 
-  className={`md:hidden p-2 -ml-2 rounded-md transition-colors ${
-    theme === 'dark' ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-  }`}
+  {/* Main content */}
+  <main className="flex-1 flex flex-col relative overflow-hidden min-w-0">
+  <header className="h-16 flex items-center px-4 md:px-6 shrink-0 gap-3 border-b border-stroke-card glacier-chrome">
+  <button
+  className="md:hidden p-2 -ml-2 rounded-md text-fg-muted hover:text-fg hover:bg-hover"
   onClick={() => setIsMobileMenuOpen(true)}
+  aria-label="Open navigation"
   >
-  <Menu size={24} />
+  <Menu size={20} />
   </button>
-  <h2 className="text-base font-semibold font-mono tracking-tight truncate">
-  / {activeTab.replace('-','')}
-  </h2>
+  <h1 className="text-2xl font-semibold tracking-[-0.016em] text-fg truncate">
+  {tabTitles[activeTab] || activeTab}
+  </h1>
 
-  {/* Global Theme Toggle Button in Header */}
-  <div className="ml-auto flex items-center gap-3">
+  <div className="ml-auto flex items-center gap-2">
+    {canInstall && (
+      <button onClick={install} className="btn-secondary" aria-label="Install RecruitScout as an app">
+        <MonitorDown size={16} />
+        <span className="hidden sm:inline">Install app</span>
+      </button>
+    )}
     <button
       onClick={toggleTheme}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all shadow-sm ${
-        theme === 'dark'
-          ? 'bg-zinc-800 text-amber-400 border-zinc-700 hover:bg-zinc-700 hover:text-amber-300 shadow-black/40'
-          : 'bg-slate-100 text-indigo-600 border-slate-200 hover:bg-slate-200 shadow-slate-200/50'
-      }`}
-      title={theme === 'dark' ? "Switch to Light Theme" : "Switch to Obsidian Dark Theme"}
+      className="btn-ghost"
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
     >
-      {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-      <span className="hidden sm:inline font-mono font-medium">
-        {theme === 'dark' ? 'Obsidian Dark' : 'Light Mode'}
-      </span>
+      {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      <span className="hidden sm:inline">{theme === 'dark' ? 'Light theme' : 'Dark theme'}</span>
     </button>
   </div>
   </header>
@@ -855,6 +755,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  {/* OVERVIEW MODE */}
  {activeTab ==='overview' && (
  <OverviewTab />
+ )}
+
+ {activeTab === 'indeed-sessions' && (
+  <IndeedSessionsTab />
  )}
 
  {activeTab === 'graph' && (
@@ -870,14 +774,15 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  onClick={() => setIsBulkLoadOpen(false)}
  className="absolute top-4 right-4 text-gray-500 hover:text-gray-600 transition-colors text-[16px] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 z-10"
  title="Close"
+ aria-label="Close"
  >
  ✕
  </button>
  <div className="bg-white rounded-lg p-6">
  <h3 className="text-base font-medium text-gray-900 mb-2 flex items-center gap-2">
- <span>🚀</span> Bulk Job Priority Queue
+ Load a bulk job
  </h3>
- <p className="text-[12px] text-gray-500 mb-4">
+ <p className="text-xs text-gray-500 mb-4">
  Paste job titles below (one per line). The remote extension agents will pick these up automatically when their engines start.
  </p>
  
@@ -885,23 +790,23 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  value={bulkTitles}
  onChange={(e) => setBulkTitles(e.target.value)}
  placeholder={`Software Engineer\nProduct Manager\nData Scientist\n\n(or leave blank and set a Location to scrape all jobs in that area)`}
- className="w-full h-40 bg-white border border-gray-200 rounded-lg p-4 text-[12px] font-mono text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none"
+ className="w-full h-40 bg-white border border-gray-200 rounded-lg p-4 text-xs font-mono text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none"
  />
  
  <div className="mt-4 md:grid md:grid-cols-12 md:gap-4 md:items-end">
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
  <MultiSelectChecklist
- label="Associated Client"
+ label="Associated client"
  options={clients.map(c => ({ id: c.id, name: c.name }))}
  selectedIds={selectedClients}
  onChange={setSelectedClients}
- placeholder="(No Client)"
+ placeholder="(No client)"
  allowEmpty={true}
  />
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
  <MultiSelectChecklist
- label="Target Site"
+ label="Target site"
  options={[
  { id:'indeed', name:'Indeed' },
  { id:'spanish-indeed', name:'Spanish Indeed' },
@@ -909,21 +814,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  ]}
  selectedIds={selectedTargetSites}
  onChange={setSelectedTargetSites}
- placeholder="Select Sites"
+ placeholder="Select sites"
  allowEmpty={false}
  />
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
- Date Posted
+ <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ Date posted
  </label>
  <select 
  value={dateFilter} 
  onChange={(e) => setDateFilter(e.target.value)} 
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none min-h-[38px]"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none min-h-[38px]"
  disabled={selectedTargetSites.length === 1 && selectedTargetSites[0] ==='trovolavoro'}
  >
- <option value="">All Dates</option>
+ <option value="">All dates</option>
  <option value="last">Ads not displayed</option>
  <option value="1">Last 24 hours</option>
  <option value="3">Last 3 days</option>
@@ -932,26 +837,26 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  </select>
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
- Location Filter
+ <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ Location filter
  </label>
  <input 
  type="text"
  placeholder="e.g. Remote, New York..."
  value={locationFilter}
  onChange={(e) => setLocationFilter(e.target.value)}
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[9px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-slate-600/50 transition-all"
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-slate-600/50 transition-all"
  />
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 flex justify-between items-center">
- <span>Assigned Worker</span> 
+ <label className="text-xs text-gray-500 font-bold mb-1.5 flex justify-between items-center">
+ <span>Assigned worker</span> 
  <span className="text-primary-600 font-medium">{activeAgents.length} Online</span>
  </label>
  <select 
  value={assignedTo} 
  onChange={(e) => setAssignedTo(e.target.value)} 
- className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none" 
+ className="w-full bg-gray-50 border border-gray-200 rounded-md p-2 text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.2)] text-xs text-gray-900 focus:outline-none focus:border-slate-600/50 appearance-none" 
  >
  <option value="">Leave blank for any available node...</option>
  {activeAgents.map(agent => (
@@ -962,35 +867,35 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  </select>
  </div>
  <div className="col-span-12 sm:col-span-6 md:col-span-2">
- <label className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1.5 block">
- Sheets Sync
+ <label className="text-xs text-gray-500 font-bold mb-1.5 block">
+ Sheets sync
  </label>
  <button
  onClick={() => updateSetting('filterRecruitersEnabled', !settings.filterRecruitersEnabled)}
- className={`w-full text-left px-3 py-2 rounded-md text-[9px] font-medium border transition-all min-h-[38px] flex items-center justify-between ${
+ className={`w-full text-left px-3 py-2 rounded-md text-xs font-medium border transition-all min-h-[38px] flex items-center justify-between ${
  settings.filterRecruitersEnabled 
  ?'bg-primary-50 text-primary-700 border-primary-200 focus:ring-1 focus:ring-primary-500' 
  :'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
  }`}
- title="If enabled, jobs from companies in the Recruiters table will not be synced to Google Sheets"
+ title="If enabled, jobs from companies in the recruiters table will not be synced to Google Sheets"
  >
- <span className="truncate">Filter Recruiters</span>
- <span>{settings.filterRecruitersEnabled ?'☑' :'☐'}</span>
+ <span className="truncate">Filter recruiters</span>
+ <span className="text-xs">{settings.filterRecruitersEnabled ?'On' :'Off'}</span>
  </button>
  </div>
  <div className="col-span-12 flex gap-2 justify-end md:mt-2">
  <button 
  onClick={handleUpdateLocations}
  disabled={!locationFilter.trim()}
- className="bg-gray-100 hover:bg-slate-700 text-gray-600 border border-gray-200 px-4 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[9px]"
+ className="bg-gray-100 hover:bg-slate-700 text-gray-600 border border-gray-200 px-4 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-xs"
  title="Update location for all existing queue tasks"
  >
- Apply Location
+ Apply location
  </button>
  <button 
  onClick={handleSaveBulkSearch}
  disabled={!bulkTitles.trim() && !locationFilter.trim()}
- className="bg-primary-500 hover:bg-primary-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-white px-6 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-[9px] text-center min-w-[120px]"
+ className="bg-accent hover:bg-primary-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] text-on-accent px-6 py-2 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-xs text-center min-w-[120px]"
  >
  {bulkTitles.trim() ?'Enqueue' :'Scrape'}
  </button>
@@ -1003,18 +908,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <div className="bg-white rounded-xl p-1 border border-gray-200 mt-6">
  <div className="bg-white rounded-lg p-6">
  {showBulkQueueBanner && (
-    <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 px-4 py-3 rounded-xl mb-6 flex items-start justify-between shadow-sm">
+    <div className="bg-blue-50 border border-blue-200 text-blue-900 px-4 py-3 rounded-xl mb-6 flex items-start justify-between shadow-sm">
       <div className="text-xs leading-relaxed">
-        <span className="font-bold">Notice:</span> Click on <strong>Load Bulk Job</strong> to load jobs into the queue.
-        <span className="ml-1 font-medium text-blue-700 dark:text-blue-300">Tip: You can toggle between <strong>Obsidian Dark</strong> and <strong>Light Mode</strong> anytime using the switch in the top-right header!</span>
+        Select <strong>Load bulk job</strong> to add search tasks to the queue.
+        <span className="ml-1 font-medium text-blue-700">Tip: switch between light and dark themes with the button in the top bar.</span>
       </div>
-      <button onClick={() => setShowBulkQueueBanner(false)} className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 font-bold ml-4 text-sm">✕</button>
+      <button onClick={() => setShowBulkQueueBanner(false)} className="text-blue-500 hover:text-blue-700 font-bold ml-4 text-sm" aria-label="Dismiss">✕</button>
     </div>
   )}
  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
  <div>
- <h3 className="text-[12px] font-medium text-gray-900 flex items-center gap-2">
- Queue Status
+ <h3 className="text-xs font-medium text-gray-900 flex items-center gap-2">
+ Queue status
  <button 
  onClick={() => {
  bridgeSendMessage<any>({ type:'SUPABASE_GET_QUEUE' as any }).then(r => {
@@ -1026,33 +931,33 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  else if (r?.data) setActiveAgents(r.data);
  });
  }} 
- className="text-gray-500 hover:text-gray-800 text-[9px] px-2"
+ className="text-gray-500 hover:text-gray-800 text-xs px-2"
  >
- ↻ Refresh
+ Refresh
  </button>
  <button
  onClick={async () => {
- if (!confirm('↺ Reset all completed/failed tasks back to pending?\n\nThis will re-queue every job title for today\'s run.')) return;
+ if (!confirm('Reset finished tasks to pending?\n\nEvery completed and failed task runs again today.')) return;
  try {
  const res = await bridgeSendMessage<any>({ type:'SUPABASE_RESET_QUEUE' as any });
  if (res?.error) {
- alert('⚠️ Reset failed:' + res.error);
+ alert('Couldn\'t reset the queue. ' + res.error);
  } else {
  const q = await bridgeSendMessage<any>({ type:'SUPABASE_GET_QUEUE' as any });
  if (Array.isArray(q)) setQueue(q);
  else if (q?.data) setQueue(q.data);
  }
  } catch (err) {
- alert('⚠️ Error:' + (err as Error).message);
+ alert('Something went wrong. Try again. ' + (err as Error).message);
  }
  }}
- className="bg-slate-50 text-slate-700 hover:bg-slate-100 px-2 py-1 rounded text-[9px] font-medium border border-slate-200 transition-all"
+ className="bg-slate-50 text-slate-700 hover:bg-slate-100 px-2 py-1 rounded text-xs font-medium border border-slate-200 transition-all"
  title="Reset all completed tasks back to pending so they run again today"
  >
- ↺ Reset to Pending
+ Reset to pending
  </button>
  </h3>
- <div className="flex gap-3 mt-2 text-[9px]">
+ <div className="flex gap-3 mt-2 text-xs">
   <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-medium border border-gray-200">
   Total: {filteredQueue.length}
   </span>
@@ -1064,17 +969,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   </span>
   </div>
   <div className="flex gap-2 mt-3 mb-1">
-    <select value={qClientFilter} onChange={e => setQClientFilter(e.target.value)} className="bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-700 shadow-sm max-w-[150px]">
-      <option value="">All Clients</option>
-      <option value="null">(No Client)</option>
+    <select value={qClientFilter} onChange={e => setQClientFilter(e.target.value)} className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 shadow-sm max-w-[150px]">
+      <option value="">All clients</option>
+      <option value="null">(No client)</option>
       {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
     </select>
-    <select value={qSiteFilter} onChange={e => setQSiteFilter(e.target.value)} className="bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-700 shadow-sm">
-      <option value="">All Sites</option>
-      {Array.from(new Set(['indeed', 'spanish-indeed', 'trovolavoro', ...uniqueQueueSites])).map(s => <option key={s} value={s}>{s}</option>)}
+    <select value={qSiteFilter} onChange={e => setQSiteFilter(e.target.value)} className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 shadow-sm">
+      <option value="">All sites</option>
+      {Array.from(new Set(['indeed', 'spanish-indeed', 'trovolavoro', ...uniqueQueueSites])).map(s => <option key={s} value={s}>{({ indeed: 'Indeed (Italy)', 'spanish-indeed': 'Indeed (Spain)', trovolavoro: 'Trovolavoro' } as Record<string, string>)[s] || s}</option>)}
     </select>
-    <select value={qWorkerFilter} onChange={e => setQWorkerFilter(e.target.value)} className="bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-700 shadow-sm max-w-[150px]">
-      <option value="">All Workers</option>
+    <select value={qWorkerFilter} onChange={e => setQWorkerFilter(e.target.value)} className="bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 shadow-sm max-w-[150px]">
+      <option value="">All workers</option>
       {activeAgents.map(a => <option key={a.worker_id} value={a.worker_id}>{a.worker_name} ({a.worker_id})</option>)}
     </select>
   </div>
@@ -1082,21 +987,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <div className="flex items-center gap-3">
  <button 
  onClick={() => setIsBulkLoadOpen(!isBulkLoadOpen)}
- className={`${isBulkLoadOpen ?'bg-primary-100 text-primary-700 hover:bg-primary-200 border-primary-200' :'bg-primary-600 text-white hover:bg-primary-700 border-transparent'} px-4 py-1.5 rounded-md font-medium text-[11px] transition-all shadow-sm flex items-center gap-1.5 border`}
+ className={`${isBulkLoadOpen ?'bg-primary-100 text-primary-700 hover:bg-primary-200 border-primary-200' :'bg-accent text-on-accent hover:bg-accent-700 border-transparent'} px-4 py-1.5 rounded-md font-medium text-xs transition-all shadow-sm flex items-center gap-1.5 border`}
  >
- <span>🚀</span> {isBulkLoadOpen ?'Hide Bulk Loader' :'Load Bulk Job'}
+ {isBulkLoadOpen ?'Hide bulk loader' :'Load bulk job'}
  </button>
  <button 
  onClick={() => {
  bridgeSendMessage({ type:'STOP_EXTRACTION' as any }).then(() => {
- alert('🚨 Abort signal sent! Scraping Engine has been gracefully killed.');
+ alert('Stopped the scraping engine.');
  updateSetting('pollingEnabled', false);
  bridgeSendMessage<any>({ type:'SUPABASE_GET_QUEUE' as any }).then(r => r?.data && setQueue(r.data));
  });
  }}
- className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-md uppercase font-bold text-[9px] border border-red-200 transition-all"
+ className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 px-3 py-1.5 rounded-md font-bold text-xs border border-red-200 transition-all"
  >
- STOP / KILL ENGINE
+ Stop engine
  </button>
  </div>
  </div>
@@ -1104,7 +1009,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <div className="overflow-x-auto overflow-y-auto max-h-[500px] lg:max-h-[600px] xl:max-h-[700px] 2xl:max-h-[800px] rounded-md border border-gray-200 w-full relative">
  {selectedJobIds.length > 0 && (
  <div className="bg-primary-50 border-b border-primary-100 px-4 py-2 flex items-center justify-between sticky top-0 z-20 shadow-sm">
- <div className="text-[9px] font-bold text-primary-700">
+ <div className="text-xs font-bold text-primary-700">
  {selectedJobIds.length} job(s) selected
  </div>
  {isBulkEditing ? (
@@ -1112,9 +1017,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <select 
  value={editTaskDraft.target_site ||''} 
  onChange={e => setEditTaskDraft({...editTaskDraft, target_site: e.target.value})}
- className="bg-white border border-primary-200 rounded px-2 py-1 text-[9px] text-gray-900 shadow-sm"
+ className="bg-white border border-primary-200 rounded px-2 py-1 text-xs text-gray-900 shadow-sm"
  >
- <option value="">Leave Site as is</option>
+ <option value="">Leave site as is</option>
  <option value="indeed">Indeed</option>
  <option value="spanish-indeed">Spanish Indeed</option>
  <option value="trovolavoro">TrovoLavoro</option>
@@ -1122,34 +1027,34 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <select 
  value={editTaskDraft.client_id ||''} 
  onChange={e => setEditTaskDraft({...editTaskDraft, client_id: e.target.value})}
- className="bg-white border border-primary-200 rounded px-2 py-1 text-[9px] text-gray-900 shadow-sm max-w-[150px]"
+ className="bg-white border border-primary-200 rounded px-2 py-1 text-xs text-gray-900 shadow-sm max-w-[150px]"
  >
- <option value="">Leave Client as is</option>
- <option value="null">(No Client)</option>
+ <option value="">Leave client as is</option>
+ <option value="null">(No client)</option>
  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
  </select>
  <input 
  type="text" 
  value={editTaskDraft.location ||''} 
  onChange={e => setEditTaskDraft({...editTaskDraft, location: e.target.value})}
- className="bg-white border border-primary-200 rounded px-2 py-1 text-[9px] text-gray-900 shadow-sm w-[100px]"
+ className="bg-white border border-primary-200 rounded px-2 py-1 text-xs text-gray-900 shadow-sm w-[100px]"
  placeholder="Location"
  />
- <button onClick={handleBulkEditSave} className="bg-primary-500 hover:bg-primary-400 text-white font-bold px-3 py-1 rounded text-[9px] shadow-sm ml-2">Apply Edit</button>
- <button onClick={() => { setIsBulkEditing(false); setEditTaskDraft({}); }} className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold px-3 py-1 rounded text-[9px] shadow-sm">Cancel</button>
+ <button onClick={handleBulkEditSave} className="bg-accent hover:bg-primary-400 text-on-accent font-bold px-3 py-1 rounded text-xs shadow-sm ml-2">Apply edit</button>
+ <button onClick={() => { setIsBulkEditing(false); setEditTaskDraft({}); }} className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-bold px-3 py-1 rounded text-xs shadow-sm">Cancel</button>
  </div>
  ) : (
  <div className="flex items-center gap-2">
- <button onClick={() => handleBulkStatusChange('pending')} className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold px-3 py-1 rounded text-[9px] border border-slate-200 shadow-sm">Mark Pending</button>
- <button onClick={() => handleBulkStatusChange('completed')} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-bold px-3 py-1 rounded text-[9px] border border-primary-200 shadow-sm">Mark Complete</button>
- <button onClick={() => setIsBulkEditing(true)} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-bold px-3 py-1 rounded text-[9px] border border-primary-200 shadow-sm ml-2">Edit</button>
- <button onClick={handleBulkDelete} className="bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1 rounded text-[9px] border border-red-200 shadow-sm">Delete</button>
+ <button onClick={() => handleBulkStatusChange('pending')} className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold px-3 py-1 rounded text-xs border border-slate-200 shadow-sm">Mark pending</button>
+ <button onClick={() => handleBulkStatusChange('completed')} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-bold px-3 py-1 rounded text-xs border border-primary-200 shadow-sm">Mark complete</button>
+ <button onClick={() => setIsBulkEditing(true)} className="bg-primary-100 text-primary-700 hover:bg-primary-200 font-bold px-3 py-1 rounded text-xs border border-primary-200 shadow-sm ml-2">Edit</button>
+ <button onClick={handleBulkDelete} className="bg-red-100 text-red-700 hover:bg-red-200 font-bold px-3 py-1 rounded text-xs border border-red-200 shadow-sm">Delete</button>
  </div>
  )}
  </div>
  )}
- <table className="w-full text-left text-[9px] text-gray-600 min-w-[800px]">
- <thead className={`text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-white border-b border-gray-200 sticky ${selectedJobIds.length > 0 ?'top-[44px]' :'top-0'} z-10 `}>
+ <table className="w-full text-left text-xs text-gray-600 min-w-[800px]">
+ <thead className={`text-xs font-bold text-gray-500 bg-white border-b border-gray-200 sticky ${selectedJobIds.length > 0 ?'top-[44px]' :'top-0'} z-10 `}>
  <tr>
  <th className="px-3 py-2 bg-white w-[40px]">
  <input 
@@ -1192,14 +1097,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  type="text" 
  value={editTaskDraft.job_title} 
  onChange={e => setEditTaskDraft({...editTaskDraft, job_title: e.target.value})}
- className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-900"
+ className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900"
  />
  </td>
  <td className="px-3 py-1.5">
  <select 
  value={editTaskDraft.target_site} 
  onChange={e => setEditTaskDraft({...editTaskDraft, target_site: e.target.value})}
- className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-900"
+ className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900"
  >
  <option value="indeed">Indeed</option>
  <option value="spanish-indeed">Spanish Indeed</option>
@@ -1210,10 +1115,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <select 
  value={editTaskDraft.date_filter ||''} 
  onChange={e => setEditTaskDraft({...editTaskDraft, date_filter: e.target.value || undefined})}
- className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-900"
+ className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900"
  >
  <option value="">All</option>
- <option value="last">No Ads</option>
+ <option value="last">No ads</option>
  <option value="1">24h</option>
  <option value="3">3d</option>
  <option value="7">7d</option>
@@ -1224,9 +1129,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <select 
  value={editTaskDraft.client_id} 
  onChange={e => setEditTaskDraft({...editTaskDraft, client_id: e.target.value})}
- className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-900"
+ className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900"
  >
- <option value="">(No Client)</option>
+ <option value="">(No client)</option>
  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
  </select>
  </td>
@@ -1235,36 +1140,37 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  type="text" 
  value={editTaskDraft.location} 
  onChange={e => setEditTaskDraft({...editTaskDraft, location: e.target.value})}
- className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-[9px] text-gray-900"
+ className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-900"
  placeholder="-"
  />
  </td>
  <td className="px-3 py-1.5" colSpan={3}>
- <span className="text-[9px] text-gray-500 italic">Editing task...</span>
+ <span className="text-xs text-gray-500 italic">Editing task...</span>
  </td>
  <td className="px-3 py-1.5 text-right whitespace-nowrap">
- <button onClick={handleSaveEdit} className="text-primary-600 hover:text-primary-600 font-medium px-2 py-1 text-[9px]">Save</button>
- <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-600 font-medium px-2 py-1 text-[9px]">Cancel</button>
+ <button onClick={handleSaveEdit} className="text-primary-600 hover:text-primary-600 font-medium px-2 py-1 text-xs">Save</button>
+ <button onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-600 font-medium px-2 py-1 text-xs">Cancel</button>
  </td>
  </>
  ) : (
  <>
  <td className="px-3 py-1.5 font-medium text-gray-900 truncate max-w-[150px] lg:max-w-[250px] xl:max-w-[400px]" title={q.job_title}>{q.job_title}</td>
- <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-[9px] uppercase font-bold bg-slate-50 text-slate-700 border-slate-200 whitespace-nowrap">{q.target_site ||'indeed'}</span></td>
+ <td className="px-3 py-1.5"><span className="px-2 py-0.5 rounded border text-xs font-bold bg-slate-50 text-slate-700 border-slate-200 whitespace-nowrap">{q.target_site ||'indeed'}</span></td>
  <td className="px-3 py-1.5 whitespace-nowrap">
  {q.date_filter ? (
- <span className={`px-2 py-0.5 rounded border text-[9px] font-medium ${q.date_filter ==='last' ?'bg-slate-50 text-slate-700 border-slate-200' :'bg-primary-50 text-primary-700 border border-primary-200 border-primary-200'}`}>
- {q.date_filter ==='last' ?'No Ads' : q.date_filter ==='1' ?'24h' : `${q.date_filter}d`}
+ <span className={`px-2 py-0.5 rounded border text-xs font-medium ${q.date_filter ==='last' ?'bg-slate-50 text-slate-700 border-slate-200' :'bg-primary-50 text-primary-700 border border-primary-200 border-primary-200'}`}>
+ {q.date_filter ==='last' ?'No ads' : q.date_filter ==='1' ?'24h' : `${q.date_filter}d`}
  </span>
  ) : (
- <span className="text-gray-500 italic text-[9px]">Any</span>
+ <span className="text-gray-500 italic text-xs">Any</span>
  )}
  </td>
  <td className="px-3 py-1.5 text-gray-600 font-semibold truncate max-w-[120px] lg:max-w-[180px] xl:max-w-[250px]" title={clientRecord?.name}>{clientRecord ? clientRecord.name : <span className="text-gray-500 italic font-normal">—</span>}</td>
  <td className="px-3 py-1.5 text-gray-600 truncate max-w-[100px] lg:max-w-[150px]" title={q.location}>{q.location ||'-'}</td>
  <td className="px-3 py-1.5 whitespace-nowrap">
- <span className={`px-2 py-0.5 rounded border text-[9px] uppercase tracking-wider ${q.status ==='pending' ?'bg-slate-50 text-slate-700 border-slate-200' : q.status ==='running' ?'bg-primary-50 text-primary-700 border border-primary-200 border-primary-200' : q.status ==='completed' ?'bg-primary-50 text-primary-700 border-primary-200' :'bg-red-50 text-red-700 border-red-200'}`}>
- {q.status}
+ <span className={`badge ${q.status ==='pending' ?'bg-neutral-badge text-fg-muted' : q.status ==='running' ?'badge-warning' : q.status ==='completed' ?'badge-success' :'badge-error'}`}>
+ <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
+ {q.status ==='pending' ?'Pending' : q.status ==='running' ?'Running' : q.status ==='completed' ?'Completed' : q.status ==='failed' ?'Failed' : q.status}
  </span>
  </td>
  <td className="px-3 py-1.5 whitespace-nowrap">{q.assigned_to || <span className="text-gray-600 italic">Unassigned</span>}</td>
@@ -1275,23 +1181,23 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <>
  <button 
  onClick={() => handleChangeStatus(q.id,'pending')}
- className="text-slate-500 hover:text-slate-700 font-medium text-[9px]"
- title="Mark as Pending"
+ className="text-slate-500 hover:text-slate-700 font-medium text-xs"
+ title="Mark as pending"
  >
- ↻ Pending
+ Mark pending
  </button>
  <button 
  onClick={() => handleChangeStatus(q.id,'completed')}
- className="text-primary-500 hover:text-primary-700 font-medium text-[9px]"
- title="Mark as Complete"
+ className="text-primary-500 hover:text-primary-700 font-medium text-xs"
+ title="Mark as complete"
  >
- ✓ Complete
+ Mark complete
  </button>
  </>
  )}
  <button 
  onClick={() => handleEditClick(q)}
- className="text-primary-600 hover:text-blue-800 font-medium text-[9px]"
+ className="text-primary-600 hover:text-blue-800 font-medium text-xs"
  disabled={q.status ==='running'}
  title={q.status ==='running' ?'Cannot edit running tasks' :'Edit task'}
  >
@@ -1299,7 +1205,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  </button>
  <button 
  onClick={() => handleDeleteTask(q.id)}
- className="text-red-600 hover:text-red-800 font-medium text-[9px]"
+ className="text-red-600 hover:text-red-800 font-medium text-xs"
  disabled={q.status ==='running'}
  title={q.status ==='running' ?'Cannot delete running tasks' :'Delete task'}
  >
@@ -1313,7 +1219,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  );
  })}
  {queue.length === 0 && (
- <tr><td colSpan={10} className="px-4 py-6 text-center text-gray-500 italic">Queue is currently empty</td></tr>
+ <tr><td colSpan={10} className="px-4 py-6 text-center text-gray-500 ">No tasks in the queue. Select Load bulk job to add some.</td></tr>
  )}
  </tbody>
  </table>
@@ -1329,58 +1235,72 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  
  {/* General Settings */}
  <div className="bg-white rounded-md p-5 border border-gray-200 space-y-4">
- <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3">General Settings</h3>
+ <h3 className="text-xs font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">General settings</h3>
  
  <label className="flex items-center justify-between cursor-pointer group">
  <div>
- <div className="text-[9px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Auto Extract</div>
- <div className="text-[9px] text-gray-500 mt-0.5">Automatically extract jobs when visiting job boards</div>
+ <div className="text-xs font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Auto extract</div>
+ <div className="text-xs text-gray-500 mt-0.5">Automatically extract jobs when visiting job boards</div>
  </div>
  <input type="checkbox" checked={settings.autoExtract || false} onChange={e => updateSetting('autoExtract', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
  </label>
 
  <label className="flex items-center justify-between cursor-pointer group">
  <div>
- <div className="text-[9px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Notifications</div>
- <div className="text-[9px] text-gray-500 mt-0.5">Show notifications when extraction completes</div>
+ <div className="text-xs font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Notifications</div>
+ <div className="text-xs text-gray-500 mt-0.5">Show notifications when extraction completes</div>
  </div>
  <input type="checkbox" checked={settings.notificationEnabled !== false} onChange={e => updateSetting('notificationEnabled', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
  </label>
 
  <div className="space-y-3 pt-4 border-t border-gray-200 mt-2">
- <h4 className="text-[9px] font-semibold text-gray-600 flex items-center gap-2">
- <span>📡</span> Distributed Worker Mode
+ <h4 className="text-xs font-semibold text-gray-600 flex items-center gap-2">
+ Distributed worker mode
  </h4>
 
  <label className="flex items-center justify-between cursor-pointer group">
  <div>
- <div className="text-[9px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Enable Remote Polling</div>
- <div className="text-[9px] text-gray-500 mt-0.5">Automatically pull and execute jobs pushed to Supabase queue</div>
+ <div className="text-xs font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Enable remote polling</div>
+ <div className="text-xs text-gray-500 mt-0.5">Automatically pull and execute jobs pushed to Supabase queue</div>
  </div>
  <input type="checkbox" checked={settings.pollingEnabled || false} onChange={e => updateSetting('pollingEnabled', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
  </label>
 
  <div className="space-y-1.5">
- <label className="text-[9px] font-medium text-gray-900">Worker ID / Agent Name (assigned_to)</label>
+ <label className="text-xs font-medium text-gray-900">Worker ID / agent name (assigned_to)</label>
  <input
  type="text"
  placeholder="e.g. Node-A"
  value={settings.friendName ||''}
  onChange={e => updateSetting('friendName', e.target.value)}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
  />
+ </div>
+
+ <div className="space-y-1.5">
+ <label htmlFor="indeed-cookie-mode" className="text-xs font-medium text-gray-900">Indeed sign-in</label>
+ <select
+ id="indeed-cookie-mode"
+ value={settings.indeedCookieMode ?? 'stored'}
+ onChange={e => updateSetting('indeedCookieMode', e.target.value)}
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none"
+ >
+ <option value="stored">Stored accounts (cookies from indeed_scraper_sessions)</option>
+ <option value="browser">This browser's own Indeed sign-in</option>
+ </select>
+ <p className="text-xs text-gray-500">Applies to Indeed queue and bulk tasks on this agent. Trovolavoro always uses the browser.</p>
  </div>
  </div>
 
  <div className="space-y-3 pt-4 border-t border-gray-200 mt-2">
- <h4 className="text-[9px] font-semibold text-gray-600 flex items-center gap-2">
- <span>🇪🇸</span> Spanish Indeed Settings
+ <h4 className="text-xs font-semibold text-gray-600 flex items-center gap-2">
+ Spanish Indeed
  </h4>
 
  <label className="flex items-center justify-between cursor-pointer group">
  <div>
- <div className="text-[9px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Spanish Companies Whitelist</div>
- <div className="text-[9px] text-gray-500 mt-0.5">
+ <div className="text-xs font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Spanish companies whitelist</div>
+ <div className="text-xs text-gray-500 mt-0.5">
  {settings.spanishWhitelistEnabled !== false
  ?'ON — only companies in Spanish_Companies table sync to sheet'
  :'OFF — all extracted Spanish Indeed jobs sync to sheet'}
@@ -1399,34 +1319,34 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
  {/* Extraction Settings */}
  <div className="bg-white rounded-md p-5 border border-gray-200 space-y-4">
- <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-200 pb-2 mb-3">Extraction Settings</h3>
+ <h3 className="text-xs font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">Extraction settings</h3>
 
  <div className="space-y-1.5">
- <label className="text-[9px] font-medium text-gray-900">Max Jobs per Page</label>
+ <label className="text-xs font-medium text-gray-900">Max jobs per page</label>
  <input
  type="number"
  min="10"
  max="500"
  value={settings.maxJobsPerPage || 100}
  onChange={e => updateSetting('maxJobsPerPage', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
  />
  </div>
 
  <div className="space-y-1.5">
- <label className="text-[9px] font-medium text-gray-900">Pagination Limit</label>
+ <label className="text-xs font-medium text-gray-900">Pagination limit</label>
  <input
  type="number"
  min="1"
  max="100"
  value={settings.paginationLimit || 10}
  onChange={e => updateSetting('paginationLimit', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
  />
  </div>
 
  <div className="space-y-1.5">
- <label className="text-[9px] font-medium text-gray-900">Crawl Delay (ms)</label>
+ <label className="text-xs font-medium text-gray-900">Crawl delay (ms)</label>
  <input
  type="number"
  min="100"
@@ -1434,14 +1354,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  step="100"
  value={settings.crawlDelay || 1000}
  onChange={e => updateSetting('crawlDelay', parseInt(e.target.value))}
- className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-[9px] text-gray-900 focus:outline-none focus:border-slate-600/50"
+ className="w-full bg-white border border-gray-200 rounded-md px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-slate-600/50"
  />
  </div>
 
  <label className="flex items-center justify-between cursor-pointer group">
  <div>
- <div className="text-[9px] font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Respect robots.txt</div>
- <div className="text-[9px] text-gray-500 mt-0.5">Respect guidelines when crawling</div>
+ <div className="text-xs font-medium text-gray-900 group-hover:text-gray-600 transition-colors">Respect robots.txt</div>
+ <div className="text-xs text-gray-500 mt-0.5">Respect guidelines when crawling</div>
  </div>
  <input type="checkbox" checked={settings.respectRobotsTxt !== false} onChange={e => updateSetting('respectRobotsTxt', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
  </label>

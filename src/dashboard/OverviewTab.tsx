@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../shared/supabase';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, supabaseClient } from '../shared/supabase';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, ResponsiveContainer,
@@ -21,36 +21,47 @@ const ANON_HEADERS = {
   'Accept': 'application/json',
 };
 
-const PALETTE = {
-  emerald:  ['#059669','#10b981','#34d399','#6ee7b7','#a7f3d0'],
-  violet:   ['#7c3aed','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe'],
-  sky:      ['#0284c7','#0ea5e9','#38bdf8','#7dd3fc','#bae6fd'],
-  rose:     ['#be123c','#e11d48','#fb7185','#fda4af','#fecdd3'],
-  amber:    ['#b45309','#d97706','#f59e0b','#fbbf24','#fde68a'],
-  indigo:   ['#4338ca','#4f46e5','#6366f1','#818cf8','#a5b4fc'],
-  teal:     ['#0f766e','#0d9488','#14b8a6','#2dd4bf','#99f6e4'],
-  pink:     ['#be185d','#db2777','#ec4899','#f472b6','#fbcfe8'],
-  orange:   ['#c2410c','#ea580c','#f97316','#fb923c','#fdba74'],
-  cyan:     ['#0e7490','#0891b2','#06b6d4','#22d3ee','#a5f3fc'],
+// Chart series use the six Glacier accent families (mid-tones that read on both
+// themes). SVG attributes can't take CSS variables, so these are the token hexes.
+const GLACIER_FAMILIES = {
+  deepsea: ['#004670', '#1E70A7', '#4590C8', '#8FC4EC', '#DEF0FF'],
+  teal:    ['#004D4A', '#0B7A75', '#2A9C96', '#7FCFC9', '#DCF2F0'],
+  iris:    ['#421BA1', '#6840E7', '#7A5CFA', '#B1A0FF', '#EBEBFE'],
+  saffron: ['#583D00', '#B27F00', '#E0A100', '#F0BE45', '#FAEBD1'],
+  fern:    ['#005125', '#00803F', '#39A05E', '#8FD3A6', '#DDF4E2'],
+  coral:   ['#742300', '#B23F09', '#D56237', '#F59A79', '#FFE7DF'],
 };
 
-const SOURCE_LINE_COLORS = ['#10b981','#6366f1','#f59e0b','#e11d48','#06b6d4','#f97316','#8b5cf6','#ec4899'];
-const CHART_GRID = '#f1f5f9';
-const TICK = { fill: '#94a3b8', fontSize: 10 };
+const PALETTE = {
+  emerald: GLACIER_FAMILIES.fern,
+  violet:  GLACIER_FAMILIES.iris,
+  sky:     GLACIER_FAMILIES.deepsea,
+  rose:    GLACIER_FAMILIES.coral,
+  amber:   GLACIER_FAMILIES.saffron,
+  indigo:  GLACIER_FAMILIES.iris,
+  teal:    GLACIER_FAMILIES.teal,
+  pink:    GLACIER_FAMILIES.coral,
+  orange:  GLACIER_FAMILIES.saffron,
+  cyan:    GLACIER_FAMILIES.teal,
+};
+
+const SOURCE_LINE_COLORS = ['#1E70A7', '#2A9C96', '#7A5CFA', '#E0A100', '#39A05E', '#D56237', '#4590C8', '#B27F00'];
+const CHART_GRID = 'rgba(110,132,143,0.22)';
+const TICK = { fill: '#6E848F', fontSize: 12 };
 
 const TT = {
   contentStyle: {
-    background: '#0f172a',
-    border: 'none',
-    borderRadius: '10px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-    fontSize: '11px',
-    color: '#f8fafc',
-    padding: '10px 14px',
+    background: 'rgb(var(--g-bg-surface))',
+    border: '1px solid rgb(var(--g-stroke-card))',
+    borderRadius: '8px',
+    boxShadow: 'var(--g-shadow-dialog)',
+    fontSize: '12px',
+    color: 'rgb(var(--g-fg))',
+    padding: '8px 12px',
   },
-  labelStyle: { color: '#94a3b8', fontWeight: 600, marginBottom: 4 },
-  itemStyle: { color: '#f8fafc' },
-  cursor: { fill: 'rgba(148,163,184,0.06)' },
+  labelStyle: { color: 'rgb(var(--g-fg-muted))', fontWeight: 500, marginBottom: 4 },
+  itemStyle: { color: 'rgb(var(--g-fg))' },
+  cursor: { fill: 'var(--g-bg-hover)' },
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -130,18 +141,18 @@ function lastNDays(n = 14): string[] {
 
 const StatCard: React.FC<{
   label: string; value: number | string; icon: React.ReactNode;
-  gradient: string; sub?: string;
-}> = ({ label, value, icon, gradient, sub }) => (
-  <div className={`${gradient} rounded-xl p-4 flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-transform duration-200 cursor-default`}>
-    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: 'radial-gradient(circle at 80% 20%, white, transparent 70%)' }} />
-    <div className="relative min-w-0">
-      <p className="text-[10px] font-extrabold text-white/70 uppercase tracking-widest mb-1 truncate">{label}</p>
-      <h3 className="text-2xl font-black text-white tracking-tighter leading-none">
+  gradient?: string; sub?: string;
+}> = ({ label, value, icon, sub }) => (
+  // Glacier StatCard: surface card, muted label, metric figure, accent-tinted icon tile
+  <div className="bg-surface border border-stroke-card shadow-card rounded-xl p-5 flex items-start justify-between gap-3 min-w-0">
+    <div className="min-w-0">
+      <p className="text-sm font-medium text-fg-muted truncate">{label}</p>
+      <p className="metric text-fg mt-1">
         {typeof value === 'number' ? value.toLocaleString() : value}
-      </h3>
-      {sub && <p className="text-[10px] text-white/55 mt-1">{sub}</p>}
+      </p>
+      {sub && <p className="text-xs text-fg-subtle mt-1 truncate">{sub}</p>}
     </div>
-    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-white/30 transition-colors ml-2">
+    <div className="w-9 h-9 bg-accent-subtle-2 text-accent-text rounded-lg flex items-center justify-center shrink-0 [&_svg]:text-accent-text">
       {icon}
     </div>
   </div>
@@ -150,10 +161,10 @@ const StatCard: React.FC<{
 const ChartCard: React.FC<{
   title: string; subtitle: string; children: React.ReactNode; className?: string;
 }> = ({ title, subtitle, children, className = '' }) => (
-  <div className={`bg-white border border-slate-100 rounded-2xl p-5 shadow-sm ${className}`}>
-    <div className="mb-4 pb-3 border-b border-slate-50">
-      <h3 className="text-sm font-bold text-slate-800">{title}</h3>
-      <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>
+  <div className={`bg-surface border border-stroke-card rounded-xl p-5 shadow-card ${className}`}>
+    <div className="mb-4">
+      <h3 className="text-base font-semibold text-fg">{title}</h3>
+      <p className="text-xs text-fg-subtle mt-0.5">{subtitle}</p>
     </div>
     {children}
   </div>
@@ -192,6 +203,79 @@ interface OverviewData {
   recruiterStatus: { name: string; value: number }[];
 }
 
+type NameValue = { name: string; value: number };
+
+/** Shape returned by public.overview_stats() (see the overview_stats migration). */
+interface OverviewStats {
+  totals: { jobs: number; clients: number; recruiters: number; queue_tasks: number; email_logs: number; active_agents: number };
+  per_day: { day: string; source: string; n: number }[];
+  sources: NameValue[]; categories: NameValue[]; employment_types: NameValue[]; job_status: NameValue[];
+  locations: NameValue[]; companies: NameValue[]; workers: NameValue[]; clients: NameValue[];
+  queue_status: NameValue[]; recruiter_status: NameValue[];
+}
+
+const QUEUE_COLORS: Record<string, string> = {
+  Pending: '#E0A100', Running: '#1E70A7', Completed: '#39A05E', Failed: '#C62F2B',
+};
+
+function colorQueue(rows: NameValue[]) {
+  return rows.map(q => {
+    const name = q.name.charAt(0).toUpperCase() + q.name.slice(1);
+    return { name, value: q.value, fill: QUEUE_COLORS[name] ?? '#6E848F' };
+  });
+}
+
+function buildSeries(days: string[], perDay: { day: string; source: string; n: number }[]) {
+  const total: Record<string, number> = Object.fromEntries(days.map(d => [d, 0]));
+  const bySource: Record<string, Record<string, number>> = {};
+  perDay.forEach(({ day, source, n }) => {
+    if (!(day in total)) return;
+    total[day] += n;
+    (bySource[source] ??= Object.fromEntries(days.map(d => [d, 0])))[day] += n;
+  });
+  const allSources = Object.keys(bySource);
+  return {
+    jobsPerDay: days.map(d => ({ date: d.slice(5), jobs: total[d] })),
+    allSources,
+    jobsPerSourcePerDay: days.map(d => {
+      const row: any = { date: d.slice(5) };
+      allSources.forEach(src => { row[src] = bySource[src][d]; });
+      return row;
+    }),
+  };
+}
+
+function fromStats(st: OverviewStats): OverviewData {
+  return {
+    totalJobs: st.totals.jobs,
+    totalClients: st.totals.clients,
+    totalRecruiters: st.totals.recruiters,
+    totalQueueTasks: st.totals.queue_tasks,
+    totalEmailLogs: st.totals.email_logs,
+    totalActiveAgents: st.totals.active_agents,
+    ...buildSeries(lastNDays(14), st.per_day || []),
+    sources: st.sources || [],
+    categories: st.categories || [],
+    employmentTypes: st.employment_types || [],
+    jobStatus: st.job_status || [],
+    clientJobs: (st.clients || []).map(c => ({ name: c.name, jobs: c.value })),
+    topCompanies: st.companies || [],
+    topLocations: st.locations || [],
+    workersActivity: st.workers || [],
+    queueStatus: colorQueue(st.queue_status || []),
+    recruiterStatus: st.recruiter_status || [],
+  };
+}
+
+const EMPTY_DATA: OverviewData = {
+  totalJobs: 0, totalClients: 0, totalRecruiters: 0, totalQueueTasks: 0, totalEmailLogs: 0, totalActiveAgents: 0,
+  jobsPerDay: [], jobsPerSourcePerDay: [], allSources: [], sources: [], categories: [], employmentTypes: [],
+  jobStatus: [], clientJobs: [], topCompanies: [], topLocations: [], workersActivity: [], queueStatus: [], recruiterStatus: [],
+};
+
+/** Rows sampled by the slow fallback, used only until overview_stats() is installed. */
+const FALLBACK_SAMPLE = 1000;
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const OverviewTab: React.FC = () => {
@@ -199,16 +283,38 @@ export const OverviewTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<OverviewData | null>(null);
   const [showBanner, setShowBanner] = useState(true);
+  // 'full' = exact numbers from overview_stats(); 'sample' = fallback charts from recent rows
+  const [chartSource, setChartSource] = useState<'full' | 'sample' | 'loading'>('full');
 
   const CACHE_KEY = 'rs_overview_data';
   const CACHE_TIME_KEY = 'rs_overview_time';
   const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
+  const saveCache = (payload: OverviewData, source: 'full' | 'sample') => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+      localStorage.setItem(CACHE_KEY + '_source', source);
+      localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+    } catch { /* storage full or blocked: the page still works without a cache */ }
+  };
+
   const fetchAndCacheData = useCallback(async (isBackgroundSync = false) => {
     if (!isBackgroundSync) setLoading(true);
     setError(null);
     try {
-      // ── Parallel fetches ──────────────────────────────────────────────────
+      // ── Fast path: one aggregate call (a few KB) ─────────────────────────
+      const stats = await supabaseClient.callUserRpc<OverviewStats>('overview_stats');
+      if (!stats.error && stats.data?.totals) {
+        const payload = fromStats(stats.data);
+        setData(payload);
+        setChartSource('full');
+        saveCache(payload, 'full');
+        return;
+      }
+      // Expected until the overview_stats migration is applied; not an error
+      console.info('[Overview] overview_stats() not installed yet, using the sampled fallback.');
+
+      // ── Fallback: counts first (fast), then charts from a recent sample ──
       const [
         totalJobs,
         totalClients,
@@ -225,11 +331,18 @@ export const OverviewTab: React.FC = () => {
         fetchCount('ActiveAgents'),
       ]);
 
-      // Fetch rows needed for charts (limit to keep it fast)
+      // Show the stat cards straight away; charts follow when the sample arrives
+      setData(prev => ({
+        ...(prev ?? EMPTY_DATA),
+        totalJobs, totalClients, totalRecruiters, totalQueueTasks, totalEmailLogs, totalActiveAgents,
+      }));
+      setChartSource('loading');
+      if (!isBackgroundSync) setLoading(false);
+
       const [jobRows, recruiterRows, queueRows] = await Promise.all([
-        fetchRows<any>('jobs', 'source,category,employmenttype,status,location,company,client,extractedat,worker_id', [], 50000),
-        fetchRows<any>('Recruiters', 'status', [], 10000),
-        fetchRows<any>('BulkQueue', 'status', [], 10000),
+        fetchRows<any>('jobs', 'source,category,employmenttype,status,location,company,client,extractedat,worker_id', ['order=extractedat.desc.nullslast'], FALLBACK_SAMPLE),
+        fetchRows<any>('Recruiters', 'status', [], 2000),
+        fetchRows<any>('BulkQueue', 'status', [], 1000),
       ]);
 
       // ── Time-series ───────────────────────────────────────────────────────
@@ -286,14 +399,7 @@ export const OverviewTab: React.FC = () => {
       // Recruiter status
       const recruiterStatus = tally(recruiterRows, 'status');
 
-      // Queue status with colors
-      const QCOLORS: Record<string, string> = {
-        Pending: '#f59e0b', Running: '#3b82f6', Completed: '#059669', Failed: '#ef4444',
-      };
-      const queueStatus = tally(queueRows, 'status').map(q => {
-        const name = q.name.charAt(0).toUpperCase() + q.name.slice(1);
-        return { name, value: q.value, fill: QCOLORS[name] ?? '#94a3b8' };
-      });
+      const queueStatus = colorQueue(tally(queueRows, 'status'));
 
       const payload: OverviewData = {
         totalJobs,
@@ -318,10 +424,8 @@ export const OverviewTab: React.FC = () => {
       };
 
       setData(payload);
-
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ [CACHE_KEY]: payload, [CACHE_TIME_KEY]: Date.now() });
-      }
+      setChartSource('sample');
+      saveCache(payload, 'sample');
     } catch (err) {
       console.error('[Overview] Fatal error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load analytics.');
@@ -335,20 +439,19 @@ export const OverviewTab: React.FC = () => {
     let interval: NodeJS.Timeout;
 
     const init = async () => {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get([CACHE_KEY, CACHE_TIME_KEY], (res) => {
-          const cachedData = res[CACHE_KEY];
-          const cacheTime = res[CACHE_TIME_KEY] || 0;
-          
-          if (cachedData && (Date.now() - cacheTime < CACHE_DURATION)) {
-            // Use cache, no loading spinner needed
-            setData(cachedData);
-            setLoading(false);
-          } else {
-            // Cache expired or missing, fetch fresh data
-            fetchAndCacheData(false);
-          }
-        });
+      // Show the last result instantly (any age), then refresh in the background if stale
+      let cached: OverviewData | null = null;
+      let cacheTime = 0;
+      try {
+        cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        cacheTime = Number(localStorage.getItem(CACHE_TIME_KEY) || 0);
+      } catch { /* no usable cache */ }
+
+      if (cached) {
+        setData({ ...EMPTY_DATA, ...cached });
+        try { setChartSource(localStorage.getItem(CACHE_KEY + '_source') === 'sample' ? 'sample' : 'full'); } catch { /* ignore */ }
+        setLoading(false);
+        if (Date.now() - cacheTime >= CACHE_DURATION) fetchAndCacheData(true);
       } else {
         fetchAndCacheData(false);
       }
@@ -437,62 +540,70 @@ export const OverviewTab: React.FC = () => {
     <div className="space-y-6 pb-10">
 
       {showBanner && (
-        <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200 px-4 py-3 rounded-xl flex items-start justify-between shadow-sm">
+        <div className="bg-blue-50 border border-blue-200 text-blue-900 px-4 py-3 rounded-xl flex items-start justify-between shadow-sm">
           <div className="text-xs leading-relaxed">
-            <span className="font-bold">Notice:</span> This dashboard displays live RecruitScout data across all your tables. 
-            <span className="ml-1 font-medium text-blue-700 dark:text-blue-300">Tip: You can switch between <strong>Obsidian Dark</strong> theme and <strong>Light Mode</strong> anytime using the toggle button in the top-right header!</span>
+            Live RecruitScout data from all your tables. 
+            <span className="ml-1 font-medium text-blue-700">Tip: switch between light and dark themes with the button in the top bar.</span>
           </div>
-          <button onClick={() => setShowBanner(false)} className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 font-bold ml-4 text-sm">✕</button>
+          <button onClick={() => setShowBanner(false)} className="text-blue-500 hover:text-blue-700 font-bold ml-4 text-sm" aria-label="Dismiss">✕</button>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">Overview Analytics</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Live data · {data.totalJobs.toLocaleString()} jobs · {data.allSources.length} sources: {data.allSources.join(', ')}
+          <h2 className="text-base font-semibold text-fg">Overview analytics</h2>
+          <p className="text-sm text-fg-muted mt-0.5">
+            {data.totalJobs.toLocaleString()} jobs · {data.allSources.length} {data.allSources.length === 1 ? 'source' : 'sources'} in the last 14 days
           </p>
+          {chartSource !== 'full' && (
+            <p className="text-xs text-warning-fg mt-1 flex items-center gap-1.5">
+              {chartSource === 'loading' && <Loader2 size={12} className="animate-spin" />}
+              {chartSource === 'loading'
+                ? 'Charts are loading from a sample of recent jobs.'
+                : `Charts show the latest ${FALLBACK_SAMPLE.toLocaleString()} jobs. Apply the overview_stats migration for exact numbers in about a second.`}
+            </p>
+          )}
         </div>
-        <button onClick={() => fetchAndCacheData(false)} className="flex items-center gap-2 text-xs font-semibold px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all shadow-sm">
-          <RefreshCw size={12} /> Refresh All
+        <button onClick={() => fetchAndCacheData(true)} className="btn-secondary shrink-0">
+          <RefreshCw size={16} /> Refresh
         </button>
       </div>
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard label="Total Jobs" value={data.totalJobs} icon={<Briefcase className="text-white w-4 h-4" />} gradient="bg-gradient-to-br from-emerald-500 to-teal-600" sub="jobs table" />
-        <StatCard label="Clients" value={data.totalClients} icon={<Users className="text-white w-4 h-4" />} gradient="bg-gradient-to-br from-violet-500 to-purple-700" sub="clients table" />
-        <StatCard label="Recruiters" value={data.totalRecruiters} icon={<UserCheck className="text-white w-4 h-4" />} gradient="bg-gradient-to-br from-sky-500 to-blue-700" sub="Recruiters table" />
-        <StatCard label="Queue Tasks" value={data.totalQueueTasks} icon={<Database className="text-white w-4 h-4" />} gradient="bg-gradient-to-br from-amber-500 to-orange-600" sub="BulkQueue" />
-        <StatCard label="Emails Sent" value={data.totalEmailLogs} icon={<Mail className="text-white w-4 h-4" />} gradient="bg-gradient-to-br from-rose-500 to-pink-700" sub="email_logs" />
-        <StatCard label="Active Agents" value={data.totalActiveAgents} icon={<Zap className="text-white w-4 h-4" />} gradient="bg-gradient-to-br from-cyan-500 to-indigo-600" sub="ActiveAgents" />
+        <StatCard label="Total jobs" value={data.totalJobs} icon={<Briefcase className="text-white w-4 h-4" />} sub="jobs table" />
+        <StatCard label="Clients" value={data.totalClients} icon={<Users className="text-white w-4 h-4" />} sub="clients table" />
+        <StatCard label="Recruiters" value={data.totalRecruiters} icon={<UserCheck className="text-white w-4 h-4" />} sub="Recruiters table" />
+        <StatCard label="Queue tasks" value={data.totalQueueTasks} icon={<Database className="text-white w-4 h-4" />} sub="BulkQueue" />
+        <StatCard label="Emails sent" value={data.totalEmailLogs} icon={<Mail className="text-white w-4 h-4" />} sub="email_logs" />
+        <StatCard label="Active agents" value={data.totalActiveAgents} icon={<Zap className="text-white w-4 h-4" />} sub="ActiveAgents" />
       </div>
 
       {/* ── Row 1: Total Jobs/Day + Multi-source Line ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        <ChartCard title="Daily Extraction Volume" subtitle="Total jobs collected per day over the last 14 days">
+        <ChartCard title="Daily extraction volume" subtitle="Total jobs collected per day over the last 14 days">
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.jobsPerDay} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#1E70A7" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#1E70A7" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID} />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={TICK} />
                 <YAxis axisLine={false} tickLine={false} tick={TICK} />
                 <RTooltip {...TT} />
-                <Area type="monotone" dataKey="jobs" stroke="#10b981" strokeWidth={2.5} fill="url(#areaGreen)" name="Jobs" dot={false} activeDot={{ r: 5, fill: '#10b981', strokeWidth: 0 }} />
+                <Area type="monotone" dataKey="jobs" stroke="#1E70A7" strokeWidth={2.5} fill="url(#areaGreen)" name="Jobs" dot={false} activeDot={{ r: 5, fill: '#1E70A7', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
-        <ChartCard title={`Jobs per Source · Last 14 Days (${data.allSources.length} sources)`} subtitle="One line per job board — shows individual extraction activity over time">
+        <ChartCard title="Jobs per source, last 14 days" subtitle="One line per job board">
           {data.allSources.length > 0 ? (
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
@@ -513,7 +624,7 @@ export const OverviewTab: React.FC = () => {
       </div>
 
       {/* ── Categories — full width horizontal bar ── */}
-      <ChartCard title="Job Categories" subtitle={`${data.categories.length} categories · source: category column in the jobs table`}>
+      <ChartCard title="Job categories" subtitle={`${data.categories.length} categories · source: category column in the jobs table`}>
         {data.categories.length > 0 ? (
           <div style={{ height: Math.max(260, data.categories.length * 38) }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -522,12 +633,12 @@ export const OverviewTab: React.FC = () => {
                 <XAxis type="number" axisLine={false} tickLine={false} tick={TICK} />
                 <YAxis type="category" dataKey="name" width={210} axisLine={false} tickLine={false} tick={{ fill: '#334155', fontSize: 11, fontWeight: 500 }} />
                 <RTooltip {...TT} />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]} name="Jobs" label={{ position: 'right', fill: '#94a3b8', fontSize: 11 }}>
+                <Bar dataKey="value" radius={[0, 6, 6, 0]} name="Jobs" label={{ position: 'right', fill: '#6E848F', fontSize: 11 }}>
                   {data.categories.map((_, i) => (
                     <Cell key={i} fill={[
-                      '#7c3aed','#6366f1','#0ea5e9','#059669','#f59e0b',
-                      '#e11d48','#f97316','#06b6d4','#8b5cf6','#10b981',
-                      '#3b82f6','#ec4899','#14b8a6','#a855f7',
+                      '#1E70A7','#2A9C96','#7A5CFA','#B27F00','#39A05E',
+                      '#D56237','#E0A100','#2A9C96','#7A5CFA','#39A05E',
+                      '#4590C8','#B23F09','#0B7A75','#6840E7',
                     ][i % 14]} />
                   ))}
                 </Bar>
@@ -540,7 +651,7 @@ export const OverviewTab: React.FC = () => {
       {/* ── Sources donut + Employment Types ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-        <ChartCard title="All Job Sources" subtitle={`${data.sources.length} sites found across all jobs`}>
+        <ChartCard title="All job sources" subtitle={`${data.sources.length} sites found across all jobs`}>
           {data.sources.length > 0 ? (
             <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
@@ -556,7 +667,7 @@ export const OverviewTab: React.FC = () => {
           ) : <EmptyState />}
         </ChartCard>
 
-        <ChartCard title="Employment Types" subtitle="Contract type breakdown from the employmenttype column">
+        <ChartCard title="Employment types" subtitle="Contract type breakdown from the employmenttype column">
           {data.employmentTypes.length > 0 ? (
             <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
@@ -578,7 +689,7 @@ export const OverviewTab: React.FC = () => {
       {/* ── Row 3: Jobs per Client + Top Companies ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        <ChartCard title="Jobs per Client" subtitle="Jobs in the jobs table grouped by their client field value">
+        <ChartCard title="Jobs per client" subtitle="Jobs in the jobs table grouped by their client field value">
           {data.clientJobs.length > 0 ? (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -596,7 +707,7 @@ export const OverviewTab: React.FC = () => {
           ) : <EmptyState height="h-72" />}
         </ChartCard>
 
-        <ChartCard title="Top 10 Companies" subtitle="Companies with the most job listings in the database">
+        <ChartCard title="Top 10 companies" subtitle="Companies with the most job listings in the database">
           {data.topCompanies.length > 0 ? (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -618,7 +729,7 @@ export const OverviewTab: React.FC = () => {
       {/* ── Row 4: Top Locations + Job Status + Worker Activity ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-        <ChartCard title="Top Job Locations" subtitle="Cities and regions with the most postings">
+        <ChartCard title="Top job locations" subtitle="Cities and regions with the most postings">
           {data.topLocations.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -636,7 +747,7 @@ export const OverviewTab: React.FC = () => {
           ) : <EmptyState height="h-64" />}
         </ChartCard>
 
-        <ChartCard title="Job Status Breakdown" subtitle="Status field distribution across all jobs">
+        <ChartCard title="Job status breakdown" subtitle="Status field distribution across all jobs">
           {data.jobStatus.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -652,7 +763,7 @@ export const OverviewTab: React.FC = () => {
           ) : <EmptyState height="h-64" />}
         </ChartCard>
 
-        <ChartCard title="Worker Node Activity" subtitle="Jobs scraped per extension worker ID">
+        <ChartCard title="Worker node activity" subtitle="Jobs scraped per extension worker ID">
           {data.workersActivity.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -674,7 +785,7 @@ export const OverviewTab: React.FC = () => {
       {/* ── Row 5: Queue Status radial + Recruiter Status ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-        <ChartCard title="BulkQueue Task Status" subtitle="Breakdown of all BulkQueue tasks by status">
+        <ChartCard title="BulkQueue task status" subtitle="Breakdown of all BulkQueue tasks by status">
           {data.queueStatus.length > 0 ? (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -688,7 +799,7 @@ export const OverviewTab: React.FC = () => {
           ) : <EmptyState />}
         </ChartCard>
 
-        <ChartCard title="Recruiter Status Distribution" subtitle="All recruiters from the Recruiters table grouped by status">
+        <ChartCard title="Recruiter status distribution" subtitle="All recruiters from the recruiters table grouped by status">
           {data.recruiterStatus.length > 0 ? (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">

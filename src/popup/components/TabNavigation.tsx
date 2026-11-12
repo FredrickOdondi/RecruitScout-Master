@@ -7,10 +7,10 @@ interface TabNavigationProps {
 
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
  const tabs = [
- { id:'extract', label:'Extract', icon:'🔍' },
- { id:'jobs', label:'Jobs', icon:'💼' },
- { id:'export', label:'Export', icon:'📤' },
- { id:'settings', label:'Settings', icon:'⚙️' },
+ { id:'extract', label:'Extract', icon:'' },
+ { id:'jobs', label:'Jobs', icon:'' },
+ { id:'export', label:'Export', icon:'' },
+ { id:'settings', label:'Settings', icon:'' },
  ];
 
  return (
@@ -29,7 +29,7 @@ export default function TabNavigation({ activeTab, onTabChange }: TabNavigationP
  }
 `}
  >
- <span>{tab.icon}</span>
+{tab.icon && <span>{tab.icon}</span>}
  <span className="hidden sm:inline">{tab.label}</span>
  </button>
  ))}

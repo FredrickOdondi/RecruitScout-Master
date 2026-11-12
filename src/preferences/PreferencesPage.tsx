@@ -138,160 +138,170 @@ export default function PreferencesPage() {
     }
   };
 
-  // ── Styles (inline — no bundled CSS needed for this standalone page) ─────────
+  // ── Styles (inline — this page ships standalone). Values are Glacier tokens. ──
+  const G = {
+    canvas: '#F3F7F8', surface: '#FFFFFF', subtle: '#E6EEF1', strokeCard: '#DBE5E9', strokeControl: '#C8D6DC',
+    strokeAccessible: '#6E848F', fg: '#0E1A1F', fgMuted: '#4E6470', fgSubtle: '#576D78',
+    accent: '#1E70A7', accentHover: '#0E5A8A', onAccent: '#FFFFFF', accentText: '#1E70A7',
+    accentSubtle: '#F0F8FE', accentSubtle2: '#DEF0FF', accentSubtleFg: '#0E5A8A',
+    appIcon1: '#4590C8', appIcon2: '#0E5A8A',
+    dangerFg: '#B42A26', dangerBg: '#FCEDEB', successFg: '#1F6B3A', successBg: '#E6F6EA',
+  };
   const styles: Record<string, React.CSSProperties> = {
     body: {
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+      backgroundColor: G.canvas,
+      backgroundImage: `radial-gradient(120% 80% at 0% 0%, ${G.accentSubtle} 0%, transparent 55%)`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: "'Inter', system-ui, sans-serif",
+      fontFamily: '"Onest", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif',
+      color: G.fg,
       padding: '24px',
       margin: 0,
     },
     card: {
-      background: 'rgba(30, 41, 59, 0.8)',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(99, 102, 241, 0.2)',
-      borderRadius: '20px',
-      padding: '40px 48px',
-      maxWidth: '520px',
+      background: G.surface,
+      border: `1px solid ${G.strokeCard}`,
+      borderRadius: '12px',
+      padding: '32px',
+      maxWidth: '480px',
       width: '100%',
-      boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+      boxShadow: '0 4px 8px rgba(30,50,60,0.04), 0 24px 56px rgba(30,50,60,0.12)',
     },
     logo: {
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      marginBottom: '32px',
+      marginBottom: '24px',
     },
     logoIcon: {
-      width: '36px',
-      height: '36px',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      borderRadius: '10px',
+      width: '32px',
+      height: '32px',
+      background: `linear-gradient(160deg, ${G.appIcon1}, ${G.appIcon2})`,
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.35)',
+      borderRadius: '9px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '18px',
+      color: '#FFFFFF',
     },
     logoText: {
-      fontSize: '18px',
-      fontWeight: 700,
-      color: '#f1f5f9',
-      letterSpacing: '-0.3px',
+      fontSize: '16px',
+      fontWeight: 600,
+      color: G.fg,
     },
     heading: {
       fontSize: '24px',
-      fontWeight: 700,
-      color: '#f1f5f9',
-      margin: '0 0 6px',
-      letterSpacing: '-0.5px',
+      lineHeight: '32px',
+      fontWeight: 600,
+      color: G.fg,
+      margin: '0 0 4px',
+      letterSpacing: '-0.016em',
     },
     subheading: {
       fontSize: '14px',
-      color: '#94a3b8',
-      margin: '0 0 32px',
-      lineHeight: 1.6,
+      lineHeight: '20px',
+      color: G.fgMuted,
+      margin: '0 0 20px',
     },
     label: {
       display: 'block',
-      fontSize: '13px',
-      fontWeight: 600,
-      color: '#cbd5e1',
+      fontSize: '14px',
+      lineHeight: '20px',
+      fontWeight: 500,
+      color: G.fg,
       marginBottom: '6px',
-      letterSpacing: '0.3px',
-      textTransform: 'uppercase' as const,
     },
     fieldGroup: {
-      marginBottom: '20px',
+      marginBottom: '16px',
     },
     input: {
       width: '100%',
-      padding: '12px 14px',
-      background: 'rgba(15, 23, 42, 0.6)',
-      border: '1px solid rgba(99, 102, 241, 0.25)',
-      borderRadius: '10px',
-      color: '#f1f5f9',
+      height: '32px',
+      padding: '0 12px',
+      background: G.surface,
+      border: `1px solid ${G.strokeControl}`,
+      borderBottomColor: G.strokeAccessible,
+      borderRadius: '6px',
+      color: G.fg,
+      fontFamily: 'inherit',
       fontSize: '14px',
       outline: 'none',
-      transition: 'border-color 0.2s',
       boxSizing: 'border-box' as const,
     },
     select: {
       width: '100%',
-      padding: '12px 14px',
-      background: 'rgba(15, 23, 42, 0.6)',
-      border: '1px solid rgba(99, 102, 241, 0.25)',
-      borderRadius: '10px',
-      color: '#f1f5f9',
+      height: '32px',
+      padding: '0 12px',
+      background: G.surface,
+      border: `1px solid ${G.strokeControl}`,
+      borderBottomColor: G.strokeAccessible,
+      borderRadius: '6px',
+      color: G.fg,
+      fontFamily: 'inherit',
       fontSize: '14px',
       outline: 'none',
-      transition: 'border-color 0.2s',
       boxSizing: 'border-box' as const,
-      appearance: 'none' as const,
       cursor: 'pointer',
     },
     btn: {
       width: '100%',
-      padding: '14px',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+      height: '40px',
+      background: G.accent,
       border: 'none',
-      borderRadius: '12px',
-      color: '#fff',
-      fontSize: '15px',
-      fontWeight: 600,
+      borderRadius: '6px',
+      color: G.onAccent,
+      fontFamily: 'inherit',
+      fontSize: '14px',
+      fontWeight: 500,
       cursor: 'pointer',
-      transition: 'opacity 0.2s, transform 0.15s',
       marginTop: '8px',
     },
     savedBanner: {
-      padding: '14px 18px',
-      background: 'rgba(16, 185, 129, 0.15)',
-      border: '1px solid rgba(16, 185, 129, 0.3)',
-      borderRadius: '12px',
-      color: '#34d399',
+      padding: '12px 14px',
+      background: G.successBg,
+      borderRadius: '8px',
+      color: G.successFg,
       fontSize: '14px',
       fontWeight: 500,
-      textAlign: 'center' as const,
-      marginTop: '20px',
+      marginTop: '16px',
     },
     errorBanner: {
-      padding: '14px 18px',
-      background: 'rgba(239, 68, 68, 0.12)',
-      border: '1px solid rgba(239, 68, 68, 0.3)',
-      borderRadius: '12px',
-      color: '#f87171',
-      fontSize: '13px',
-      marginTop: '16px',
+      padding: '12px 14px',
+      background: G.dangerBg,
+      borderRadius: '8px',
+      color: G.dangerFg,
+      fontSize: '14px',
+      marginTop: '12px',
     },
     spinner: {
       display: 'inline-block',
-      width: '20px',
-      height: '20px',
-      border: '2px solid rgba(255,255,255,0.2)',
-      borderTopColor: '#fff',
+      width: '16px',
+      height: '16px',
+      border: '2px solid currentColor',
+      borderRightColor: 'transparent',
       borderRadius: '50%',
       animation: 'spin 0.7s linear infinite',
       marginRight: '8px',
       verticalAlign: 'middle',
     },
     notFound: {
-      textAlign: 'center' as const,
-      color: '#94a3b8',
-      fontSize: '15px',
-      lineHeight: 1.7,
+      color: G.fgMuted,
+      fontSize: '14px',
+      lineHeight: '20px',
     },
     recruiterBadge: {
-      display: 'inline-block',
-      padding: '4px 12px',
-      background: 'rgba(99, 102, 241, 0.15)',
-      border: '1px solid rgba(99, 102, 241, 0.3)',
-      borderRadius: '20px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '2px 10px',
+      background: G.accentSubtle2,
+      borderRadius: '9999px',
       fontSize: '12px',
-      color: '#a5b4fc',
-      marginBottom: '24px',
+      lineHeight: '20px',
+      color: G.accentSubtleFg,
+      marginBottom: '20px',
       fontWeight: 500,
     },
   };
@@ -305,27 +315,30 @@ export default function PreferencesPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         * { box-sizing: border-box; }
         body { margin: 0; }
-        input:focus, select:focus {
-          border-color: rgba(99, 102, 241, 0.6) !important;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-        }
-        button:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
-        button:active:not(:disabled) { transform: translateY(0); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        select option { background: #1e293b; color: #f1f5f9; }
+        input:focus, select:focus { border-bottom-color: #1E70A7 !important; box-shadow: inset 0 -1px 0 #1E70A7; }
+        :focus-visible { outline: 2px solid #0E1A1F; outline-offset: 1px; box-shadow: 0 0 0 1px #FFFFFF; }
+        button:hover:not(:disabled) { background: #0E5A8A !important; }
+        button:disabled { background: #E6EEF1 !important; color: #576D78 !important; cursor: not-allowed; }
+        input:disabled, select:disabled { background: #E6EEF1 !important; color: #576D78; }
+        ::placeholder { color: #576D78; }
       `}</style>
 
       <div style={styles.body}>
         <div style={styles.card}>
           {/* Logo */}
           <div style={styles.logo}>
-            <div style={styles.logoIcon}>🎯</div>
+            <div style={styles.logoIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="8" rx="2" /><rect x="2" y="14" width="20" height="8" rx="2" />
+                <line x1="6" y1="6" x2="6.01" y2="6" /><line x1="6" y1="18" x2="6.01" y2="18" />
+              </svg>
+            </div>
             <span style={styles.logoText}>RecruitScout</span>
           </div>
 
           {/* Loading */}
           {status === 'loading' && (
-            <div style={{ color: '#94a3b8', fontSize: '14px' }}>
+            <div style={{ color: G.fgMuted, fontSize: '14px' }}>
               <span style={styles.spinner} />
               Caricamento in corso…
             </div>
@@ -334,14 +347,13 @@ export default function PreferencesPage() {
           {/* Not found */}
           {status === 'not_found' && (
             <div style={styles.notFound}>
-              <div style={{ fontSize: '40px', marginBottom: '16px' }}>🔍</div>
-              <p style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '18px', margin: '0 0 8px' }}>
+              <p style={{ color: G.fg, fontWeight: 600, fontSize: '20px', lineHeight: '28px', margin: '0 0 8px' }}>
                 Profilo non trovato
               </p>
               <p>
                 Non riusciamo a trovare il tuo profilo. Controlla il link nell'email
                 o contattaci a{' '}
-                <a href="mailto:support@recruitscout.tech" style={{ color: '#818cf8' }}>
+                <a href="mailto:support@recruitscout.tech" style={{ color: G.accentText }}>
                   support@recruitscout.tech
                 </a>
                 .
@@ -352,7 +364,7 @@ export default function PreferencesPage() {
           {/* Error */}
           {status === 'error' && (
             <div>
-              <p style={{ color: '#f87171', fontWeight: 600 }}>Si è verificato un errore</p>
+              <p style={{ color: G.dangerFg, fontWeight: 600, margin: 0 }}>Si è verificato un errore</p>
               <div style={styles.errorBanner}>{errorMsg}</div>
             </div>
           )}
@@ -366,11 +378,11 @@ export default function PreferencesPage() {
               </p>
 
               {/* Recruiter badge */}
-              <div style={styles.recruiterBadge}>👤 {recName}</div>
+              <div style={styles.recruiterBadge}>{recName}</div>
 
               {/* Location */}
               <div style={styles.fieldGroup}>
-                <label style={styles.label}>📍 Posizione geografica</label>
+                <label style={styles.label}>Posizione geografica</label>
                 <input
                   style={styles.input}
                   type="text"
@@ -383,7 +395,7 @@ export default function PreferencesPage() {
 
               {/* Size */}
               <div style={styles.fieldGroup}>
-                <label style={styles.label}>🏢 Dimensione agenzia</label>
+                <label style={styles.label}>Dimensione agenzia</label>
                 <select
                   style={styles.select}
                   value={size}
@@ -399,7 +411,7 @@ export default function PreferencesPage() {
 
               {/* Primary Specialty */}
               <div style={styles.fieldGroup}>
-                <label style={styles.label}>🎯 Specializzazione principale</label>
+                <label style={styles.label}>Specializzazione principale</label>
                 <select
                   style={styles.select}
                   value={specialty}
@@ -423,7 +435,7 @@ export default function PreferencesPage() {
                   {status === 'saving' ? (
                     <><span style={styles.spinner} />Salvataggio…</>
                   ) : (
-                    '✓ Salva preferenze'
+                    'Salva preferenze'
                   )}
                 </button>
               )}
@@ -431,9 +443,9 @@ export default function PreferencesPage() {
               {/* Success */}
               {status === 'saved' && (
                 <div style={styles.savedBanner}>
-                  ✅ Preferenze aggiornate con successo!
+                  Preferenze aggiornate.
                   <br />
-                  <span style={{ fontSize: '12px', opacity: 0.8 }}>
+                  <span style={{ fontSize: '12px', fontWeight: 400 }}>
                     Le tue informazioni sono state salvate. Puoi chiudere questa pagina.
                   </span>
                 </div>

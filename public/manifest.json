@@ -9,10 +9,11 @@
     "tabs",
     "scripting",
     "offscreen",
-    "identity"
+    "identity",
+    "cookies"
   ],
   "oauth2": {
-    "client_id": "241480604524-pk45mp8ol398cmoaa67886ja4cdfb1ho.apps.googleusercontent.com",
+    "client_id": "115904503078-uo6086fg23p32frupfkqsgg6432nps2r.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive.readonly"
@@ -47,7 +48,9 @@
     "https://html.duckduckgo.com/*",
     "http://72.60.215.34/*",
     "http://72.60.215.34:8000/*",
-    "https://next-api.useplunk.com/*"
+    "https://next-api.useplunk.com/*",
+    "https://sheets.googleapis.com/*",
+    "https://www.googleapis.com/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",
