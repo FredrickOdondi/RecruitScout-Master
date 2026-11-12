@@ -1,7 +1,9 @@
 import { JobData, BulkQueueRecord, ClientRecord, EmailLogRecord } from './types';
 
 // Supabase configuration
-export const SUPABASE_URL = 'http://72.60.215.34:8000';
+// Served through the server's Caddy proxy: HTTPS, HTTP/2 and zstd/gzip compression.
+// The plain http://72.60.215.34:8000 address sends uncompressed JSON (up to 15x larger).
+export const SUPABASE_URL = 'https://supabase.72-60-215-34.sslip.io';
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
 /**
@@ -55,8 +57,8 @@ export interface SupabaseResponse<T> {
 export class SupabaseClient {
   private baseUrl: string;
   private apiKey: string;
-  private cachedRecruiters: any[] | null = null;
-  private cachedRecruitersTime: number = 0;
+  // Recruiter cache, keyed by the column list requested ('*' = every column)
+  private cachedRecruitersByCols = new Map<string, { rows: any[]; time: number }>();
   private cachedRecruiterContacts: any[] | null = null;
   private cachedRecruiterContactsTime: number = 0;
   private readonly RECRUITERS_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
@@ -302,9 +304,11 @@ export class SupabaseClient {
   /**
    * Get categorized jobs (jobs that have category and industry vertical)
    */
-  async getCategorizedJobs(): Promise<SupabaseResponse<SupabaseJob[]>> {
+  async getCategorizedJobs(columns?: string): Promise<SupabaseResponse<SupabaseJob[]>> {
     try {
-      const url = `${this.baseUrl}/rest/v1/jobs?select=id,title,company,location,employmenttype,url,description,dateposted,salary,source,extractedat,category,%22industry%20vertical%22&category=not.is.null&%22industry%20vertical%22=not.is.null&order=extractedat.desc`;
+      // Callers that only match jobs pass a short column list; descriptions alone are most of the payload
+      const select = columns || 'id,title,company,location,employmenttype,url,description,dateposted,salary,source,extractedat,category,%22industry%20vertical%22';
+      const url = `${this.baseUrl}/rest/v1/jobs?select=${select}&category=not.is.null&%22industry%20vertical%22=not.is.null&order=extractedat.desc`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -553,8 +557,63 @@ export class SupabaseClient {
   /**
    * Fetch pending task and lock it atomically
    */
+  /** A task "running" longer than this was abandoned by its agent (closed browser, crash). */
+  static readonly STALE_RUNNING_HOURS = 3;
+
+  /**
+   * Put abandoned tasks back in the queue: anything still "running" after
+   * STALE_RUNNING_HOURS goes back to pending and unassigned, the same way
+   * resetCompletedTasks treats finished tasks. Returns how many were released.
+   */
+  async releaseStaleTasks(): Promise<number> {
+    const cutoff = new Date(Date.now() - SupabaseClient.STALE_RUNNING_HOURS * 3600 * 1000).toISOString();
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/rest/v1/BulkQueue?status=eq.running&or=(started_at.is.null,started_at.lt.${encodeURIComponent(cutoff)})`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': this.apiKey,
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal, count=exact',
+          },
+          body: JSON.stringify({ status: 'pending', assigned_to: null, started_at: null }),
+          signal: AbortSignal.timeout(30000),
+        }
+      );
+      if (!res.ok) return 0;
+      const released = parseInt(res.headers.get('content-range')?.split('/').pop() || '0', 10) || 0;
+      if (released > 0) console.log(`[RecruitScout] Released ${released} abandoned queue task(s) back to pending.`);
+      return released;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Number of pending and running tasks, for explaining an empty poll. */
+  async getQueueCounts(): Promise<{ pending: number; running: number }> {
+    const count = async (status: string) => {
+      try {
+        const res = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?select=id&status=eq.${status}&limit=0`, {
+          method: 'HEAD',
+          headers: { 'apikey': this.apiKey, 'Authorization': `Bearer ${this.apiKey}`, 'Prefer': 'count=exact' },
+          signal: AbortSignal.timeout(15000),
+        });
+        return parseInt(res.headers.get('content-range')?.split('/').pop() || '0', 10) || 0;
+      } catch {
+        return 0;
+      }
+    };
+    const [pending, running] = await Promise.all([count('pending'), count('running')]);
+    return { pending, running };
+  }
+
   async fetchNextTaskAndLock(workerId: string): Promise<SupabaseResponse<BulkQueueRecord>> {
     try {
+      // Tasks left "running" by an agent that went away would otherwise block the queue forever
+      await this.releaseStaleTasks();
+
       // Find one pending task that is either unassigned or assigned to this specific worker
       const url = `${this.baseUrl}/rest/v1/BulkQueue?select=*&status=eq.pending&or=(assigned_to.is.null,assigned_to.eq.${encodeURIComponent(workerId)})&order=created_at.asc&limit=1`;
 
@@ -652,6 +711,7 @@ export class SupabaseClient {
    */
   async resetCompletedTasks(): Promise<SupabaseResponse<{ reset: boolean }>> {
     try {
+      await this.releaseStaleTasks();
       const res = await fetch(`${this.baseUrl}/rest/v1/BulkQueue?status=in.(completed,failed)`, {
         method: 'PATCH',
         headers: {
@@ -1327,12 +1387,20 @@ export class SupabaseClient {
    * Paginates through the entire table in parallel so it loads quickly.
    * An optional search query filters by Name or Domain.
    */
-  async getRecruiters(searchQuery?: string, forceRefresh = false): Promise<SupabaseResponse<any[]>> {
+  /**
+   * Fetch recruiters page by page. Pass `columns` to download only what the
+   * caller reads: the full table is ~55k rows x 20 columns (~34 MB uncompressed).
+   */
+  async getRecruiters(searchQuery?: string, forceRefresh = false, columns?: string[]): Promise<SupabaseResponse<any[]>> {
     try {
+      const select = columns?.length
+        ? columns.map(c => (/^[a-z_]+$/.test(c) ? c : `"${c}"`)).map(encodeURIComponent).join(',')
+        : '*';
       // Use in-memory cache if it's a default fetch (no query) and not forced to refresh
       const isDefaultFetch = !searchQuery;
-      if (isDefaultFetch && !forceRefresh && this.cachedRecruiters && (Date.now() - this.cachedRecruitersTime < this.RECRUITERS_CACHE_TTL)) {
-        return { data: this.cachedRecruiters, error: null };
+      const cached = this.cachedRecruitersByCols.get(select);
+      if (isDefaultFetch && !forceRefresh && cached && (Date.now() - cached.time < this.RECRUITERS_CACHE_TTL)) {
+        return { data: cached.rows, error: null };
       }
       // 1. Get the total count of rows first
       let countUrl = `${this.baseUrl}/rest/v1/Recruiters?select=id&limit=0`;
@@ -1370,7 +1438,8 @@ export class SupabaseClient {
         const chunk = Array.from({ length: Math.min(concurrencyLimit, pagesToFetch - i) }).map((_, j) => {
           const pageIndex = i + j;
           const offset = pageIndex * pageSize;
-          let url = `${this.baseUrl}/rest/v1/Recruiters?limit=${pageSize}&offset=${offset}`;
+          // A fixed order keeps offset pages from overlapping or skipping rows
+          let url = `${this.baseUrl}/rest/v1/Recruiters?select=${select}&order=id.asc&limit=${pageSize}&offset=${offset}`;
           if (searchQuery) {
             url += `&or=(Name.ilike.*${encodeURIComponent(searchQuery)}*,Domain.ilike.*${encodeURIComponent(searchQuery)}*)`;
           }
@@ -1398,8 +1467,7 @@ export class SupabaseClient {
       }
 
       if (isDefaultFetch) {
-        this.cachedRecruiters = allRecruiters;
-        this.cachedRecruitersTime = Date.now();
+        this.cachedRecruitersByCols.set(select, { rows: allRecruiters, time: Date.now() });
       }
 
       return { data: allRecruiters, error: null };
@@ -1699,6 +1767,34 @@ export class SupabaseClient {
   /**
    * Delete a client by ID
    */
+  /** Change a client's name or Google Sheet settings. */
+  async updateClient(
+    id: string,
+    updates: Partial<Pick<SupabaseClientRecord, 'name' | 'apps_script_url' | 'spreadsheet_id' | 'sheet_name'>>,
+  ): Promise<SupabaseResponse<SupabaseClientRecord>> {
+    try {
+      const response = await fetch(`${this.baseUrl}/rest/v1/clients?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(updates),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!response.ok) {
+        return { data: null, error: `HTTP ${response.status}: ${await response.text()}` };
+      }
+      const rows = await response.json();
+      if (!rows.length) return { data: null, error: 'No client with that ID.' };
+      return { data: rows[0], error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   async deleteClient(id: string): Promise<SupabaseResponse<{ deleted: boolean }>> {
     try {
       const response = await fetch(`${this.baseUrl}/rest/v1/clients?id=eq.${id}`, {

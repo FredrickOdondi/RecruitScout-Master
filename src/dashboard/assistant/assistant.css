@@ -1,0 +1,482 @@
+/*
+ * RecruitScout Assistant — approved visual exception to Glacier (PRODUCT.md,
+ * 2026-11-13): aurora field, live work trace, orb and glow. Colours still come
+ * from Glacier tokens so both themes follow the dashboard toggle.
+ */
+
+.ai-root {
+  --ai-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ai-a: var(--g-accent-500);
+  --ai-b: var(--g-accent-300);
+  --ai-c: 104 64 231;   /* Glacier iris family */
+  --ai-d: 11 122 117;   /* Glacier teal family */
+  --ai-glow: 0.14;
+  position: relative;
+  isolation: isolate;
+}
+html.dark .ai-root {
+  --ai-glow: 0.24;
+}
+
+/* ── Aurora field ─────────────────────────────────────────────────────────── */
+.ai-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 100%);
+}
+.ai-aurora::before,
+.ai-aurora::after,
+.ai-aurora span {
+  content: '';
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: var(--ai-glow);
+  will-change: transform;
+  animation: ai-drift 38s var(--ai-ease) infinite alternate;
+}
+.ai-aurora::before {
+  top: -38vmax;
+  left: -12vmax;
+  background: radial-gradient(circle at center, rgb(var(--ai-a)) 0%, transparent 62%);
+}
+.ai-aurora::after {
+  top: -30vmax;
+  right: -18vmax;
+  background: radial-gradient(circle at center, rgb(var(--ai-c)) 0%, transparent 60%);
+  animation-duration: 46s;
+  animation-direction: alternate-reverse;
+}
+.ai-aurora span {
+  top: -42vmax;
+  left: 28%;
+  background: radial-gradient(circle at center, rgb(var(--ai-d)) 0%, transparent 58%);
+  animation-duration: 54s;
+}
+.ai-root[data-busy='true'] .ai-aurora::before,
+.ai-root[data-busy='true'] .ai-aurora::after,
+.ai-root[data-busy='true'] .ai-aurora span {
+  opacity: calc(var(--ai-glow) * 1.45);
+  transition: opacity 1.2s var(--ai-ease);
+}
+.ai-root[data-hidden='true'] .ai-aurora * ,
+.ai-root[data-hidden='true'] .ai-aurora::before,
+.ai-root[data-hidden='true'] .ai-aurora::after {
+  animation-play-state: paused;
+}
+@keyframes ai-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(6vmax, 4vmax, 0) scale(1.08); }
+  100% { transform: translate3d(-5vmax, 7vmax, 0) scale(0.96); }
+}
+
+/* Fine grid that gives the field depth */
+.ai-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(var(--g-stroke-card) / 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--g-stroke-card) / 0.35) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 55% at 50% 0%, black 0%, transparent 75%);
+}
+
+/* ── Glass surfaces ───────────────────────────────────────────────────────── */
+.ai-glass {
+  background: rgb(var(--g-bg-surface) / 0.72);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgb(var(--g-stroke-card) / 0.9);
+}
+.ai-rail {
+  background: rgb(var(--g-bg-surface) / 0.55);
+  backdrop-filter: blur(22px) saturate(1.3);
+}
+
+/* ── Orb (the Assistant's presence) ───────────────────────────────────────── */
+.ai-orb {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.85) 0%, transparent 34%),
+    conic-gradient(from 210deg, rgb(var(--ai-a)), rgb(var(--ai-d)), rgb(var(--ai-c)), rgb(var(--ai-a)));
+  box-shadow: 0 0 0 1px rgb(var(--g-stroke-card)), 0 6px 18px -4px rgb(var(--ai-a) / 0.55);
+}
+.ai-orb::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, transparent 0deg, rgb(var(--ai-b) / 0.9) 70deg, transparent 140deg);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 1px));
+  opacity: 0;
+  transition: opacity 300ms var(--ai-ease);
+}
+.ai-orb[data-active='true'] {
+  animation: ai-breathe 2.4s ease-in-out infinite;
+}
+.ai-orb[data-active='true']::after {
+  opacity: 1;
+  animation: ai-spin 1.6s linear infinite;
+}
+@keyframes ai-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Live work trace (focal moment) ───────────────────────────────────────── */
+.ai-trace {
+  position: relative;
+  padding-left: 28px;
+}
+.ai-trace::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: linear-gradient(to bottom, rgb(var(--ai-a) / 0.55), rgb(var(--g-stroke-card)) 70%);
+}
+.ai-trace[data-live='true']::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  border-radius: 5px;
+  background-image: linear-gradient(to bottom, transparent, rgb(var(--ai-b)), transparent);
+  background-size: 100% 64px;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 6px rgb(var(--ai-a) / 0.7));
+  animation: ai-scan 1.8s var(--ai-ease) infinite;
+}
+@keyframes ai-scan {
+  from { background-position: 0 -64px; }
+  to { background-position: 0 calc(100% + 64px); }
+}
+
+.ai-step {
+  position: relative;
+  animation: ai-step-in 420ms var(--ai-ease) both;
+}
+.ai-step-node {
+  position: absolute;
+  left: -28px;
+  top: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--g-bg-surface));
+  border: 1px solid rgb(var(--g-stroke-control));
+}
+.ai-step[data-state='running'] .ai-step-node {
+  border-color: rgb(var(--ai-a));
+  box-shadow: 0 0 0 4px rgb(var(--ai-a) / 0.14), 0 0 14px rgb(var(--ai-a) / 0.5);
+  animation: ai-pulse 1.4s ease-in-out infinite;
+}
+.ai-step[data-state='ok'] .ai-step-node {
+  border-color: rgb(var(--g-success-fg) / 0.5);
+  color: rgb(var(--g-success-fg));
+}
+.ai-step[data-state='error'] .ai-step-node {
+  border-color: rgb(var(--g-danger-fg) / 0.5);
+  color: rgb(var(--g-danger-fg));
+}
+.ai-step[data-state='waiting'] .ai-step-node {
+  border-color: rgb(var(--g-warning-fg) / 0.7);
+  color: rgb(var(--g-warning-fg));
+  box-shadow: 0 0 0 4px rgb(var(--g-warning-fg) / 0.12);
+}
+@keyframes ai-step-in {
+  /* the negative left inset keeps the timeline marker (outside the row) visible */
+  from { opacity: 0; transform: translateY(6px); clip-path: inset(0 0 100% -40px); filter: blur(4px); }
+  to { opacity: 1; transform: none; clip-path: inset(-8px -8px -8px -40px); filter: none; }
+}
+@keyframes ai-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgb(var(--ai-a) / 0.14), 0 0 10px rgb(var(--ai-a) / 0.35); }
+  50% { box-shadow: 0 0 0 7px rgb(var(--ai-a) / 0.06), 0 0 18px rgb(var(--ai-a) / 0.6); }
+}
+
+/* Running label: a light sweep under the text, not gradient text */
+.ai-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.ai-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgb(var(--g-bg-surface) / 0.75) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: ai-sweep 1.6s ease-in-out infinite;
+}
+@keyframes ai-sweep {
+  to { transform: translateX(100%); }
+}
+
+/* Result panels unfold in place */
+.ai-unfold {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: ai-unfold 520ms var(--ai-ease) both;
+}
+.ai-unfold > * { min-height: 0; overflow: hidden; }
+@keyframes ai-unfold {
+  from { grid-template-rows: 0fr; opacity: 0; }
+  to { grid-template-rows: 1fr; opacity: 1; }
+}
+
+/* ── Approval card ────────────────────────────────────────────────────────── */
+.ai-approval {
+  position: relative;
+  border-radius: 12px;
+  background: rgb(var(--g-bg-surface));
+  box-shadow: var(--g-shadow-dialog);
+}
+.ai-approval::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  padding: 1px;
+  background: conic-gradient(from var(--ai-angle, 0deg), rgb(var(--g-warning-fg) / 0.9), rgb(var(--ai-c) / 0.6), rgb(var(--ai-a) / 0.8), rgb(var(--g-warning-fg) / 0.9));
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+  animation: ai-ring 4s linear infinite;
+  pointer-events: none;
+}
+@property --ai-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes ai-ring {
+  to { --ai-angle: 360deg; }
+}
+
+/* ── Streaming caret ──────────────────────────────────────────────────────── */
+.ai-caret::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  border-radius: 1px;
+  background: rgb(var(--ai-a));
+  box-shadow: 0 0 8px rgb(var(--ai-a) / 0.8);
+  animation: ai-blink 1s steps(2, start) infinite;
+}
+@keyframes ai-blink {
+  to { visibility: hidden; }
+}
+
+/* ── Composer ─────────────────────────────────────────────────────────────── */
+.ai-composer {
+  position: relative;
+  border-radius: 16px;
+  transition: box-shadow 300ms var(--ai-ease);
+}
+.ai-composer::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1px;
+  background: linear-gradient(120deg, rgb(var(--ai-a) / 0.9), rgb(var(--ai-c) / 0.7), rgb(var(--ai-d) / 0.9));
+  mask: linear-gradient(black 0 0) content-box, linear-gradient(black 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 300ms var(--ai-ease);
+  pointer-events: none;
+}
+.ai-composer:focus-within::before {
+  opacity: 1;
+}
+.ai-composer:focus-within {
+  box-shadow: 0 12px 40px -12px rgb(var(--ai-a) / 0.45), var(--g-shadow-card);
+}
+
+/* The composer's glow is the focus indicator for its text field */
+.ai-composer textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Messages arrive */
+.ai-in {
+  animation: ai-in 360ms var(--ai-ease) both;
+}
+@keyframes ai-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Slide-over panel */
+.ai-panel-enter {
+  animation: ai-panel 320ms var(--ai-ease) both;
+}
+@keyframes ai-panel {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* Markdown */
+.ai-md > * + * { margin-top: 0.75em; }
+.ai-md h1, .ai-md h2, .ai-md h3 { font-weight: 600; color: rgb(var(--g-fg)); line-height: 1.35; }
+.ai-md h1 { font-size: 20px; }
+.ai-md h2 { font-size: 18px; }
+.ai-md h3 { font-size: 16px; }
+.ai-md ul, .ai-md ol { padding-left: 1.25em; }
+.ai-md ul { list-style: disc; }
+.ai-md ol { list-style: decimal; }
+.ai-md li + li { margin-top: 0.3em; }
+.ai-md li::marker { color: rgb(var(--g-fg-subtle)); }
+.ai-md strong { font-weight: 600; color: rgb(var(--g-fg)); }
+.ai-md a { color: rgb(var(--g-accent-text)); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(var(--g-accent-text) / 0.4); }
+.ai-md code { font-family: var(--g-font-mono); font-size: 0.86em; padding: 1px 5px; border-radius: 4px; background: rgb(var(--g-bg-subtle)); }
+.ai-md pre { padding: 12px 14px; border-radius: 8px; background: rgb(var(--g-bg-subtle)); overflow-x: auto; }
+.ai-md pre code { padding: 0; background: none; }
+.ai-md blockquote { padding-left: 12px; border-left: 1px solid rgb(var(--g-stroke-control)); color: rgb(var(--g-fg-muted)); }
+.ai-md hr { border: 0; border-top: 1px solid rgb(var(--g-stroke-divider)); }
+
+/* Themed browser surfaces */
+.ai-root ::selection { background: rgb(var(--ai-a) / 0.25); }
+.ai-root textarea { caret-color: rgb(var(--ai-a)); }
+
+/* ── Reduced motion: keep state changes, drop movement ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ai-aurora::before, .ai-aurora::after, .ai-aurora span,
+  .ai-orb[data-active='true'], .ai-orb[data-active='true']::after,
+  .ai-trace[data-live='true']::after, .ai-sweep::after, .ai-approval::before,
+  .ai-step[data-state='running'] .ai-step-node {
+    animation: none;
+  }
+  .ai-step, .ai-in, .ai-unfold, .ai-panel-enter {
+    animation-duration: 1ms;
+  }
+  .ai-caret::after { animation: none; }
+}
+
+
+/* ── Patterns adapted from Beautiful UI (MIT): pixel loader, chips, capsules ── */
+.ai-pixels {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 3px);
+  gap: 1.5px;
+  flex-shrink: 0;
+}
+.ai-pixels i {
+  width: 3px;
+  height: 3px;
+  border-radius: 0.5px;
+  background: rgb(var(--g-fg-muted));
+  opacity: 0.25;
+  animation: ai-pixel 1.2s ease-in-out infinite;
+}
+.ai-pixels i:nth-child(1) { animation-delay: 0ms; }
+.ai-pixels i:nth-child(2) { animation-delay: 120ms; }
+.ai-pixels i:nth-child(3) { animation-delay: 240ms; }
+.ai-pixels i:nth-child(4) { animation-delay: 360ms; }
+.ai-pixels i:nth-child(5) { animation-delay: 480ms; background: rgb(var(--ai-a)); }
+.ai-pixels i:nth-child(6) { animation-delay: 600ms; }
+.ai-pixels i:nth-child(7) { animation-delay: 720ms; }
+.ai-pixels i:nth-child(8) { animation-delay: 840ms; }
+.ai-pixels i:nth-child(9) { animation-delay: 960ms; }
+@keyframes ai-pixel {
+  0%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+
+/* Text shimmer for the live verb: a light band passes over muted text */
+.ai-shimmer {
+  color: rgb(var(--g-fg-subtle));
+  background: linear-gradient(90deg, rgb(var(--g-fg-subtle)) 0%, rgb(var(--g-fg)) 50%, rgb(var(--g-fg-subtle)) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ai-shimmer 2s linear infinite;
+}
+@keyframes ai-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+/* Tool chip detail: compact mono pill next to the step label */
+.ai-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: rgb(var(--g-bg-subtle) / 0.8);
+  border: 1px solid rgb(var(--g-stroke-divider));
+  font-family: var(--g-font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  color: rgb(var(--g-fg-muted));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Option rows in the approval card */
+.ai-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: rgb(var(--g-fg-muted));
+  text-align: left;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.ai-option:hover { background: var(--g-bg-hover); color: rgb(var(--g-fg)); }
+.ai-option[aria-checked='true'] { background: rgb(var(--g-accent-subtle)); color: rgb(var(--g-fg)); }
+.ai-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--g-stroke-accessible));
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.ai-option[aria-checked='true'] .ai-radio {
+  border-color: rgb(var(--g-accent));
+}
+.ai-option[aria-checked='true'] .ai-radio::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgb(var(--g-accent));
+}
+
+/* Collapsed work summary */
+.ai-summary-chevron { transition: transform 200ms var(--ai-ease); }
+[aria-expanded='true'] > .ai-summary-chevron { transform: rotate(180deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-pixels i, .ai-shimmer { animation: none; }
+  .ai-pixels i { opacity: 0.6; }
+  .ai-shimmer { -webkit-text-fill-color: currentColor; color: rgb(var(--g-fg-muted)); background: none; }
+}

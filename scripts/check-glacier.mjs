@@ -35,6 +35,10 @@ const EXEMPT_RULES_BY_FILE = {
   'src/dashboard/GraphTab.tsx': ['raw-colour'],
   // Outreach email HTML sent to recruiters is email content, not app UI
   'src/dashboard/LeadsFlowTab.tsx': ['raw-colour', 'emoji', 'font-family'],
+  // Recruiter lead email templates (email HTML, moved out of LeadsFlowTab)
+  'src/shared/leadEmail.ts': ['raw-colour', 'emoji', 'font-family'],
+  // Approved Assistant visual exception (PRODUCT.md, 2026-11-13): aurora, glow and glass live in this file
+  'src/dashboard/assistant/assistant.css': ['raw-colour', 'gradient', 'blur', 'arbitrary-shadow'],
   'src/dashboard/RecruiterDashboard.tsx': ['raw-colour'],
   // Blue.cc tag colours come from Blue.cc at runtime
   'src/blue/App.tsx': [],

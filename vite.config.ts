@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   
   return {
     define: {
-      'import.meta.env.VITE_OPENAI_API_KEY': JSON.stringify(env.VITE_OPENAI_API_KEY),
+      // The OpenAI key lives only on the server (supabase/functions/assistant-chat); never define it here
       'import.meta.env.VITE_PINECONE_API_KEY': JSON.stringify(env.VITE_PINECONE_API_KEY),
       'import.meta.env.VITE_PINECONE_INDEX': JSON.stringify(env.VITE_PINECONE_INDEX),
     },
