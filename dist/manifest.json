@@ -52,6 +52,7 @@
     "https://next-api.useplunk.com/*",
     "https://sheets.googleapis.com/*",
     "https://www.googleapis.com/*",
+    "https://api.openai.com/*",
     "https://autocomplete.clearbit.com/*",
     "https://qyceqgttvvairnaxwicm.supabase.co/*",
     "https://*.supabase.co/*",

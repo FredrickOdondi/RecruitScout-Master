@@ -297,7 +297,7 @@ export default function AssistantTab({ sendMessage, focusNonce = 0 }: Props) {
         <div className="h-12 px-4 md:px-6 flex items-center gap-2 border-b border-stroke-card bg-chrome/80">
           <MessageSquare size={18} className="text-accent-text" />
           <span className="text-sm font-medium text-fg">Assistant</span>
-          <span className="text-xs text-fg-subtle hidden sm:inline">OpenAI · tools over live RecruitScout APIs</span>
+          <span className="text-xs text-fg-subtle hidden sm:inline">GPT-6 Astra · tools over live RecruitScout APIs</span>
           <button type="button" onClick={startNewChat} className="lg:hidden ml-auto btn-ghost text-xs gap-1">
             <Plus size={14} /> New
           </button>

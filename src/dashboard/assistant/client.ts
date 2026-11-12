@@ -12,7 +12,9 @@ import type {
 } from './types';
 
 const MAX_TOOL_ROUNDS = 10;
-const MODEL = 'gpt-4.1';
+const MODEL = 'gpt-6-astra';
+
+type ResponseInputItem = Record<string, unknown>;
 
 function summarizeArgs(args: unknown): string {
   try {
@@ -32,35 +34,95 @@ function summarizeResult(result: ToolResult): string {
   }
 }
 
-async function callOpenAI(messages: ChatMessage[]): Promise<ChatMessage> {
+/** Convert stored chat history into Responses API input items. */
+function chatToResponseInput(messages: ChatMessage[]): ResponseInputItem[] {
+  const input: ResponseInputItem[] = [];
+  for (const m of messages) {
+    if (m.role === 'user') {
+      input.push({ role: 'user', content: m.content || '' });
+      continue;
+    }
+    if (m.role === 'assistant') {
+      if (m.tool_calls?.length) {
+        for (const call of m.tool_calls) {
+          input.push({
+            type: 'function_call',
+            call_id: call.id,
+            name: call.function.name,
+            arguments: call.function.arguments || '{}',
+          });
+        }
+      }
+      if (m.content) {
+        input.push({ role: 'assistant', content: m.content });
+      }
+      continue;
+    }
+    if (m.role === 'tool' && m.tool_call_id) {
+      input.push({
+        type: 'function_call_output',
+        call_id: m.tool_call_id,
+        output: m.content || '',
+      });
+    }
+  }
+  return input;
+}
+
+function extractAssistantMessage(data: any): {
+  message: ChatMessage;
+  rawOutput: any[];
+} {
+  const output: any[] = Array.isArray(data.output) ? data.output : [];
+  const functionCalls = output.filter((item) => item?.type === 'function_call');
+  const textParts: string[] = [];
+
+  if (typeof data.output_text === 'string' && data.output_text.trim()) {
+    textParts.push(data.output_text);
+  } else {
+    for (const item of output) {
+      if (item?.type === 'message' && Array.isArray(item.content)) {
+        for (const part of item.content) {
+          if (part?.type === 'output_text' && part.text) textParts.push(part.text);
+          else if (typeof part?.text === 'string') textParts.push(part.text);
+        }
+      }
+    }
+  }
+
+  const tool_calls: OpenAIToolCall[] | undefined = functionCalls.length
+    ? functionCalls.map((fc) => ({
+        id: fc.call_id || fc.id,
+        type: 'function' as const,
+        function: {
+          name: fc.name,
+          arguments: typeof fc.arguments === 'string' ? fc.arguments : JSON.stringify(fc.arguments || {}),
+        },
+      }))
+    : undefined;
+
+  return {
+    message: {
+      role: 'assistant',
+      content: textParts.join('\n').trim() || null,
+      tool_calls,
+    },
+    rawOutput: output,
+  };
+}
+
+async function callResponsesApi(input: ResponseInputItem[]): Promise<{
+  message: ChatMessage;
+  rawOutput: any[];
+}> {
   const session = supabaseClient.getSession();
   const token = session?.access_token || SUPABASE_ANON_KEY;
-  const tools = toolsForOpenAI();
-
   const payload = {
     model: MODEL,
-    messages: [
-      { role: 'system', content: ASSISTANT_SYSTEM_PROMPT },
-      ...messages.map((m) => {
-        if (m.role === 'tool') {
-          return {
-            role: 'tool',
-            tool_call_id: m.tool_call_id,
-            content: m.content || '',
-          };
-        }
-        if (m.role === 'assistant' && m.tool_calls?.length) {
-          return {
-            role: 'assistant',
-            content: m.content,
-            tool_calls: m.tool_calls,
-          };
-        }
-        return { role: m.role, content: m.content };
-      }),
-    ],
-    tools,
-    tool_choice: 'auto',
+    instructions: ASSISTANT_SYSTEM_PROMPT,
+    input,
+    tools: toolsForOpenAI(),
+    tool_choice: 'auto' as const,
   };
 
   // 1) Prefer edge function (server-held OPENAI_API_KEY)
@@ -73,17 +135,13 @@ async function callOpenAI(messages: ChatMessage[]): Promise<ChatMessage> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(120000),
+      signal: AbortSignal.timeout(180000),
     });
     if (edgeRes.ok) {
       const data = await edgeRes.json();
-      const msg = data.message || data.choices?.[0]?.message;
-      if (msg) {
-        return {
-          role: 'assistant',
-          content: msg.content ?? null,
-          tool_calls: msg.tool_calls,
-        };
+      const body = data.response || data;
+      if (body?.output || body?.output_text) {
+        return extractAssistantMessage(body);
       }
     }
   } catch {
@@ -98,27 +156,20 @@ async function callOpenAI(messages: ChatMessage[]): Promise<ChatMessage> {
     );
   }
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${directKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(120000),
+    signal: AbortSignal.timeout(180000),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`OpenAI HTTP ${res.status}: ${text.slice(0, 300)}`);
+    throw new Error(`OpenAI HTTP ${res.status}: ${text.slice(0, 400)}`);
   }
-  const data = await res.json();
-  const msg = data.choices?.[0]?.message;
-  if (!msg) throw new Error('Empty OpenAI response');
-  return {
-    role: 'assistant',
-    content: msg.content ?? null,
-    tool_calls: msg.tool_calls,
-  };
+  return extractAssistantMessage(await res.json());
 }
 
 function waitForConfirmation(
@@ -156,13 +207,32 @@ export async function runAssistantTurn(opts: {
   messages.push(userMsg);
   await appendMessage(threadId, userMsg).catch(() => {});
 
+  // Responses-native input for the active turn (preserves reasoning items for Astra)
+  let responseInput: ResponseInputItem[] = chatToResponseInput(messages);
+
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     if (signal?.aborted) throw new Error('Cancelled');
 
     onEvent({ type: 'status', message: round === 0 ? 'Thinking…' : 'Continuing…' });
-    const assistant = await callOpenAI(messages);
+
+    const { message: assistant, rawOutput } = await callResponsesApi(responseInput);
     messages.push(assistant);
     await appendMessage(threadId, assistant).catch(() => {});
+
+    if (rawOutput.length) {
+      responseInput = [...responseInput, ...rawOutput];
+    } else if (assistant.tool_calls?.length) {
+      for (const call of assistant.tool_calls) {
+        responseInput.push({
+          type: 'function_call',
+          call_id: call.id,
+          name: call.function.name,
+          arguments: call.function.arguments || '{}',
+        });
+      }
+    } else if (assistant.content) {
+      responseInput.push({ role: 'assistant', content: assistant.content });
+    }
 
     const toolCalls = (assistant.tool_calls || []) as OpenAIToolCall[];
     if (!toolCalls.length) {
@@ -258,20 +328,24 @@ export async function runAssistantTurn(opts: {
         durationMs: Date.now() - started,
       });
 
+      const outputPayload = JSON.stringify(
+        result.ok ? result.data : { error: result.error },
+      );
+
       const toolMsg: ChatMessage = {
         role: 'tool',
         tool_call_id: call.id,
         name: call.function.name,
-        content: JSON.stringify(
-          result.needsConfirmation
-            ? { error: 'Confirmation was required' }
-            : result.ok
-              ? result.data
-              : { error: result.error },
-        ),
+        content: outputPayload,
       };
       messages.push(toolMsg);
       await appendMessage(threadId, toolMsg).catch(() => {});
+
+      responseInput.push({
+        type: 'function_call_output',
+        call_id: call.id,
+        output: outputPayload,
+      });
     }
   }
 

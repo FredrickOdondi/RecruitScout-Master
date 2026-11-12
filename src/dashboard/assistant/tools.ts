@@ -457,14 +457,13 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   },
 ];
 
+/** Tool defs for the OpenAI Responses API (required for gpt-6-astra + function tools). */
 export function toolsForOpenAI() {
   return ASSISTANT_TOOLS.map((t) => ({
     type: 'function' as const,
-    function: {
-      name: t.name,
-      description: t.description,
-      parameters: t.parameters,
-    },
+    name: t.name,
+    description: t.description,
+    parameters: t.parameters,
   }));
 }
 

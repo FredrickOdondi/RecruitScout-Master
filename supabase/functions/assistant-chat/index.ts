@@ -30,7 +30,6 @@ serve(async (req) => {
   const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const authHeader = req.headers.get("Authorization") || "";
 
-  // Require a real user JWT (not just the anon key) when possible
   try {
     const supabase = createClient(supabaseUrl, supabaseAnon, {
       global: { headers: { Authorization: authHeader } },
@@ -59,18 +58,21 @@ serve(async (req) => {
     });
   }
 
-  const model = body.model || "gpt-4.1";
-  const messages = body.messages;
+  const model = body.model || "gpt-6-astra";
+  const input = body.input;
   const tools = body.tools;
-  if (!Array.isArray(messages)) {
-    return new Response(JSON.stringify({ error: "messages required" }), {
+  const instructions = body.instructions;
+
+  if (!Array.isArray(input)) {
+    return new Response(JSON.stringify({ error: "input required (Responses API)" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
-    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    // gpt-6-astra requires /v1/responses when using function tools with reasoning
+    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${openaiKey}`,
@@ -78,24 +80,23 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        messages,
+        instructions,
+        input,
         tools,
         tool_choice: body.tool_choice || "auto",
-        temperature: 0.2,
       }),
     });
 
     const text = await openaiRes.text();
     if (!openaiRes.ok) {
-      return new Response(JSON.stringify({ error: `OpenAI ${openaiRes.status}`, detail: text.slice(0, 500) }), {
+      return new Response(JSON.stringify({ error: `OpenAI ${openaiRes.status}`, detail: text.slice(0, 800) }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = JSON.parse(text);
-    const message = data.choices?.[0]?.message;
-    return new Response(JSON.stringify({ message, usage: data.usage }), {
+    return new Response(JSON.stringify(data), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
