@@ -24,6 +24,21 @@ export default {
   ],
   theme: {
     extend: {
+      // Glacier type ramp. Every Tailwind size lands on a Glacier style:
+      // caption 12/16, body 14/20, subtitle 16/22, title-3 20/28, title-2 24/32,
+      // title-1 28/36, display 40/52. There is no 18px or 30px+ size.
+      fontSize: {
+        xs: ['12px', '16px'],
+        sm: ['14px', '20px'],
+        base: ['16px', '22px'],
+        lg: ['16px', '22px'],
+        xl: ['20px', '28px'],
+        '2xl': ['24px', '32px'],
+        '3xl': ['28px', '36px'],
+        '4xl': ['40px', '52px'],
+        '5xl': ['40px', '52px'],
+        '6xl': ['40px', '52px'],
+      },
       fontFamily: {
         sans: ['var(--g-font-sans)'],
         mono: ['var(--g-font-mono)'],

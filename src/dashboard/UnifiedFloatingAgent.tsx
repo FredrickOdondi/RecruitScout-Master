@@ -81,8 +81,8 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  </div>
  <div className={`max-w-[85%] px-4 py-3 shadow-sm ${
  m.role ==='user' 
- ?'bg-blue-600 text-white rounded-2xl rounded-tr-sm' 
- :'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.03)]'
+ ?'bg-blue-600 text-white rounded-2xl rounded-tr' 
+ :'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl shadow-card'
  }`}>
  {m.role ==='assistant' ? (
  <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-xs">
@@ -99,7 +99,7 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex shrink-0 items-center justify-center shadow-sm">
  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/></svg>
  </div>
- <div className="bg-white border border-gray-100/50 rounded-2xl rounded-tl-sm px-4 py-3 shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex items-center gap-1.5 h-10">
+ <div className="bg-white border border-gray-100/50 rounded-2xl rounded-tl px-4 py-3 shadow-card flex items-center gap-1.5 h-10">
  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay:'150ms' }}></div>
  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay:'300ms' }}></div>
@@ -110,13 +110,13 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  </div>
 
  <div className="p-4 bg-transparent shrink-0">
- <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end bg-white border border-gray-200 rounded-3xl p-1.5 shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-shadow focus-within:shadow-[0_4px_20px_rgb(37,99,235,0.1)] focus-within:border-blue-400/50">
+ <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end bg-white border border-gray-200 rounded-2xl p-1.5 shadow-dialog transition-shadow focus-within:border-blue-400/50">
  <textarea
  value={input}
  onChange={(e) => { setInput(e.target.value); e.target.style.height ='auto'; e.target.style.height =`${Math.min(e.target.scrollHeight, 150)}px`; }}
  onKeyDown={(e) => { if (e.key ==='Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
  placeholder="Ask the agent..."
- className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
+ className="flex-1 bg-transparent border-none rounded-2xl pl-4 pr-12 py-2.5 text-xs text-gray-800 placeholder-gray-400 resize-none overflow-y-auto"
  style={{ minHeight:'44px', maxHeight:'150px' }}
  disabled={isLoading || !agentApp}
  rows={1}
@@ -126,7 +126,7 @@ function LangGraphChat({ agentApp, threadId, initialMessages }: { agentApp: any,
  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" /></svg>
  </button>
  ) : (
- <button type="submit" disabled={!input.trim() || !agentApp} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-sm active:scale-95">
+ <button type="submit" disabled={!input.trim() || !agentApp} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:bg-subtle disabled:text-fg-subtle disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-sm">
  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
  </button>
  )}
@@ -232,8 +232,8 @@ ${contextChunks}
  </div>
  <div className={`max-w-[85%] px-4 py-3 shadow-sm ${
  m.role ==='user' 
- ?'bg-blue-600 text-white rounded-2xl rounded-tr-sm' 
- :'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl-sm shadow-[0_2px_10px_rgb(0,0,0,0.03)]'
+ ?'bg-blue-600 text-white rounded-2xl rounded-tr' 
+ :'bg-white border border-gray-100/50 text-gray-800 rounded-2xl rounded-tl shadow-card'
  }`}>
  {m.role ==='assistant' ? (
  <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-50 prose-pre:text-gray-800 prose-pre:border prose-pre:border-gray-100 text-xs">
@@ -250,7 +250,7 @@ ${contextChunks}
  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex shrink-0 items-center justify-center shadow-sm">
  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
  </div>
- <div className="bg-white border border-gray-100/50 rounded-2xl rounded-tl-sm px-4 py-3 shadow-[0_2px_10px_rgb(0,0,0,0.03)] flex items-center gap-1.5 h-10">
+ <div className="bg-white border border-gray-100/50 rounded-2xl rounded-tl px-4 py-3 shadow-card flex items-center gap-1.5 h-10">
  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay:'150ms' }}></div>
  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay:'300ms' }}></div>
@@ -261,13 +261,13 @@ ${contextChunks}
  </div>
 
  <div className="p-4 bg-transparent shrink-0">
- <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end bg-white border border-gray-200 rounded-3xl p-1.5 shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-shadow focus-within:shadow-[0_4px_20px_rgb(37,99,235,0.1)] focus-within:border-blue-400/50">
+ <form onSubmit={handleSubmit} className="flex gap-2 relative w-full items-end bg-white border border-gray-200 rounded-2xl p-1.5 shadow-dialog transition-shadow focus-within:border-blue-400/50">
  <textarea
  value={input}
  onChange={(e) => { setInput(e.target.value); e.target.style.height ='auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`; }}
  onKeyDown={(e) => { if (e.key ==='Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e as any); } }}
  placeholder="Ask standard RAG..."
- className="flex-1 bg-transparent border-none rounded-3xl pl-4 pr-12 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none resize-none overflow-y-auto"
+ className="flex-1 bg-transparent border-none rounded-2xl pl-4 pr-12 py-2.5 text-xs text-gray-800 placeholder-gray-400 resize-none overflow-y-auto"
  style={{ minHeight:'44px', maxHeight:'150px' }}
  disabled={isLoading || !clients}
  rows={1}
@@ -277,7 +277,7 @@ ${contextChunks}
  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" /></svg>
  </button>
  ) : (
- <button type="submit" disabled={!input.trim() || !clients} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-sm active:scale-95">
+ <button type="submit" disabled={!input.trim() || !clients} className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:bg-subtle disabled:text-fg-subtle disabled:bg-gray-300 disabled:text-gray-500 transition-colors shadow-sm">
  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
  </button>
  )}
@@ -471,16 +471,16 @@ export default function UnifiedFloatingAgent() {
  return (
  <button 
  onClick={() => setIsOpen(true)}
- className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-white border border-gray-200/60 text-gray-800 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:scale-105 transition-all duration-300 group"
+ className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-white border border-gray-200/60 text-gray-800 rounded-full flex items-center justify-center shadow-dialog hover:shadow-dialog transition-all duration-300 group"
  >
- <svg className="w-7 h-7 text-blue-600 group-hover:rotate-12 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
+ <svg className="w-7 h-7 text-blue-600 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
  </button>
  );
  }
 
  return (
  <div 
- className="fixed bottom-6 right-6 z-50 bg-white -3xl rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.1)] border border-white/50 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300"
+ className="fixed bottom-6 right-6 z-50 bg-white -3xl rounded-2xl shadow-dialog border border-white/50 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300"
  style={{ width: size.width, height: size.height }}
  >
  {/* Invisible Drag Handles */}
@@ -533,23 +533,23 @@ export default function UnifiedFloatingAgent() {
  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
  </div>
  <div>
- <h2 className="text-base font-bold text-gray-900">Agent configuration</h2>
+ <h2 className="text-base font-semibold text-gray-900">Agent configuration</h2>
  <p className="text-xs text-gray-500">Settings apply to both AI modes.</p>
  </div>
  </div>
  <form onSubmit={handleSaveCredentials} className="space-y-5">
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Gemini API key</label><input type="password" required value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">OpenAI API key (for Pinecone embeddings)</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Pinecone API key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Pinecone index name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Gemini API key</label><input type="password" required value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">OpenAI API key (for Pinecone embeddings)</label><input type="password" required value={openaiKey} onChange={(e) => setOpenaiKey(e.target.value)} placeholder="sk-..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Pinecone API key</label><input type="password" required value={pineconeKey} onChange={(e) => setPineconeKey(e.target.value)} placeholder="pcsk_..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Pinecone index name</label><input type="text" required value={pineconeIndex} onChange={(e) => setPineconeIndex(e.target.value)} placeholder="recruitscout" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
  
- <div className="pt-4 border-t border-gray-200/60 mt-4"><h3 className="text-xs font-bold text-gray-800 mb-3">Blue.cc integration (optional)</h3></div>
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Token ID</label><input type="text" value={blueccTokenId} onChange={(e) => setBlueccTokenId(e.target.value)} placeholder="e.g. 5x..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Secret ID</label><input type="password" value={blueccSecretId} onChange={(e) => setBlueccSecretId(e.target.value)} placeholder="secret..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
- <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Company ID</label><input type="text" value={blueccCompanyId} onChange={(e) => setBlueccCompanyId(e.target.value)} placeholder="(Optional)" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm" /></div>
+ <div className="pt-4 border-t border-gray-200/60 mt-4"><h3 className="text-xs font-semibold text-gray-800 mb-3">Blue.cc integration (optional)</h3></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Token ID</label><input type="text" value={blueccTokenId} onChange={(e) => setBlueccTokenId(e.target.value)} placeholder="e.g. 5x..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Secret ID</label><input type="password" value={blueccSecretId} onChange={(e) => setBlueccSecretId(e.target.value)} placeholder="secret..." className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
+ <div><label className="block text-xs font-medium text-gray-700 mb-1.5">Company ID</label><input type="text" value={blueccCompanyId} onChange={(e) => setBlueccCompanyId(e.target.value)} placeholder="(Optional)" className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-500 shadow-sm" /></div>
 
  <div className="pt-4">
- <button type="submit" disabled={savingConfig} className="w-full bg-gray-900 text-white font-medium rounded-xl px-4 py-3 hover:bg-black disabled:opacity-70 flex justify-center items-center gap-2 transition-colors text-xs">
+ <button type="submit" disabled={savingConfig} className="w-full bg-gray-900 text-white font-medium rounded-xl px-4 py-3 hover:bg-black disabled:bg-subtle disabled:text-fg-subtle flex justify-center items-center gap-2 transition-colors text-xs">
  {savingConfig ? (<><div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>Saving...</>) :'Save configuration'}
  </button>
  </div>

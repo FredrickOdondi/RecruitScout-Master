@@ -14,7 +14,7 @@ export default function Header() {
 
  {/* Title */}
  <div>
- <h1 className="text-lg font-bold text-gray-900">RecruitScout</h1>
+ <h1 className="text-lg font-semibold text-gray-900">RecruitScout</h1>
  <p className="text-xs text-gray-500">Job Data Extractor</p>
  </div>
  </div>

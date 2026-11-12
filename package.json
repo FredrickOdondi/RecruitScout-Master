@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:dashboard": "tsc && vite build -c vite.dashboard.config.ts",
-    "build:blue": "tsc && vite build -c vite.blue.config.ts",
+    "build": "tsc && node scripts/check-glacier.mjs && vite build",
+    "build:dashboard": "tsc && node scripts/check-glacier.mjs && vite build -c vite.dashboard.config.ts",
+    "build:blue": "tsc && node scripts/check-glacier.mjs && vite build -c vite.blue.config.ts",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "check:glacier": "node scripts/check-glacier.mjs",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "generate-icons": "node scripts/generate-icons.js"

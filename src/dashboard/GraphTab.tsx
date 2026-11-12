@@ -660,13 +660,13 @@ export const GraphTab: React.FC = () => {
       {/* TOP FLOATING BAR: Brand Pill + Quick Legends */}
       <div className="absolute top-4 left-4 z-10 flex flex-col sm:flex-row items-start sm:items-center gap-3 pointer-events-none">
         {/* Title Badge */}
-        <div className={`px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 pointer-events-auto backdrop-blur-xl border transition-all ${
-          'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/60'
+        <div className={`px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 pointer-events-auto border transition-all ${
+          'bg-white/90 border-slate-200 text-slate-900'
         }`}>
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm tracking-tight">Knowledge graph</span>
+              <span className="font-semibold text-sm">Knowledge graph</span>
               <span className={`text-xs font-mono px-1.5 py-0.5 rounded border ${
                 'bg-slate-100 text-slate-600 border-slate-200'
               }`}>
@@ -680,8 +680,8 @@ export const GraphTab: React.FC = () => {
         </div>
 
         {/* Interactive Group Legend Pills (Click to toggle group visibility) */}
-        <div className={`px-3 py-1.5 rounded-2xl shadow-xl flex flex-wrap items-center gap-2 pointer-events-auto backdrop-blur-xl border transition-all ${
-          'bg-white/85 border-slate-200 shadow-slate-200/50'
+        <div className={`px-3 py-1.5 rounded-2xl shadow-xl flex flex-wrap items-center gap-2 pointer-events-auto border transition-all ${
+          'bg-white/85 border-slate-200'
         }`}>
           {(['client', 'recruiter', 'category', 'job', 'source'] as NodeGroup[]).map(group => {
             const isVisible = visibleGroups[group];
@@ -718,7 +718,7 @@ export const GraphTab: React.FC = () => {
         {/* Theme Switcher Button */}
         <button
           onClick={toggleTheme}
-          className={`p-2 rounded-xl backdrop-blur-xl border transition-all shadow-xl flex items-center justify-center ${
+          className={`p-2 rounded-xl border transition-all shadow-xl flex items-center justify-center ${
             'bg-white/90 border-slate-200 text-indigo-600 hover:bg-slate-100 hover:text-indigo-700'
           }`}
           title={isDark ? "Switch to light theme" : "Switch to dark theme"}
@@ -730,7 +730,7 @@ export const GraphTab: React.FC = () => {
         <select 
           value={filterJobCount}
           onChange={(e) => setFilterJobCount(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-          className={`backdrop-blur-xl border rounded-xl px-3.5 py-2 text-xs font-medium shadow-xl outline-none cursor-pointer transition-colors ${
+          className={` border rounded-xl px-3.5 py-2 text-xs font-medium shadow-xl cursor-pointer transition-colors ${
             'bg-white/90 border-slate-200 text-slate-700 focus:border-slate-400'
           }`}
         >
@@ -743,7 +743,7 @@ export const GraphTab: React.FC = () => {
         {/* Settings Toggle Button */}
         <button
           onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-          className={`p-2 rounded-xl backdrop-blur-xl border transition-all shadow-xl ${
+          className={`p-2 rounded-xl border transition-all shadow-xl ${
             isSettingsOpen 
               ? 'bg-primary-500/20 border-primary-500 text-primary-400' 
               : ('bg-white/90 border-slate-200 text-slate-700 hover:bg-slate-100')
@@ -755,8 +755,8 @@ export const GraphTab: React.FC = () => {
       </div>
 
       {/* BOTTOM-RIGHT FLOATING HUD: Zoom & Simulation Tools */}
-      <div className={`absolute bottom-6 right-6 z-10 flex items-center gap-1.5 backdrop-blur-xl border p-1.5 rounded-2xl shadow-2xl pointer-events-auto transition-all ${
-        'bg-white/90 border-slate-200 shadow-slate-300/60'
+      <div className={`absolute bottom-6 right-6 z-10 flex items-center gap-1.5 border p-1.5 rounded-2xl shadow-2xl pointer-events-auto transition-all ${
+        'bg-white/90 border-slate-200'
       }`}>
         <button
           onClick={handleZoomIn}
@@ -801,8 +801,8 @@ export const GraphTab: React.FC = () => {
 
       {/* GRAPH SETTINGS DRAWER */}
       {isSettingsOpen && (
-        <div className={`absolute top-16 right-4 z-20 w-80 backdrop-blur-2xl border rounded-2xl shadow-2xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-100px)] overflow-y-auto transition-all ${
-          'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
+        <div className={`absolute top-16 right-4 z-20 w-80 border rounded-2xl shadow-2xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 max-h-[calc(100vh-100px)] overflow-y-auto transition-all ${
+          'bg-white/95 border-slate-200 text-slate-800'
         }`}>
           <div className={`flex items-center justify-between pb-3 border-b ${'border-slate-200'}`}>
             <div className="flex items-center gap-2">
@@ -848,7 +848,7 @@ export const GraphTab: React.FC = () => {
                 placeholder="Type title, company, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full rounded-xl pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-primary-500 border transition-colors ${
+                className={`w-full rounded-xl pl-9 pr-3 py-1.5 text-xs focus:border-primary-500 border transition-colors ${
                   'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
                 }`}
               />
@@ -999,7 +999,7 @@ export const GraphTab: React.FC = () => {
       {/* MAIN GRAPH CANVAS AREA */}
       <div className="flex-1 w-full relative h-full" ref={containerRef}>
         {loading && (
-          <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center backdrop-blur-md transition-colors ${
+          <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center transition-colors ${
             'bg-slate-50/80'
           }`}>
             <div className={`w-12 h-12 rounded-2xl border shadow-2xl flex items-center justify-center animate-pulse ${
@@ -1044,10 +1044,10 @@ export const GraphTab: React.FC = () => {
       </div>
 
       {/* NODE INSPECTOR (Side Slide-over Drawer) */}
-      <div className={`absolute top-0 right-0 bottom-0 w-84 sm:w-96 backdrop-blur-2xl border-l transition-transform duration-300 ease-in-out z-30 shadow-2xl flex flex-col ${
+      <div className={`absolute top-0 right-0 bottom-0 w-84 sm:w-96 border-l transition-transform duration-300 ease-in-out z-30 shadow-2xl flex flex-col ${
         selectedNode ? 'translate-x-0' : 'translate-x-full'
       } ${
-        'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/50'
+        'bg-white/95 border-slate-200 text-slate-800'
       }`}>
         {selectedNode && (
           <div className="h-full flex flex-col">
@@ -1079,7 +1079,7 @@ export const GraphTab: React.FC = () => {
             {/* Content Body */}
             <div className="p-5 overflow-y-auto flex-1 flex flex-col gap-6">
               <div>
-                <h3 className={`text-lg font-bold tracking-tight leading-snug ${'text-slate-900'}`}>
+                <h3 className={`text-lg font-semibold leading-snug ${'text-slate-900'}`}>
                   {selectedNode.name}
                 </h3>
                 
@@ -1127,7 +1127,7 @@ export const GraphTab: React.FC = () => {
                           {neighbor.name}
                         </span>
                       </div>
-                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 ${
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${
                         'text-slate-400 group-hover:text-slate-600'
                       }`} />
                     </button>

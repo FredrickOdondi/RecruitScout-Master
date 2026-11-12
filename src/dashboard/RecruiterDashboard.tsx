@@ -71,8 +71,8 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
 
  // 3. Teaser Status
  const teaserData = [
- { name:'Leads sent', value: leadsBeforeTeaser, color:'#0284c7' }, // sky-600
- { name:'Remaining to teaser', value: Math.max(0, teaserThreshold - leadsBeforeTeaser), color:'#e0f2fe' } // sky-100
+ { name:'Leads sent', value: leadsBeforeTeaser, color:'#1E70A7' }, // Glacier accent
+ { name:'Remaining to teaser', value: Math.max(0, teaserThreshold - leadsBeforeTeaser), color:'#DEF0FF' } // Glacier accent-subtle-2
  ];
 
  return (
@@ -87,7 +87,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <ArrowLeft />
  </button>
  <div>
- <h1 className="text-xl font-semibold text-gray-900 tracking-tight flex items-center gap-3">
+ <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
  {name}
  {recruiter.status && (
  <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
@@ -135,11 +135,11 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <div className="bg-slate-50 text-slate-700 p-1.5 rounded-md flex-shrink-0"><Users /></div>
  <p className="text-xs font-medium text-gray-500 truncate">Contacts</p>
  </div>
- <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate" title={String(associatedContacts)}>{associatedContacts}</p>
+ <p className="text-xl sm:text-2xl font-semibold text-gray-900 truncate" title={String(associatedContacts)}>{associatedContacts}</p>
  </div>
  <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col justify-center gap-1 overflow-hidden">
  <p className="text-xs font-medium text-gray-500 truncate">Total Leads Sent</p>
- <p className="text-3xl font-bold font-mono tracking-tight text-gray-900 truncate">{leadsTotal}</p>
+ <p className="text-3xl font-semibold font-mono text-gray-900 truncate">{leadsTotal}</p>
  </div>
  </div>
 
@@ -153,10 +153,10 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <ResponsiveContainer width="100%" height="100%">
  <BarChart data={progressionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
- <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill:'#64748b' }} dy={10} />
- <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill:'#64748b' }} />
+ <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill:'#6E848F' }} dy={10} />
+ <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill:'#6E848F' }} />
  <RechartsTooltip 
- cursor={{ fill:'#f8fafc' }}
+ cursor={{ fill:'rgba(110,132,143,0.12)' }}
  contentStyle={{ borderRadius:'8px', border:'1px solid #e2e8f0', boxShadow:'0 4px 6px -1px rgba(0,0,0,0.05)' }}
  />
  <Bar dataKey="leads" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={60} />
@@ -188,7 +188,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  </PieChart>
  </ResponsiveContainer>
  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
- <span className="text-2xl font-bold text-gray-900">{leadsBeforeTeaser}</span>
+ <span className="text-2xl font-semibold text-gray-900">{leadsBeforeTeaser}</span>
  <span className="text-xs font-medium text-gray-500 ">/ {teaserThreshold}</span>
  </div>
  </div>
@@ -206,8 +206,8 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  <BarChart data={dailyData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
  <XAxis type="number" hide />
- <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill:'#64748b' }} width={100} />
- <RechartsTooltip cursor={{ fill:'#f8fafc' }} />
+ <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill:'#6E848F' }} width={100} />
+ <RechartsTooltip cursor={{ fill:'rgba(110,132,143,0.12)' }} />
  <Legend iconType="circle" wrapperStyle={{ fontSize:'12px' }} />
  <Bar dataKey="sent" name="Estimated Daily Sent" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={24} />
  <Bar dataKey="minLimit" name="Min Leads/Email" fill="#93c5fd" radius={[0, 4, 4, 0]} barSize={24} />
@@ -280,7 +280,7 @@ export default function RecruiterDashboard({ recruiter, onBack }: RecruiterDashb
  ></div>
  <div className="relative bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-slate-50 rounded-t-xl">
- <h2 className="text-base font-bold text-slate-800">
+ <h2 className="text-base font-semibold text-slate-800">
  Email content
  </h2>
  <button 

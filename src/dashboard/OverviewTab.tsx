@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import {
   Briefcase, Users, UserCheck, Loader2, AlertCircle,
-  RefreshCw, Mail, Database, Zap,
+  RefreshCw, Mail, Database, Zap, X,
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -484,7 +484,7 @@ export const OverviewTab: React.FC = () => {
         {[...Array(6)].map((_, i) => (
           <div key={i} className="bg-slate-200/60 rounded-xl p-4 flex items-center justify-between h-[84px]">
             <div className="space-y-2 w-full">
-              <div className="h-2 w-16 bg-slate-300/50 rounded-sm"></div>
+              <div className="h-2 w-16 bg-slate-300/50 rounded"></div>
               <div className="h-5 w-12 bg-slate-300/60 rounded-md"></div>
             </div>
             <div className="w-10 h-10 bg-slate-300/50 rounded-xl shrink-0 ml-2"></div>
@@ -514,7 +514,7 @@ export const OverviewTab: React.FC = () => {
         <div className="flex-1 w-full bg-slate-50/50 rounded-xl border border-slate-100 flex flex-col gap-3 justify-center p-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center gap-3 w-full">
-              <div className="h-3 w-20 bg-slate-200 rounded-sm shrink-0"></div>
+              <div className="h-3 w-20 bg-slate-200 rounded shrink-0"></div>
               <div className="h-4 bg-slate-100 rounded-r-md" style={{ width: `${Math.max(20, 100 - i * 15)}%` }}></div>
             </div>
           ))}
@@ -528,7 +528,7 @@ export const OverviewTab: React.FC = () => {
     <div className="bg-red-50 p-5 rounded-2xl border border-red-200 flex gap-3 items-start">
       <AlertCircle className="text-red-500 w-5 h-5 mt-0.5 shrink-0" />
       <div>
-        <p className="font-bold text-sm text-red-700">Failed to load analytics</p>
+        <p className="font-semibold text-sm text-red-700">Failed to load analytics</p>
         <p className="text-xs text-red-500 mt-1">{error}</p>
         <button onClick={() => fetchAndCacheData(false)} className="mt-3 text-xs font-semibold bg-red-100 hover:bg-red-200 px-3 py-1.5 rounded-lg transition-colors">Retry</button>
       </div>
@@ -545,7 +545,7 @@ export const OverviewTab: React.FC = () => {
             Live RecruitScout data from all your tables. 
             <span className="ml-1 font-medium text-blue-700">Tip: switch between light and dark themes with the button in the top bar.</span>
           </div>
-          <button onClick={() => setShowBanner(false)} className="text-blue-500 hover:text-blue-700 font-bold ml-4 text-sm" aria-label="Dismiss">✕</button>
+          <button onClick={() => setShowBanner(false)} className="text-blue-500 hover:text-blue-700 font-semibold ml-4 text-sm" aria-label="Dismiss"><X size={16} /></button>
         </div>
       )}
 

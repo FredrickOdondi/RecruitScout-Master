@@ -354,7 +354,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
 
  <form onSubmit={handleEnroll} className="space-y-4">
  <div>
- <label className="text-xs text-gray-600 font-bold mb-1.5 block">
+ <label className="text-xs text-gray-600 font-semibold mb-1.5 block">
  Client name <span className="text-red-500">*</span>
  </label>
  <input
@@ -363,13 +363,13 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  required
  value={name}
  onChange={(e) => setName(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-green-500 transition-all shadow-sm"
  />
  </div>
 
  <div>
  <div className="flex items-center justify-between mb-1.5">
-   <label className="text-xs text-gray-600 font-bold block">
+   <label className="text-xs text-gray-600 font-semibold block">
      Google spreadsheet <span className="text-red-500">*</span>
    </label>
    <button
@@ -397,7 +397,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
        placeholder="Paste full Google Sheet URL or spreadsheet ID..."
        value={spreadsheetId}
        onChange={(e) => setSpreadsheetId(e.target.value)}
-       className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+       className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:border-green-500 shadow-sm"
      />
      <p className="text-xs text-gray-400 mt-1">
        Paste either the full URL (e.g. <code>https://docs.google.com/spreadsheets/d/...</code>) or the ID.
@@ -420,7 +420,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
      required
      value={spreadsheetId}
      onChange={(e) => setSpreadsheetId(e.target.value)}
-     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+     className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:border-green-500 shadow-sm"
    >
      <option value="">Select a Spreadsheet ({spreadsheets.length} found)...</option>
      {spreadsheets.map(sheet => (
@@ -434,7 +434,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
 
  <div>
  <div className="flex items-center justify-between mb-1.5">
- <label className="text-xs text-gray-600 font-bold block">
+ <label className="text-xs text-gray-600 font-semibold block">
  Sheet name <span className="text-red-500">*</span>
  </label>
  <div className="flex items-center gap-2">
@@ -478,7 +478,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  setSheetName(e.target.value);
  }
  }}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 focus:border-green-500 shadow-sm"
  >
  {availableSheets.map(tab => (
  <option key={tab.id} value={tab.title}>
@@ -494,7 +494,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  required
  value={sheetName}
  onChange={(e) => setSheetName(e.target.value)}
- className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all shadow-sm"
+ className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-green-500 transition-all shadow-sm"
  />
  )}
 
@@ -520,7 +520,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <button
  type="submit"
  disabled={enrolling || tableMissing}
- className="w-full bg-accent hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-on-accent py-2.5 rounded-lg font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
+ className="w-full bg-accent hover:bg-accent-700 disabled:bg-subtle disabled:text-fg-subtle disabled:cursor-not-allowed text-on-accent py-2.5 rounded-lg font-semibold text-xs transition-all shadow-sm flex items-center justify-center gap-2 mt-4"
  >
  {enrolling ?'Enrolling...' :'Enroll client'}
  </button>
@@ -539,7 +539,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
  <button 
  onClick={() => fetchClients()}
  disabled={loading}
- className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 transition-all"
+ className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 disabled:bg-subtle disabled:text-fg-subtle transition-all"
  >
  <span className={loading ?'animate-spin' :''}><RefreshIcon /></span>
  Refresh
@@ -566,7 +566,7 @@ CREATE POLICY"Allow public read and write" ON public.clients FOR ALL USING (true
 
  <div className="overflow-x-auto rounded-lg border border-gray-200 flex-1">
  <table className="w-full text-left text-xs text-gray-700 min-w-[600px]">
- <thead className="text-xs font-bold text-gray-600 bg-gray-50 border-b border-gray-200">
+ <thead className="text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">
  <tr>
  <th className="px-4 py-3">Client</th>
  <th className="px-4 py-3">Sheet settings</th>

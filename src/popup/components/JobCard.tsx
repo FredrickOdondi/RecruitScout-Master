@@ -29,7 +29,7 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  {/* Job info */}
  <div className="flex-1 min-w-0">
  <div className="flex items-start justify-between gap-4">
- <h3 className="font-medium text-gray-900 text-[15px] truncate group-hover:text-gray-700 transition-colors">{job.title}</h3>
+ <h3 className="font-medium text-gray-900 text-base truncate group-hover:text-gray-700 transition-colors">{job.title}</h3>
  <button
  onClick={onToggleExpand}
  className="flex-shrink-0 p-1 hover:bg-gray-100 rounded-md transition-colors border border-transparent hover:border-gray-200 text-gray-500 hover:text-gray-700"
@@ -86,7 +86,7 @@ export default function JobCard({ job, isSelected, isExpanded, onToggleSelect, o
  onClick={openJob}
  className="text-xs text-green-600 hover:text-green-700 font-medium group flex items-center gap-1"
  >
- Open Original Job <span className="transition-transform group-hover:translate-x-1">→</span>
+ Open Original Job <span className="transition-transform">→</span>
  </button>
  </div>
  </div>
