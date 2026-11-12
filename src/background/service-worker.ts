@@ -5,7 +5,7 @@ import { storage } from '../shared/storage';
 import { MessageType, ExtensionMessage, ExtractionStatus } from '../shared/types';
 import { MESSAGE_TIMEOUT } from '../shared/constants';
 import { parseDomain } from '../shared/utils';
-import { supabaseClient } from '../shared/supabase';
+import { supabaseClient, SUPABASE_URL as SHARED_SUPABASE_URL } from '../shared/supabase';
 import { googleSheetsClient } from '../lib/export/google-sheets';
 import { ensureSheetHeaders, appendToGoogleSheet } from '../lib/export/google-sheets-api';
 import {
@@ -246,7 +246,7 @@ async function fetchDomainFromLinkedIn(companyName: string): Promise<string> {
 }
 
 // Supabase config
-const SUPABASE_URL = 'http://72.60.215.34:8000';
+const SUPABASE_URL = SHARED_SUPABASE_URL;
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
 async function fetchDomainFromSupabase(companyName: string): Promise<string> {

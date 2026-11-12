@@ -48,6 +48,7 @@
     "http://localhost:5173/*",
     "http://72.60.215.34/*",
     "http://72.60.215.34:8000/*",
+    "https://supabase.72-60-215-34.sslip.io/*",
     "https://next-api.useplunk.com/*",
     "https://sheets.googleapis.com/*",
     "https://www.googleapis.com/*",

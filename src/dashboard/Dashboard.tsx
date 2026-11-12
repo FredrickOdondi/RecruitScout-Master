@@ -7,14 +7,14 @@ import ClientEnrollmentTab from'./ClientEnrollmentTab';
 import LeadsManagementTab from'./LeadsManagementTab';
 import LeadsFlowTab from'./LeadsFlowTab';
 import BlueApp from'../blue/App';
-import UnifiedFloatingAgent from './UnifiedFloatingAgent';
 import { OverviewTab } from './OverviewTab';
 import { GraphTab } from './GraphTab';
+import AssistantTab from './assistant/AssistantTab';
 import { supabaseClient } from'../shared/supabase';
 import { BlueCcClient } from'../shared/bluecc';
 
 // Icons 
-import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Bot, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon, Cookie, MonitorDown, X } from 'lucide-react';
+import { Server, Settings, Search, Database, Download, Cloud, Briefcase, Users, Activity, ChevronLeft, LogOut, Menu, Hexagon, LayoutDashboard, Network, Sun, Moon, Cookie, MonitorDown, X, MessageSquare } from 'lucide-react';
 import IndeedSessionsTab from './IndeedSessionsTab';
 import { setThemeColor, useInstallPrompt } from './pwa';
 
@@ -26,7 +26,6 @@ const DownloadIcon = () => <Download size={20} />;
 const CloudDbIcon = () => <Cloud size={20} />;
 const BriefcasePlusIcon = () => <Briefcase size={20} />;
 const UsersIcon = () => <Users size={20} />;
-const RobotIcon = () => <Bot size={20} />;
 const ActivityIcon = () => <Activity size={20} />;
 const LayoutDashboardIcon = () => <LayoutDashboard size={20} />;
 const NetworkIcon = () => <Network size={20} />;
@@ -159,8 +158,22 @@ const MultiSelectChecklist: React.FC<MultiSelectProps> = ({
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [assistantFocusNonce, setAssistantFocusNonce] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setActiveTab('assistant');
+        setAssistantFocusNonce((n) => n + 1);
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   // Global dashboard theme: 'dark' or 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -199,6 +212,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   // Built at render time because it reads the jobs count declared further down
   const getNavItems = (): { group: string; items: { id: string; label: string; icon: React.ReactNode; badge?: number }[] }[] => [
     { group: 'Agent control', items: [
+      { id: 'assistant', label: 'Assistant', icon: <MessageSquare size={20} /> },
       { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={20} /> },
       { id: 'search', label: 'Queue', icon: <Search size={20} /> },
       { id: 'indeed-sessions', label: 'Indeed accounts', icon: <Cookie size={20} /> },
@@ -218,7 +232,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   ];
 
   const tabTitles: Record<string, string> = {
-    overview: 'Overview', search: 'Queue', 'indeed-sessions': 'Indeed accounts', settings: 'Settings', jobs: 'Jobs', export: 'Export and sync',
+    assistant: 'Assistant', overview: 'Overview', search: 'Queue', 'indeed-sessions': 'Indeed accounts', settings: 'Settings', jobs: 'Jobs', export: 'Export and sync',
     graph: 'Knowledge graph', supabase: 'Database', clients: 'Clients', leads: 'Leads',
     'leads-flow': 'Leads flow', blue: 'Blue.cc workspaces',
   };
@@ -731,6 +745,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   <h1 className="text-2xl font-semibold text-fg truncate">
   {tabTitles[activeTab] || activeTab}
   </h1>
+  {activeTab !== 'assistant' && (
+    <button
+      type="button"
+      onClick={() => { setActiveTab('assistant'); setAssistantFocusNonce((n) => n + 1); }}
+      className="hidden md:inline-flex items-center gap-1.5 text-xs text-fg-subtle hover:text-fg px-2 py-1 rounded-md hover:bg-hover"
+      title="Open Assistant (⌘K)"
+    >
+      <MessageSquare size={12} />
+      <span>⌘K</span>
+    </button>
+  )}
 
   <div className="ml-auto flex items-center gap-2">
     {canInstall && (
@@ -750,7 +775,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   </div>
   </header>
 
-  <div className={`flex-1 min-h-0 ${activeTab === 'graph' || activeTab === 'leads' || activeTab === 'leads-flow' || activeTab === 'supabase' || activeTab === 'blue' ? 'overflow-hidden p-0 flex flex-col' : 'overflow-y-auto p-4 md:p-6 lg:p-8'}`}>
+  <div className={`flex-1 min-h-0 ${activeTab === 'assistant' || activeTab === 'graph' || activeTab === 'leads' || activeTab === 'leads-flow' || activeTab === 'supabase' || activeTab === 'blue' ? 'overflow-hidden p-0 flex flex-col' : 'overflow-y-auto p-4 md:p-6 lg:p-8'}`}>
+
+ {activeTab === 'assistant' && (
+  <AssistantTab sendMessage={bridgeSendMessage} focusNonce={assistantFocusNonce} />
+ )}
  
  {/* OVERVIEW MODE */}
  {activeTab ==='overview' && (
@@ -1429,8 +1458,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
  </div>
  </main>
-
- <UnifiedFloatingAgent />
  </div>
  );
 }

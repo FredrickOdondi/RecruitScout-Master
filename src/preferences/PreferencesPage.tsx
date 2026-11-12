@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 // ── Supabase config (same as service-worker) ─────────────────────────────────
-const SUPABASE_URL = 'http://72.60.215.34:8000';
+const SUPABASE_URL = 'https://supabase.72-60-215-34.sslip.io'; // compressed HTTPS proxy
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
