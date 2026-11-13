@@ -20,6 +20,7 @@ const ClientEnrollmentTab = lazy(() => import('./ClientEnrollmentTab'));
 const LeadsManagementTab = lazy(() => import('./LeadsManagementTab'));
 const LeadsFlowTab = lazy(() => import('./LeadsFlowTab'));
 const BlueApp = lazy(() => import('../blue/App'));
+const McpAccessPanel = lazy(() => import('./McpAccessPanel'));
 
 /** Glacier loading state shown while a tab's code downloads. */
 function TabSkeleton() {
@@ -1420,6 +1421,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
  <input type="checkbox" checked={settings.respectRobotsTxt !== false} onChange={e => updateSetting('respectRobotsTxt', e.target.checked)} className="form-checkbox h-4 w-4 rounded border-gray-200 bg-white cursor-pointer" />
  </label>
  </div>
+
+ {/* MCP access for outside AI agents */}
+ <Suspense fallback={null}><McpAccessPanel /></Suspense>
 
  </div>
  )}

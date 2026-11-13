@@ -98,16 +98,29 @@ async function readStream(res: Response, onDelta: (text: string) => void): Promi
   return final;
 }
 
+/**
+ * Sends one model request. In the dashboard this is the assistant-chat server
+ * function; on the MCP server it calls OpenAI directly with the server's key.
+ */
+export type ModelTransport = (body: Record<string, unknown>, signal?: AbortSignal) => Promise<Response>;
+
+let modelTransport: ModelTransport | null = null;
+
+export function setModelTransport(transport: ModelTransport | null): void {
+  modelTransport = transport;
+}
+
 async function callModel(input: InputItem[], signal: AbortSignal | undefined, onDelta: (t: string) => void): Promise<any> {
   const session = supabaseClient.getSession();
-  if (!session?.access_token) throw new AssistantError('Your session has ended. Sign in again.');
+  if (!modelTransport && !session?.access_token) throw new AssistantError('Your session has ended. Sign in again.');
 
   let lastError: AssistantError | null = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     if (attempt > 0) await sleep(1000 * 2 ** (attempt - 1), signal);
     let streamed = false;
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/assistant-chat`, {
+      const body = { instructions: ASSISTANT_SYSTEM_PROMPT, input, tools: toolsForOpenAI(), stream: !modelTransport };
+      const res = modelTransport ? await modelTransport(body, signal) : await fetch(`${SUPABASE_URL}/functions/v1/assistant-chat`, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -115,7 +128,7 @@ async function callModel(input: InputItem[], signal: AbortSignal | undefined, on
           'Content-Type': 'application/json',
           Accept: 'text/event-stream',
         },
-        body: JSON.stringify({ instructions: ASSISTANT_SYSTEM_PROMPT, input, tools: toolsForOpenAI(), stream: true }),
+        body: JSON.stringify(body),
         signal,
       });
       if (!res.ok) {
@@ -168,6 +181,14 @@ export async function runAssistantTurn(opts: {
   viewContext?: string;
   onEvent: (e: AssistantUiEvent) => void;
   signal?: AbortSignal;
+  /**
+   * 'ask' (dashboard): risky steps wait for the Approve card.
+   * 'defer' (MCP chat): nobody can click Approve, so risky steps are not run and
+   * the model is told to describe them so the caller can run them itself.
+   */
+  approvalMode?: 'ask' | 'defer';
+  /** Server-side tool context flags (MCP) */
+  remote?: boolean;
 }): Promise<ChatMessage[]> {
   const { threadId, userId, onEvent, signal } = opts;
   const messages: ChatMessage[] = [...opts.history];
@@ -179,7 +200,7 @@ export async function runAssistantTurn(opts: {
   if (opts.viewContext) {
     input.splice(input.length - 1, 0, { role: 'developer', content: `The user is currently on the "${opts.viewContext}" screen of the dashboard.` });
   }
-  const baseCtx: ToolContext = { bridgeSendMessage: opts.bridgeSendMessage, userId, navigate: opts.navigate };
+  const baseCtx: ToolContext = { bridgeSendMessage: opts.bridgeSendMessage, userId, navigate: opts.navigate, remote: opts.remote };
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     if (signal?.aborted) throw new AssistantError('Cancelled');
@@ -237,7 +258,7 @@ function parseArgs(call: OpenAIToolCall): unknown {
 async function runCall(
   call: OpenAIToolCall,
   ctx: ToolContext,
-  opts: { threadId: string; userId: string; onEvent: (e: AssistantUiEvent) => void; signal?: AbortSignal },
+  opts: { threadId: string; userId: string; onEvent: (e: AssistantUiEvent) => void; signal?: AbortSignal; approvalMode?: 'ask' | 'defer' },
   mayNeedApproval: boolean,
 ): Promise<ToolResult> {
   const name = call.function.name;
@@ -249,7 +270,14 @@ async function runCall(
 
   let result = await executeTool(name, args, ctx);
 
-  if (result.needsApproval && mayNeedApproval && def) {
+  if (result.needsApproval && opts.approvalMode === 'defer') {
+    result = {
+      ok: false,
+      error: `Not run: this step needs the person's approval, which can't be given in this channel. `
+        + `Tell the user it is waiting and give the exact tool (${name}) and arguments so they can run it themselves. `
+        + `What it would do: ${result.preview?.summary || name}`,
+    };
+  } else if (result.needsApproval && mayNeedApproval && def) {
     logToolRun({ threadId: opts.threadId, userId: opts.userId, toolName: name, argsSummary: JSON.stringify(args).slice(0, 500), resultSummary: result.preview?.summary || '', status: 'needs_confirmation', durationMs: 0 });
     const approved = await new Promise<boolean>((resolve) => {
       const onAbort = () => resolve(false);

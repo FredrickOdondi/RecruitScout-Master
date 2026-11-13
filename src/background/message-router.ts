@@ -35,6 +35,16 @@ export class MessageRouter {
   }
 
   /**
+   * Run a registered handler directly (no chrome.runtime round trip).
+   * Used by the MCP relay; throws for unknown message types.
+   */
+  async dispatch(message: ExtensionMessage): Promise<any> {
+    const handler = this.handlers.get(message.type as MessageType);
+    if (!handler) throw new Error(`Unknown message type: ${message.type}`);
+    return handler(message, {} as chrome.runtime.MessageSender);
+  }
+
+  /**
    * Send message to content script
    */
   async sendToContent(
