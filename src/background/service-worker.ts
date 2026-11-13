@@ -1477,8 +1477,68 @@ class ServiceWorker {
       if (alarm.name === 'queue_polling') {
         this.pollQueue();
         this.pingHeartbeat();
+        this.pollBridgeCommands();
       }
     });
+  }
+
+  /**
+   * MCP relay: run commands that outside agents sent to this browser through
+   * the mcp edge function (table mcp_bridge_commands). Runs on the 30s alarm
+   * whether or not swarm polling is on, so an agent can also turn it on.
+   */
+  private isPollingBridge = false;
+
+  private static readonly RELAYABLE = new Set<string>([
+    MessageType.GET_SETTINGS, MessageType.UPDATE_SETTINGS, MessageType.GET_STATE, MessageType.GET_PROGRESS,
+    MessageType.START_BULK_EXTRACTION, MessageType.PAUSE_EXTRACTION, MessageType.STOP_EXTRACTION,
+    MessageType.GET_JOBS, MessageType.UPDATE_JOB, MessageType.RESOLVE_DOMAIN, MessageType.SEND_GMAIL_MESSAGE,
+    'FORCE_POLL_QUEUE', 'SUPABASE_SYNC_ALL', 'RELAY_GET_EMAIL_SCHEDULE', 'RELAY_SET_EMAIL_SCHEDULE',
+  ]);
+
+  private async runRelayed(message: ExtensionMessage): Promise<any> {
+    const type = String(message.type);
+    if (type === 'RELAY_GET_EMAIL_SCHEDULE') {
+      const [config, state] = await Promise.all([storage.getEmailScheduleConfig(), storage.getEmailScheduleState()]);
+      return { config, state };
+    }
+    if (type === 'RELAY_SET_EMAIL_SCHEDULE') {
+      await storage.setEmailScheduleConfig(message.payload || {});
+      return await storage.getEmailScheduleConfig();
+    }
+    return await messageRouter.dispatch(message);
+  }
+
+  private async pollBridgeCommands(): Promise<void> {
+    if (this.isPollingBridge) return;
+    this.isPollingBridge = true;
+    try {
+      const agent = await this.getActiveWorkerId();
+      for (let i = 0; i < 5; i++) {
+        const command = await supabaseClient.claimBridgeCommand(agent);
+        if (!command) break;
+        const message = command.message as ExtensionMessage;
+        if (!message || !ServiceWorker.RELAYABLE.has(String(message.type))) {
+          await supabaseClient.completeBridgeCommand(command.id, agent, false, { error: `This browser does not accept "${message?.type}" from MCP.` });
+          continue;
+        }
+        console.log(`[RecruitScout] MCP relay: running ${message.type}`);
+        try {
+          // Long jobs (a queue run, a bulk search) keep going; the caller hears they started
+          const data = await Promise.race([
+            this.runRelayed(message),
+            new Promise((resolve) => setTimeout(() => resolve({ success: true, started: true, note: 'Still running in this browser.' }), 20000)),
+          ]);
+          await supabaseClient.completeBridgeCommand(command.id, agent, true, { data: data ?? { success: true } });
+        } catch (e) {
+          await supabaseClient.completeBridgeCommand(command.id, agent, false, { error: e instanceof Error ? e.message : String(e) });
+        }
+      }
+    } catch (e) {
+      console.warn('[RecruitScout] MCP relay check failed:', e);
+    } finally {
+      this.isPollingBridge = false;
+    }
   }
 
   private async getActiveWorkerId(): Promise<string> {

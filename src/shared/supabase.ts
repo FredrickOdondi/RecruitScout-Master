@@ -829,6 +829,33 @@ export class SupabaseClient {
   }
 
   /**
+   * MCP relay: claim the oldest pending command for this agent (or for any agent).
+   * Returns null when there is nothing to do.
+   */
+  async claimBridgeCommand(agent: string): Promise<{ id: string; message: any } | null> {
+    const res = await fetch(`${this.baseUrl}/rest/v1/rpc/claim_bridge_command`, {
+      method: 'POST',
+      headers: { 'apikey': this.apiKey, 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_agent: agent }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`claim_bridge_command HTTP ${res.status}`);
+    const text = await res.text();
+    const body = text ? JSON.parse(text) : null;
+    return body && body.id ? body : null;
+  }
+
+  /** MCP relay: report the result of a claimed command. */
+  async completeBridgeCommand(id: string, agent: string, ok: boolean, result: unknown): Promise<void> {
+    await fetch(`${this.baseUrl}/rest/v1/rpc/complete_bridge_command`, {
+      method: 'POST',
+      headers: { 'apikey': this.apiKey, 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: id, p_agent: agent, p_ok: ok, p_result: result ?? null }),
+      signal: AbortSignal.timeout(15000),
+    });
+  }
+
+  /**
    * Get active agents for dashboard
    */
   async getActiveAgents(): Promise<SupabaseResponse<any[]>> {
@@ -1057,6 +1084,13 @@ export class SupabaseClient {
     }
   }
 
+  /** Set on the server (MCP), where there is no localStorage: returns the caller's session. */
+  private sessionProvider: (() => any | null) | null = null;
+
+  setSessionProvider(provider: (() => any | null) | null): void {
+    this.sessionProvider = provider;
+  }
+
   /**
    * Sign out — clears the stored session.
    */
@@ -1068,6 +1102,7 @@ export class SupabaseClient {
    * Returns the stored session if it is still valid, or null if missing/expired.
    */
   getSession(): any | null {
+    if (this.sessionProvider) return this.sessionProvider();
     try {
       const raw = localStorage.getItem(this.SESSION_KEY);
       if (!raw) return null;

@@ -84,6 +84,11 @@ export interface ToolContext {
   approval?: ApprovalGrant;
   /** Lets tools switch dashboard tabs */
   navigate?: (view: string, filters?: Record<string, string>) => void;
+  /**
+   * Running on the server for an MCP client: there is no browser, so
+   * extension-only state goes through the bridge and exports return the file text.
+   */
+  remote?: boolean;
 }
 
 export type AssistantUiEvent =

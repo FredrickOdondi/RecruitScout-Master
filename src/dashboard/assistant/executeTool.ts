@@ -496,6 +496,12 @@ export async function executeTool(name: string, rawArgs: unknown, ctx: ToolConte
         const jobs = rows.map(toJobData);
         const stamp = new Date().toISOString().slice(0, 10);
         const file = `recruitscout-jobs-${stamp}`;
+        if (ctx.remote) {
+          // No browser to download into: hand the file contents back to the caller
+          const content = args.format === 'json' ? JSONExporter.export(jobs) : CSVExporter.export(jobs);
+          const ext = args.format === 'json' ? 'json' : 'csv';
+          return ok({ filename: `${file}.${ext}`, rows: jobs.length, content }, `Exported ${plural(jobs.length, 'job')} as ${ext.toUpperCase()}`);
+        }
         if (args.format === 'csv') CSVExporter.download(jobs, `${file}.csv`);
         else if (args.format === 'json') JSONExporter.download(jobs, `${file}.json`);
         else XLSXExporter.download(jobs, `${file}.xls`);
@@ -703,11 +709,21 @@ export async function executeTool(name: string, rawArgs: unknown, ctx: ToolConte
       }
 
       case 'get_email_schedule': {
+        if (ctx.remote) {
+          const res = await bridge<any>(ctx, { type: 'RELAY_GET_EMAIL_SCHEDULE' });
+          if (res.error) return fail(res.error);
+          return ok(res.data, res.data?.config?.enabled ? 'Schedule is on' : 'Schedule is off');
+        }
         const [config, state] = await Promise.all([storage.getEmailScheduleConfig(), storage.getEmailScheduleState()]);
         return ok({ config, state }, config.enabled ? 'Schedule is on' : 'Schedule is off');
       }
 
       case 'set_email_schedule': {
+        if (ctx.remote) {
+          const res = await bridge<any>(ctx, { type: 'RELAY_SET_EMAIL_SCHEDULE', payload: args });
+          if (res.error) return fail(res.error);
+          return ok(res.data, res.data?.enabled ? 'Turned the schedule on' : 'Updated the schedule');
+        }
         await storage.setEmailScheduleConfig(args);
         const config = await storage.getEmailScheduleConfig();
         return ok(config, config.enabled ? 'Turned the schedule on' : 'Updated the schedule');
